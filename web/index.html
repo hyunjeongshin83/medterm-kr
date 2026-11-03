@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MedTerm-KR · 약무용어 사전 · 답변 검증 (프로토타입)</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mut:#667085;--line:#e3e7ee;--pri:#1f5fbf;--ok:#1a7f4b;--okbg:#e6f4ec;--warn:#9a6700;--warnbg:#fff4d6;--err:#b42318;--errbg:#fde8e6;--info:#475467;--infobg:#eef1f5}
+*{box-sizing:border-box}body{margin:0;font:15px/1.55 -apple-system,"Segoe UI","Malgun Gothic","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 20px}
+header h1{margin:0;font-size:18px}header p{margin:2px 0 0;color:var(--mut);font-size:13px}
+.disc{background:#fff8e1;border-bottom:1px solid #f3dfa2;color:#6b4e00;padding:8px 20px;font-size:13px}
+nav{display:flex;gap:4px;padding:10px 20px 0;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{border:0;background:none;padding:10px 14px;font:inherit;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
+nav button[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+main{max-width:1080px;margin:0 auto;padding:18px 20px 60px}
+section[hidden]{display:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+input[type=text],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+textarea{min-height:130px;resize:vertical}
+button.btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer}button.btn.sec{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:0 0 auto}.row>.grow{flex:1 1 240px}
+.hit{padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;background:#fff}.hit:hover{border-color:var(--pri)}
+.hit b{font-size:16px}.mut{color:var(--mut);font-size:13px}.badge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--infobg);color:var(--info);margin-left:6px}
+.badge.draft{background:var(--warnbg);color:var(--warn)}.badge.ok{background:var(--okbg);color:var(--ok)}.badge.err{background:var(--errbg);color:var(--err)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.chip{background:var(--infobg);border-radius:6px;padding:2px 8px;font-size:13px}.chip.leaf{background:#dfeafb;color:#124a99;font-weight:600}
+.sep{color:var(--mut)}
+details{margin:4px 0}summary{cursor:pointer;padding:3px 0}.vmp{padding:3px 0 3px 18px;font-size:14px}.amp{padding-left:38px;font-size:13px;color:var(--mut)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{color:var(--mut);font-weight:600;font-size:13px}
+.ann{white-space:pre-wrap;line-height:2;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.ann .s-error{background:var(--errbg);border-bottom:2px solid var(--err)}.ann .s-warn{background:var(--warnbg);border-bottom:2px solid #d9a400}.ann .s-info{background:var(--infobg);border-bottom:2px dotted var(--info)}.ann .s-ok{background:var(--okbg)}
+.ann span{border-radius:3px;padding:1px 0}
+.sum{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.sum .badge{font-size:13px;padding:3px 10px;margin:0}
+.verdict{padding:10px 14px;border-radius:8px;margin:8px 0;font-weight:600}.verdict.inconsistent{background:var(--errbg);color:var(--err)}.verdict.needs_review{background:var(--warnbg);color:var(--warn)}.verdict.no_conflict_found{background:var(--okbg);color:var(--ok)}
+pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto;font-size:12.5px;white-space:pre-wrap;word-break:break-word;max-height:360px}
+.sev{font-weight:700;font-size:12px}.sev.error{color:var(--err)}.sev.warn{color:var(--warn)}.sev.info{color:var(--info)}.sev.ok{color:var(--ok)}
+ul.lim li{margin:4px 0}small{color:var(--mut)}
+</style>
+</head>
+<body>
+<header><h1>MedTerm-KR <small>프로토타입</small></h1><p>약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증 · <a href="guide.html">화면 구성 안내</a></p></header>
+<div class="disc">정보 제공·연구용 프로토타입입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.</div>
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-tab="search">사전 검색</button>
+  <button role="tab" aria-selected="false" data-tab="verify">답변 검증</button>
+  <button role="tab" aria-selected="false" data-tab="rag">근거 기반 질의</button>
+  <button role="tab" aria-selected="false" data-tab="about">데이터·한계</button>
+</nav>
+<main>
+<section id="tab-search">
+  <div class="card"><div class="row"><input class="grow" id="q" type="text" placeholder="이름·상품명·ATC 코드·RxCUI (예: 오메프라졸, 타이레놀, A10BA, 6809)" autocomplete="off"></div>
+  <div class="mut" style="margin-top:6px">예: <a href="#" class="ex">메트포르민</a> · <a href="#" class="ex">노바스크</a> · <a href="#" class="ex">C10AA</a> · <a href="#" class="ex">warfarin</a></div></div>
+  <div id="hits"></div><div id="detail"></div>
+</section>
+<section id="tab-verify" hidden>
+  <div class="card">
+    <div class="row"><select id="sample" class="grow"><option value="">샘플 답변 불러오기…</option></select><button class="btn" id="run-verify">검증</button></div>
+    <textarea id="vtext" placeholder="LLM이 생성한 약 관련 답변을 붙여넣으세요."></textarea>
+  </div>
+  <div id="vresult"></div>
+</section>
+<section id="tab-rag" hidden>
+  <div class="card">
+    <div class="row"><input class="grow" id="rq" type="text" placeholder="질문 예: 오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘"><button class="btn" id="rag-go">사전에서 근거 찾기</button></div>
+    <div id="rag-out"></div>
+  </div>
+  <div class="card" id="rag-llm" hidden>
+    <h3 style="margin-top:0">LLM 호출 (선택)</h3>
+    <p class="mut">브라우저에 API 키를 두지 마세요. 서버(프록시/엣지 함수)의 URL만 입력하면 <code>{system, user}</code>를 POST하고 <code>{text}</code>를 받습니다. 비워 두면 아래 칸에 답변을 직접 붙여넣어 검증합니다.</p>
+    <div class="row"><input class="grow" id="proxy" type="text" placeholder="https://… (서버 프록시 URL, 선택)"><button class="btn sec" id="llm-call">LLM 호출</button><button class="btn sec" id="llm-mock">모의 답변 넣기(오프라인 데모)</button></div>
+    <textarea id="rag-answer" placeholder="LLM 답변(붙여넣기 또는 호출 결과)"></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn" id="rag-verify">이 답변 검증</button></div>
+    <div id="rag-verify-out"></div>
+  </div>
+</section>
+<section id="tab-about" hidden><div id="about"></div></section>
+</main>
+<script src="js/medterm-data.js"></script><script src="js/bench.js"></script><script src="js/core.js"></script><script src="js/app.js"></script>
+</body></html>

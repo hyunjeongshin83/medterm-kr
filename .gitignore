@@ -1,0 +1,5 @@
+node_modules/
+logs/
+.env
+mfds_out/
+__pycache__/

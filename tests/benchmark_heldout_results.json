@@ -1,0 +1,482 @@
+{
+ "ms": 23,
+ "n": 34,
+ "results": [
+  {
+   "id": "HELD-000",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "프로프라놀롤도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-001",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "카르베딜롤도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-002",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "비소프롤롤도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-003",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "케토코나졸도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-004",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "플루코나졸도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-005",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "보리코나졸도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-006",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "덱스란소프라졸도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-007",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "피타바스타틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-008",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "플루바스타틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-009",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "올메사르탄도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-010",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "이르베사르탄도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-011",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "에리트로마이신도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-012",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "토브라마이신도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-013",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "겐타마이신도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-014",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "암피실린도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-015",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "클록사실린도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-016",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "시타글립틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-017",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "리나글립틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-018",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "빌다글립틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-019",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "다파글리플로진도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-020",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "엠파글리플로진도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-021",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "리바록사반도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-022",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "아픽사반도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-023",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "다비가트란도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-024",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "수마트립탄도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-025",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "온단세트론도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-026",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "데스로라타딘도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-027",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "시탈로프람도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-028",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "플루옥세틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-029",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "파록세틴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-030",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "라미프릴도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-031",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "닐바디핀도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "near_miss"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-032",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "아미카신도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  },
+  {
+   "id": "HELD-033",
+   "category": "HELDOUT_real",
+   "label": "ood_real",
+   "text": "독시사이클린도 비슷한 용도로 사용됩니다.",
+   "expect": [
+    "unknown_drug",
+    "near_miss"
+   ],
+   "flagged_types": [
+    "unknown_drug"
+   ],
+   "pass": true
+  }
+ ]
+}

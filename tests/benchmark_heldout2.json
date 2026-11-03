@@ -1,0 +1,342 @@
+[
+ {
+  "id": "HELD2-000",
+  "category": "HELDOUT2_real",
+  "text": "세레콕시브도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-001",
+  "category": "HELDOUT2_real",
+  "text": "에토리콕시브도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-002",
+  "category": "HELDOUT2_real",
+  "text": "메로페넴도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-003",
+  "category": "HELDOUT2_real",
+  "text": "세파졸린도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-004",
+  "category": "HELDOUT2_real",
+  "text": "반코마이신도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-005",
+  "category": "HELDOUT2_real",
+  "text": "스트렙토마이신도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-006",
+  "category": "HELDOUT2_real",
+  "text": "클린다마이신도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-007",
+  "category": "HELDOUT2_real",
+  "text": "리네졸리드도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-008",
+  "category": "HELDOUT2_real",
+  "text": "메트로니다졸도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-009",
+  "category": "HELDOUT2_real",
+  "text": "오셀타미비르도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-010",
+  "category": "HELDOUT2_real",
+  "text": "아시클로비르도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-011",
+  "category": "HELDOUT2_real",
+  "text": "발라시클로비르도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-012",
+  "category": "HELDOUT2_real",
+  "text": "테노포비르도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-013",
+  "category": "HELDOUT2_real",
+  "text": "라미부딘도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-014",
+  "category": "HELDOUT2_real",
+  "text": "지도부딘도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-015",
+  "category": "HELDOUT2_real",
+  "text": "리툭시맙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-016",
+  "category": "HELDOUT2_real",
+  "text": "트라스투주맙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-017",
+  "category": "HELDOUT2_real",
+  "text": "베바시주맙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-018",
+  "category": "HELDOUT2_real",
+  "text": "이마티닙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-019",
+  "category": "HELDOUT2_real",
+  "text": "게피티닙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-020",
+  "category": "HELDOUT2_real",
+  "text": "에를로티닙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-021",
+  "category": "HELDOUT2_real",
+  "text": "소라페닙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-022",
+  "category": "HELDOUT2_real",
+  "text": "수니티닙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-023",
+  "category": "HELDOUT2_real",
+  "text": "인플릭시맙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-024",
+  "category": "HELDOUT2_real",
+  "text": "아달리무맙도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-025",
+  "category": "HELDOUT2_real",
+  "text": "덱사메타손도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-026",
+  "category": "HELDOUT2_real",
+  "text": "베타메타손도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-027",
+  "category": "HELDOUT2_real",
+  "text": "트리암시놀론도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-028",
+  "category": "HELDOUT2_real",
+  "text": "하이드로코르티손도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-029",
+  "category": "HELDOUT2_real",
+  "text": "부데소니드도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-030",
+  "category": "HELDOUT2_real",
+  "text": "플루티카손도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-031",
+  "category": "HELDOUT2_real",
+  "text": "네비볼롤도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-032",
+  "category": "HELDOUT2_real",
+  "text": "톨터로딘도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "HELD2-033",
+  "category": "HELDOUT2_real",
+  "text": "미라베그론도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ }
+]

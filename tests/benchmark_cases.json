@@ -1,0 +1,2827 @@
+[
+ {
+  "id": "N_atc-000",
+  "category": "N_atc",
+  "text": "아세트아미노펜의 ATC 코드는 N02BE01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-001",
+  "category": "N_strength",
+  "text": "아세트아미노펜 60mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-002",
+  "category": "N_class",
+  "text": "아세트아미노펜은(는) 해열진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-003",
+  "category": "N_rxcui",
+  "text": "acetaminophen (RxCUI 161)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-004",
+  "category": "E_atc",
+  "text": "아세트아미노펜의 ATC 코드는 A02BC05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-005",
+  "category": "E_strength",
+  "text": "아세트아미노펜 3007mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-006",
+  "category": "E_class",
+  "text": "아세트아미노펜은(는) 갑상선호르몬제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-007",
+  "category": "E_rxcui",
+  "text": "아세트아미노펜 (RxCUI 283742)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-008",
+  "category": "E_misspell",
+  "text": "아세트아미노펜린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-009",
+  "category": "N_atc",
+  "text": "이부프로펜의 ATC 코드는 G02CC01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-010",
+  "category": "N_strength",
+  "text": "이부프로펜 50mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-011",
+  "category": "N_class",
+  "text": "이부프로펜은(는) 비스테로이드성 소염진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-012",
+  "category": "N_rxcui",
+  "text": "ibuprofen (RxCUI 5640)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-013",
+  "category": "E_atc",
+  "text": "이부프로펜의 ATC 코드는 C10AA01입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-014",
+  "category": "E_strength",
+  "text": "이부프로펜 2407mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-015",
+  "category": "E_class",
+  "text": "이부프로펜은(는) 항혈소판제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-016",
+  "category": "E_rxcui",
+  "text": "이부프로펜 (RxCUI 69749)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-017",
+  "category": "E_misspell",
+  "text": "이부라로펜을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-018",
+  "category": "N_atc",
+  "text": "나프록센의 ATC 코드는 G02CC02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-019",
+  "category": "N_strength",
+  "text": "나프록센 550mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-020",
+  "category": "N_class",
+  "text": "나프록센은(는) 비스테로이드성 소염진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-021",
+  "category": "N_rxcui",
+  "text": "naproxen (RxCUI 7258)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-022",
+  "category": "E_atc",
+  "text": "나프록센의 ATC 코드는 R03DC03입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-023",
+  "category": "E_strength",
+  "text": "나프록센 2257mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-024",
+  "category": "E_class",
+  "text": "나프록센은(는) 당뇨병 치료제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-025",
+  "category": "E_rxcui",
+  "text": "나프록센 (RxCUI 2551)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-026",
+  "category": "E_misspell",
+  "text": "나프다센을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-027",
+  "category": "N_atc",
+  "text": "아스피린의 ATC 코드는 B01AC06입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-028",
+  "category": "N_strength",
+  "text": "아스피린 325mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-029",
+  "category": "N_class",
+  "text": "아스피린은(는) 해열진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-030",
+  "category": "N_rxcui",
+  "text": "aspirin (RxCUI 1191)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-031",
+  "category": "E_atc",
+  "text": "아스피린의 ATC 코드는 A02BC05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-032",
+  "category": "E_strength",
+  "text": "아스피린 93607mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-033",
+  "category": "E_class",
+  "text": "아스피린은(는) 비구아나이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-034",
+  "category": "E_rxcui",
+  "text": "아스피린 (RxCUI 20610)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-035",
+  "category": "E_misspell",
+  "text": "아스피린린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-036",
+  "category": "N_atc",
+  "text": "디클로페낙의 ATC 코드는 M01AB05입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-037",
+  "category": "N_strength",
+  "text": "디클로페낙 25mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-038",
+  "category": "N_class",
+  "text": "디클로페낙은(는) 해열진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-039",
+  "category": "N_rxcui",
+  "text": "diclofenac (RxCUI 3355)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-040",
+  "category": "E_atc",
+  "text": "디클로페낙의 ATC 코드는 A01AC04입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-041",
+  "category": "E_strength",
+  "text": "디클로페낙 307mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-042",
+  "category": "E_class",
+  "text": "디클로페낙은(는) 루프 이뇨제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-043",
+  "category": "E_rxcui",
+  "text": "디클로페낙 (RxCUI 7258)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-044",
+  "category": "E_misspell",
+  "text": "디클로페낙린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-045",
+  "category": "N_atc",
+  "text": "트라마돌의 ATC 코드는 N02AX02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-046",
+  "category": "N_strength",
+  "text": "트라마돌 200mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-047",
+  "category": "N_class",
+  "text": "트라마돌은(는) 진통제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-048",
+  "category": "N_rxcui",
+  "text": "tramadol (RxCUI 10689)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-049",
+  "category": "E_atc",
+  "text": "트라마돌의 ATC 코드는 N05CF02입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-050",
+  "category": "E_strength",
+  "text": "트라마돌 907mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-051",
+  "category": "E_class",
+  "text": "트라마돌은(는) 코르티코스테로이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-052",
+  "category": "E_rxcui",
+  "text": "트라마돌 (RxCUI 4278)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-053",
+  "category": "E_misspell",
+  "text": "트라신돌을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-054",
+  "category": "N_atc",
+  "text": "오메프라졸의 ATC 코드는 A02BC01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-055",
+  "category": "N_strength",
+  "text": "오메프라졸 20mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-056",
+  "category": "N_class",
+  "text": "오메프라졸은(는) 양성자펌프억제제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-057",
+  "category": "N_rxcui",
+  "text": "omeprazole (RxCUI 7646)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-058",
+  "category": "E_atc",
+  "text": "오메프라졸의 ATC 코드는 C08CA01입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-059",
+  "category": "E_strength",
+  "text": "오메프라졸 127mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-060",
+  "category": "E_class",
+  "text": "오메프라졸은(는) ACE 억제제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-061",
+  "category": "E_rxcui",
+  "text": "오메프라졸 (RxCUI 301542)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-062",
+  "category": "E_misspell",
+  "text": "오메신라졸을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-063",
+  "category": "N_atc",
+  "text": "에스오메프라졸의 ATC 코드는 A02BC05입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-064",
+  "category": "N_strength",
+  "text": "에스오메프라졸 40mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-065",
+  "category": "N_class",
+  "text": "에스오메프라졸은(는) 양성자펌프억제제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-066",
+  "category": "N_rxcui",
+  "text": "esomeprazole (RxCUI 283742)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-067",
+  "category": "E_atc",
+  "text": "에스오메프라졸의 ATC 코드는 C03CA01입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-068",
+  "category": "E_strength",
+  "text": "에스오메프라졸 154mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-069",
+  "category": "E_class",
+  "text": "에스오메프라졸은(는) 설포닐우레아 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-070",
+  "category": "E_rxcui",
+  "text": "에스오메프라졸 (RxCUI 32968)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-071",
+  "category": "E_misspell",
+  "text": "에스오로프라졸을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-072",
+  "category": "N_atc",
+  "text": "판토프라졸의 ATC 코드는 A02BC02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-073",
+  "category": "N_strength",
+  "text": "판토프라졸 40mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-074",
+  "category": "N_class",
+  "text": "판토프라졸은(는) 위산 분비 억제제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-075",
+  "category": "N_rxcui",
+  "text": "pantoprazole (RxCUI 40790)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-076",
+  "category": "E_atc",
+  "text": "판토프라졸의 ATC 코드는 J01FA10입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-077",
+  "category": "E_strength",
+  "text": "판토프라졸 127mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-078",
+  "category": "E_class",
+  "text": "판토프라졸은(는) 항고혈압제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-079",
+  "category": "E_rxcui",
+  "text": "판토프라졸 (RxCUI 32968)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-080",
+  "category": "E_misspell",
+  "text": "판토라라졸을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-081",
+  "category": "N_atc",
+  "text": "파모티딘의 ATC 코드는 A02BA03입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-082",
+  "category": "N_strength",
+  "text": "파모티딘 20mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-083",
+  "category": "N_class",
+  "text": "파모티딘은(는) 위산 분비 억제제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-084",
+  "category": "N_rxcui",
+  "text": "famotidine (RxCUI 4278)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-085",
+  "category": "E_atc",
+  "text": "파모티딘의 ATC 코드는 A10BA02입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-086",
+  "category": "E_strength",
+  "text": "파모티딘 127mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-087",
+  "category": "E_class",
+  "text": "파모티딘은(는) 류코트리엔 수용체 길항제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-088",
+  "category": "E_rxcui",
+  "text": "파모티딘 (RxCUI 7646)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-089",
+  "category": "E_misspell",
+  "text": "파모라딘을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-090",
+  "category": "N_atc",
+  "text": "메트포르민의 ATC 코드는 A10BA02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-091",
+  "category": "N_strength",
+  "text": "메트포르민 625mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-092",
+  "category": "N_class",
+  "text": "메트포르민은(는) 당뇨병 치료제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-093",
+  "category": "N_rxcui",
+  "text": "metformin (RxCUI 6809)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-094",
+  "category": "E_atc",
+  "text": "메트포르민의 ATC 코드는 C10AA05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-095",
+  "category": "E_strength",
+  "text": "메트포르민 3007mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-096",
+  "category": "E_class",
+  "text": "메트포르민은(는) 코르티코스테로이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-097",
+  "category": "E_rxcui",
+  "text": "메트포르민 (RxCUI 3355)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-098",
+  "category": "E_misspell",
+  "text": "메트루르민을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-099",
+  "category": "N_atc",
+  "text": "글리메피리드의 ATC 코드는 A10BB12입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-100",
+  "category": "N_strength",
+  "text": "글리메피리드 3mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-101",
+  "category": "N_class",
+  "text": "글리메피리드은(는) 당뇨병 치료제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-102",
+  "category": "N_rxcui",
+  "text": "glimepiride (RxCUI 25789)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-103",
+  "category": "E_atc",
+  "text": "글리메피리드의 ATC 코드는 A01AC04입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-104",
+  "category": "E_strength",
+  "text": "글리메피리드 31mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-105",
+  "category": "E_class",
+  "text": "글리메피리드은(는) 코르티코스테로이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-106",
+  "category": "E_rxcui",
+  "text": "글리메피리드 (RxCUI 40790)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-107",
+  "category": "E_misspell",
+  "text": "글리메다리드을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-108",
+  "category": "N_atc",
+  "text": "암로디핀의 ATC 코드는 C08CA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-109",
+  "category": "N_strength",
+  "text": "암로디핀 1.25mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-110",
+  "category": "N_class",
+  "text": "암로디핀은(는) 항고혈압제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-111",
+  "category": "N_rxcui",
+  "text": "amlodipine (RxCUI 17767)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-112",
+  "category": "E_atc",
+  "text": "암로디핀의 ATC 코드는 R03DC03입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-113",
+  "category": "E_strength",
+  "text": "암로디핀 37mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-114",
+  "category": "E_class",
+  "text": "암로디핀은(는) 비구아나이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-115",
+  "category": "E_rxcui",
+  "text": "암로디핀 (RxCUI 6809)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-116",
+  "category": "E_misspell",
+  "text": "암로디핀린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-117",
+  "category": "N_atc",
+  "text": "로사르탄의 ATC 코드는 C09CA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-118",
+  "category": "N_strength",
+  "text": "로사르탄 100mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-119",
+  "category": "N_class",
+  "text": "로사르탄은(는) 항고혈압제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-120",
+  "category": "N_rxcui",
+  "text": "losartan (RxCUI 52175)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-121",
+  "category": "E_atc",
+  "text": "로사르탄의 ATC 코드는 J01MA02입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-122",
+  "category": "E_strength",
+  "text": "로사르탄 307mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-123",
+  "category": "E_class",
+  "text": "로사르탄은(는) 비스테로이드성 소염진통제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-124",
+  "category": "E_rxcui",
+  "text": "로사르탄 (RxCUI 10582)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-125",
+  "category": "E_misspell",
+  "text": "로사르탄린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-126",
+  "category": "N_atc",
+  "text": "발사르탄의 ATC 코드는 C09CA03입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-127",
+  "category": "N_strength",
+  "text": "발사르탄 160mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-128",
+  "category": "N_class",
+  "text": "발사르탄은(는) 항고혈압제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-129",
+  "category": "N_rxcui",
+  "text": "valsartan (RxCUI 69749)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-130",
+  "category": "E_atc",
+  "text": "발사르탄의 ATC 코드는 N06AB10입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-131",
+  "category": "E_strength",
+  "text": "발사르탄 967mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-132",
+  "category": "E_class",
+  "text": "발사르탄은(는) 당뇨병 치료제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-133",
+  "category": "E_rxcui",
+  "text": "발사르탄 (RxCUI 301542)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-134",
+  "category": "E_misspell",
+  "text": "발사라탄을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-135",
+  "category": "N_atc",
+  "text": "푸로세미드의 ATC 코드는 C03CA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-136",
+  "category": "N_strength",
+  "text": "푸로세미드 12.5mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-137",
+  "category": "N_class",
+  "text": "푸로세미드은(는) 항고혈압제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-138",
+  "category": "N_rxcui",
+  "text": "furosemide (RxCUI 4603)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-139",
+  "category": "E_atc",
+  "text": "푸로세미드의 ATC 코드는 A02BC05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-140",
+  "category": "E_strength",
+  "text": "푸로세미드 1507mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-141",
+  "category": "E_class",
+  "text": "푸로세미드은(는) 비구아나이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-142",
+  "category": "E_rxcui",
+  "text": "푸로세미드 (RxCUI 69749)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-143",
+  "category": "E_misspell",
+  "text": "푸로세미드린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-144",
+  "category": "N_atc",
+  "text": "아토르바스타틴의 ATC 코드는 C10AA05입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-145",
+  "category": "N_strength",
+  "text": "아토르바스타틴 20mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-146",
+  "category": "N_class",
+  "text": "아토르바스타틴은(는) 고지혈증 치료제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-147",
+  "category": "N_rxcui",
+  "text": "atorvastatin (RxCUI 83367)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-148",
+  "category": "E_atc",
+  "text": "아토르바스타틴의 ATC 코드는 C01EB16입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-149",
+  "category": "E_strength",
+  "text": "아토르바스타틴 247mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-150",
+  "category": "E_class",
+  "text": "아토르바스타틴은(는) 페니실린계 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-151",
+  "category": "E_rxcui",
+  "text": "아토르바스타틴 (RxCUI 20610)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-152",
+  "category": "E_misspell",
+  "text": "아토르바스타틴린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-153",
+  "category": "N_atc",
+  "text": "로수바스타틴의 ATC 코드는 C10AA07입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-154",
+  "category": "N_strength",
+  "text": "로수바스타틴 5mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-155",
+  "category": "N_class",
+  "text": "로수바스타틴은(는) 스타틴 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-156",
+  "category": "N_rxcui",
+  "text": "rosuvastatin (RxCUI 301542)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-157",
+  "category": "E_atc",
+  "text": "로수바스타틴의 ATC 코드는 A02BC05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-158",
+  "category": "E_strength",
+  "text": "로수바스타틴 127mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-159",
+  "category": "E_class",
+  "text": "로수바스타틴은(는) 베타차단제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-160",
+  "category": "E_rxcui",
+  "text": "로수바스타틴 (RxCUI 11289)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-161",
+  "category": "E_misspell",
+  "text": "로수바겔타틴을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-162",
+  "category": "N_atc",
+  "text": "심바스타틴의 ATC 코드는 C10AA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-163",
+  "category": "N_strength",
+  "text": "심바스타틴 10mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-164",
+  "category": "N_class",
+  "text": "심바스타틴은(는) 고지혈증 치료제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-165",
+  "category": "N_rxcui",
+  "text": "simvastatin (RxCUI 36567)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-166",
+  "category": "E_atc",
+  "text": "심바스타틴의 ATC 코드는 A10BB12입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-167",
+  "category": "E_strength",
+  "text": "심바스타틴 247mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-168",
+  "category": "E_class",
+  "text": "심바스타틴은(는) 코르티코스테로이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-169",
+  "category": "E_rxcui",
+  "text": "심바스타틴 (RxCUI 20610)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-170",
+  "category": "E_misspell",
+  "text": "심바라타틴을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-171",
+  "category": "N_atc",
+  "text": "와파린의 ATC 코드는 B01AA03입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-172",
+  "category": "N_strength",
+  "text": "와파린 2mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-173",
+  "category": "N_class",
+  "text": "와파린은(는) 항응고제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-174",
+  "category": "N_rxcui",
+  "text": "warfarin (RxCUI 11289)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-175",
+  "category": "E_atc",
+  "text": "와파린의 ATC 코드는 C10AA05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-176",
+  "category": "E_strength",
+  "text": "와파린 37mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-177",
+  "category": "E_class",
+  "text": "와파린은(는) 류코트리엔 수용체 길항제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-178",
+  "category": "E_rxcui",
+  "text": "와파린 (RxCUI 10689)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-179",
+  "category": "E_misspell",
+  "text": "와파린린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-180",
+  "category": "N_atc",
+  "text": "클로피도그렐의 ATC 코드는 B01AC04입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-181",
+  "category": "N_strength",
+  "text": "클로피도그렐 75mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-182",
+  "category": "N_class",
+  "text": "클로피도그렐은(는) 항혈소판제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-183",
+  "category": "N_rxcui",
+  "text": "clopidogrel (RxCUI 32968)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-184",
+  "category": "E_atc",
+  "text": "클로피도그렐의 ATC 코드는 R06AE07입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-185",
+  "category": "E_strength",
+  "text": "클로피도그렐 907mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-186",
+  "category": "E_class",
+  "text": "클로피도그렐은(는) 마크로라이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-187",
+  "category": "E_rxcui",
+  "text": "클로피도그렐 (RxCUI 7258)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-188",
+  "category": "E_misspell",
+  "text": "클로피도그렐린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-189",
+  "category": "N_atc",
+  "text": "레보티록신의 ATC 코드는 H03AA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-190",
+  "category": "N_strength",
+  "text": "레보티록신 1mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-191",
+  "category": "N_class",
+  "text": "레보티록신은(는) 갑상선호르몬제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-192",
+  "category": "N_rxcui",
+  "text": "levothyroxine (RxCUI 10582)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-193",
+  "category": "E_atc",
+  "text": "레보티록신의 ATC 코드는 D11AX18입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-194",
+  "category": "E_strength",
+  "text": "레보티록신 10mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-195",
+  "category": "E_class",
+  "text": "레보티록신은(는) 칼슘채널차단제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-196",
+  "category": "E_rxcui",
+  "text": "레보티록신 (RxCUI 11289)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-197",
+  "category": "E_misspell",
+  "text": "레보신록신을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-198",
+  "category": "N_atc",
+  "text": "아목시실린의 ATC 코드는 J01CA04입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-199",
+  "category": "N_strength",
+  "text": "아목시실린 100mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-200",
+  "category": "N_class",
+  "text": "아목시실린은(는) 항생제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-201",
+  "category": "N_rxcui",
+  "text": "amoxicillin (RxCUI 723)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-202",
+  "category": "E_atc",
+  "text": "아목시실린의 ATC 코드는 A01AC04입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-203",
+  "category": "E_strength",
+  "text": "아목시실린 2632mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-204",
+  "category": "E_class",
+  "text": "아목시실린은(는) 루프 이뇨제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-205",
+  "category": "E_rxcui",
+  "text": "아목시실린 (RxCUI 3355)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-206",
+  "category": "E_misspell",
+  "text": "아목마실린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-207",
+  "category": "N_atc",
+  "text": "아지트로마이신의 ATC 코드는 J01FA10입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-208",
+  "category": "N_strength",
+  "text": "아지트로마이신 500mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-209",
+  "category": "N_class",
+  "text": "아지트로마이신은(는) 항생제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-210",
+  "category": "N_rxcui",
+  "text": "azithromycin (RxCUI 18631)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-211",
+  "category": "E_atc",
+  "text": "아지트로마이신의 ATC 코드는 B01AC04입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-212",
+  "category": "E_strength",
+  "text": "아지트로마이신 3007mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-213",
+  "category": "E_class",
+  "text": "아지트로마이신은(는) 진통제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-214",
+  "category": "E_rxcui",
+  "text": "아지트로마이신 (RxCUI 10689)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-215",
+  "category": "E_misspell",
+  "text": "아지트로마이신린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-216",
+  "category": "N_atc",
+  "text": "시프로플록사신의 ATC 코드는 J01MA02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-217",
+  "category": "N_strength",
+  "text": "시프로플록사신 500mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-218",
+  "category": "N_class",
+  "text": "시프로플록사신은(는) 플루오로퀴놀론 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-219",
+  "category": "N_rxcui",
+  "text": "ciprofloxacin (RxCUI 2551)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-220",
+  "category": "E_atc",
+  "text": "시프로플록사신의 ATC 코드는 C10AA07입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-221",
+  "category": "E_strength",
+  "text": "시프로플록사신 3007mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-222",
+  "category": "E_class",
+  "text": "시프로플록사신은(는) 갑상선호르몬제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-223",
+  "category": "E_rxcui",
+  "text": "시프로플록사신 (RxCUI 321988)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-224",
+  "category": "E_misspell",
+  "text": "시프로플록사신린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-225",
+  "category": "N_atc",
+  "text": "세티리진의 ATC 코드는 R06AE07입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-226",
+  "category": "N_strength",
+  "text": "세티리진 2.5mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-227",
+  "category": "N_class",
+  "text": "세티리진은(는) 항히스타민제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-228",
+  "category": "N_rxcui",
+  "text": "cetirizine (RxCUI 20610)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-229",
+  "category": "E_atc",
+  "text": "세티리진의 ATC 코드는 B01AA03입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-230",
+  "category": "E_strength",
+  "text": "세티리진 37mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-231",
+  "category": "E_class",
+  "text": "세티리진은(는) 베타차단제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-232",
+  "category": "E_rxcui",
+  "text": "세티리진 (RxCUI 10689)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-233",
+  "category": "E_misspell",
+  "text": "세티리진린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-234",
+  "category": "N_atc",
+  "text": "로라타딘의 ATC 코드는 R06AX13입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-235",
+  "category": "N_strength",
+  "text": "로라타딘 5mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-236",
+  "category": "N_class",
+  "text": "로라타딘은(는) 항히스타민제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-237",
+  "category": "N_rxcui",
+  "text": "loratadine (RxCUI 28889)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-238",
+  "category": "E_atc",
+  "text": "로라타딘의 ATC 코드는 N06AB10입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-239",
+  "category": "E_strength",
+  "text": "로라타딘 37mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-240",
+  "category": "E_class",
+  "text": "로라타딘은(는) 마크로라이드 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-241",
+  "category": "E_rxcui",
+  "text": "로라타딘 (RxCUI 18631)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-242",
+  "category": "E_misspell",
+  "text": "로라타딘린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-243",
+  "category": "N_atc",
+  "text": "몬테루카스트의 ATC 코드는 R03DC03입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-244",
+  "category": "N_strength",
+  "text": "몬테루카스트 4mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-245",
+  "category": "N_class",
+  "text": "몬테루카스트은(는) 류코트리엔 수용체 길항제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-246",
+  "category": "N_rxcui",
+  "text": "montelukast (RxCUI 88249)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-247",
+  "category": "E_atc",
+  "text": "몬테루카스트의 ATC 코드는 A01AD05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-248",
+  "category": "E_strength",
+  "text": "몬테루카스트 37mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-249",
+  "category": "E_class",
+  "text": "몬테루카스트은(는) 항생제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-250",
+  "category": "E_rxcui",
+  "text": "몬테루카스트 (RxCUI 6809)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-251",
+  "category": "E_misspell",
+  "text": "몬테루카스트린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-252",
+  "category": "N_atc",
+  "text": "설트랄린의 ATC 코드는 N06AB06입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-253",
+  "category": "N_strength",
+  "text": "설트랄린 100mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-254",
+  "category": "N_class",
+  "text": "설트랄린은(는) 선택적 세로토닌 재흡수 억제제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-255",
+  "category": "N_rxcui",
+  "text": "sertraline (RxCUI 36437)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-256",
+  "category": "E_atc",
+  "text": "설트랄린의 ATC 코드는 A01AD05입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-257",
+  "category": "E_strength",
+  "text": "설트랄린 607mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-258",
+  "category": "E_class",
+  "text": "설트랄린은(는) 루프 이뇨제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-259",
+  "category": "E_rxcui",
+  "text": "설트랄린 (RxCUI 52175)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-260",
+  "category": "E_misspell",
+  "text": "설트다린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-261",
+  "category": "N_atc",
+  "text": "에스시탈로프람의 ATC 코드는 N06AB10입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-262",
+  "category": "N_strength",
+  "text": "에스시탈로프람 10mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-263",
+  "category": "N_class",
+  "text": "에스시탈로프람은(는) 항우울제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-264",
+  "category": "N_rxcui",
+  "text": "escitalopram (RxCUI 321988)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-265",
+  "category": "E_atc",
+  "text": "에스시탈로프람의 ATC 코드는 A02BA03입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-266",
+  "category": "E_strength",
+  "text": "에스시탈로프람 67mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-267",
+  "category": "E_class",
+  "text": "에스시탈로프람은(는) 천식 치료제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-268",
+  "category": "E_rxcui",
+  "text": "에스시탈로프람 (RxCUI 2551)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-269",
+  "category": "E_misspell",
+  "text": "에스시탈로프람린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-270",
+  "category": "N_atc",
+  "text": "졸피뎀의 ATC 코드는 N05CF02입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-271",
+  "category": "N_strength",
+  "text": "졸피뎀 10mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-272",
+  "category": "N_class",
+  "text": "졸피뎀은(는) 수면제 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-273",
+  "category": "N_rxcui",
+  "text": "zolpidem (RxCUI 39993)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-274",
+  "category": "E_atc",
+  "text": "졸피뎀의 ATC 코드는 N02AX02입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-275",
+  "category": "E_strength",
+  "text": "졸피뎀 44mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-276",
+  "category": "E_class",
+  "text": "졸피뎀은(는) 선택적 세로토닌 재흡수 억제제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-277",
+  "category": "E_rxcui",
+  "text": "졸피뎀 (RxCUI 36437)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-278",
+  "category": "E_misspell",
+  "text": "졸피뎀린을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_atc-279",
+  "category": "N_atc",
+  "text": "프레드니솔론의 ATC 코드는 A07EA01입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_strength-280",
+  "category": "N_strength",
+  "text": "프레드니솔론 50mg 제제가 시판되고 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_class-281",
+  "category": "N_class",
+  "text": "프레드니솔론은(는) 코르티코스테로이드 계열 약물입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_rxcui-282",
+  "category": "N_rxcui",
+  "text": "prednisolone (RxCUI 8638)는 성분 수준 개념입니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "E_atc-283",
+  "category": "E_atc",
+  "text": "프레드니솔론의 ATC 코드는 D11AX18입니다.",
+  "expect": [
+   "atc_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_strength-284",
+  "category": "E_strength",
+  "text": "프레드니솔론 157mg 제제가 시판되고 있습니다.",
+  "expect": [
+   "strength_not_listed"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_class-285",
+  "category": "E_class",
+  "text": "프레드니솔론은(는) 안지오텐신 II 수용체 차단제 계열 약물입니다.",
+  "expect": [
+   "class_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_rxcui-286",
+  "category": "E_rxcui",
+  "text": "프레드니솔론 (RxCUI 36567)는 성분 수준 개념입니다.",
+  "expect": [
+   "rxcui_mismatch"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_misspell-287",
+  "category": "E_misspell",
+  "text": "프레드겔솔론을 복용하면 효과가 있습니다.",
+  "expect": [
+   "near_miss",
+   "unknown_drug"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-288",
+  "category": "E_fabricated",
+  "text": "베르나스타틴은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-289",
+  "category": "E_fabricated",
+  "text": "클로라프라졸은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-290",
+  "category": "E_fabricated",
+  "text": "디모사르탄은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-291",
+  "category": "E_fabricated",
+  "text": "탄사플록사신은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-292",
+  "category": "E_fabricated",
+  "text": "리바글립틴은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-293",
+  "category": "E_fabricated",
+  "text": "모테프릴은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-294",
+  "category": "E_fabricated",
+  "text": "카도올롤은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-295",
+  "category": "E_fabricated",
+  "text": "루미디핀은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-296",
+  "category": "E_fabricated",
+  "text": "세파마이신은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-297",
+  "category": "E_fabricated",
+  "text": "트리나졸람은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-298",
+  "category": "E_fabricated",
+  "text": "노바실린은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-299",
+  "category": "E_fabricated",
+  "text": "엘로티딘은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-300",
+  "category": "E_fabricated",
+  "text": "페로카스타틴은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-301",
+  "category": "E_fabricated",
+  "text": "미토사르탄은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-302",
+  "category": "E_fabricated",
+  "text": "라도프라졸은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "E_fabricated-303",
+  "category": "E_fabricated",
+  "text": "솔리마이신은(는) 새로운 치료제로 알려져 있습니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "positive"
+ },
+ {
+  "id": "N_general-304",
+  "category": "N_general",
+  "text": "하루 세 번 식후에 복용하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-305",
+  "category": "N_general",
+  "text": "증상이 계속되면 의사와 상담하시기 바랍니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-306",
+  "category": "N_general",
+  "text": "약은 서늘하고 건조한 곳에 보관합니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-307",
+  "category": "N_general",
+  "text": "임산부는 복용 전에 약사에게 문의하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-308",
+  "category": "N_general",
+  "text": "부작용이 나타나면 즉시 복용을 중단하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-309",
+  "category": "N_general",
+  "text": "물과 함께 삼키고 씹지 마세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-310",
+  "category": "N_general",
+  "text": "유효기간이 지난 약은 폐기하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-311",
+  "category": "N_general",
+  "text": "어린이의 손이 닿지 않는 곳에 두세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-312",
+  "category": "N_general",
+  "text": "복용 시간을 매일 일정하게 유지하는 것이 좋습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-313",
+  "category": "N_general",
+  "text": "이 앱은 의학적 진단을 대신하지 않습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-314",
+  "category": "N_general",
+  "text": "병원 방문 전에 복용 중인 약 목록을 준비하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-315",
+  "category": "N_general",
+  "text": "공복에 복용할지 식후에 복용할지는 처방전을 확인하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-316",
+  "category": "N_general",
+  "text": "건강검진 결과는 담당 의료진과 함께 확인하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-317",
+  "category": "N_general",
+  "text": "예방접종 일정은 질병관리청 안내를 참고하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-318",
+  "category": "N_general",
+  "text": "처방전 없이 구입할 수 있는 약도 주의 사항을 읽어야 합니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-319",
+  "category": "N_general",
+  "text": "The patient should consult a pharmacist before changing medication.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-320",
+  "category": "N_general",
+  "text": "Store at room temperature away from moisture.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-321",
+  "category": "N_general",
+  "text": "혈압과 혈당은 정기적으로 측정하세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-322",
+  "category": "N_general",
+  "text": "약국에서 복약 지도를 받을 수 있습니다.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "N_general-323",
+  "category": "N_general",
+  "text": "알레르기 병력이 있으면 반드시 알려 주세요.",
+  "expect": [],
+  "label": "negative"
+ },
+ {
+  "id": "OOD_real-324",
+  "category": "OOD_real",
+  "text": "라니티딘도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-325",
+  "category": "OOD_real",
+  "text": "카프토프릴도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-326",
+  "category": "OOD_real",
+  "text": "아테놀롤도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-327",
+  "category": "OOD_real",
+  "text": "이트라코나졸도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-328",
+  "category": "OOD_real",
+  "text": "레보플록사신도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-329",
+  "category": "OOD_real",
+  "text": "클래리스로마이신도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-330",
+  "category": "OOD_real",
+  "text": "리시노프릴도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-331",
+  "category": "OOD_real",
+  "text": "프라바스타틴도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-332",
+  "category": "OOD_real",
+  "text": "칸데사르탄도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-333",
+  "category": "OOD_real",
+  "text": "텔미사르탄도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-334",
+  "category": "OOD_real",
+  "text": "란소프라졸도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-335",
+  "category": "OOD_real",
+  "text": "라베프라졸도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-336",
+  "category": "OOD_real",
+  "text": "니페디핀도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-337",
+  "category": "OOD_real",
+  "text": "에날라프릴도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "OOD_real-338",
+  "category": "OOD_real",
+  "text": "로자르탄도 비슷한 용도로 사용됩니다.",
+  "expect": [
+   "unknown_drug",
+   "near_miss"
+  ],
+  "label": "ood_real"
+ },
+ {
+  "id": "AMBIG_class-339",
+  "category": "AMBIG_class",
+  "text": "페니실린도 비슷한 용도로 사용됩니다.",
+  "expect": [],
+  "label": "ambiguous_class_name"
+ }
+]
