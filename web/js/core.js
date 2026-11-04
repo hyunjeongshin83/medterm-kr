@@ -14,6 +14,8 @@
   const EN_STEMS = ['prazole','statin','sartan','pril','olol','dipine','cillin','mycin','floxacin','azolam','azepam','tidine','gliptin','gliflozin','tinib','azole','oxetine','pram','xaban','gatran','triptan','setron','lukast','tadine'];
   const COMBO_CTX = /(복합제|복합 ?제|배합제|복합|combination)/i;   // 사전은 단일 성분만 수록 → 복합제 문장은 코드·계열을 검증하지 않는다
   const DAILY_CTX = /(하루|1일|일일|매일|최대|총|daily|per day|\/day|\bday\b)/i;
+  // 확장 수록(ext)의 영어 이름 중 일상 낱말·부형제와 겹쳐 답변 검증 결과를 어지럽히는 것(검색에는 그대로 쓴다)
+  const EXT_EN_STOP = new Set(['alcohol', 'ethanol', 'methanol', 'glucose', 'sucrose', 'fructose', 'lactose', 'glycerin', 'glycerol', 'nitrogen', 'hydrogen', 'calcium', 'sodium', 'potassium', 'magnesium', 'chloride', 'vitamin', 'protein', 'starch', 'petrolatum', 'paraffin']);
 
   function lev(a, b) {
     const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
@@ -64,7 +66,7 @@
   }
 
   class MedTerm {
-    constructor(data, classLexicon) {
+    constructor(data, classLexicon, ext) {
       this.meta = data.meta; this.atcNames = data.atc || {};
       this.byId = new Map(); this.vtms = []; this.vmpsOf = new Map(); this.ampsOfVmp = new Map();
       for (const c of data.concepts) this.byId.set(c.id, c);
@@ -118,9 +120,10 @@
           this.classSurfaces.push({ cl, alias: a, sp });
         }
       }
+      this._initExt(ext);   // 확장 수록(선택). ext 가 없으면 아무것도 바뀌지 않는다
     }
 
-    atcLabel(code) { return this.atcNames[code] || null; }
+    atcLabel(code) { return this.atcNames[code] || this.extAtcNames[code] || null; }
 
     // ---------- 검색 ----------
     // 입력 형식: 이름·상품명·ATC 코드·RxCUI·SNOMED CT ID 에 더해
@@ -176,6 +179,135 @@
       return out.sort((a, b) => b.score - a.score);
     }
 
+    // ---------- 확장 수록(ext) ----------
+    // data/medterm_ext.json — 공개 자료(RxNorm·심평원 약가마스터·Wikidata)로 자동 수집·연결한 초안(약사 검수 전).
+    // ext 인자가 없으면 아래가 모두 비어 있어 핵심 사전만으로 이전과 똑같이 동작한다.
+    // 핵심 수록분과 같은 RxCUI 인 항목(core:true)은 목록에 따로 나오지 않고, 핵심 성분의 '국내 등재 현황' 보강(extOfCore)에만 쓴다.
+    _initExt(ext) {
+      this.ext = ext && Array.isArray(ext.entities) ? ext : null;
+      this.extMeta = this.ext ? (this.ext.meta || {}) : null;
+      this.extAll = []; this.extList = []; this.extById = new Map(); this.extOfCore = new Map();
+      this.extAtcNames = (this.extMeta && this.extMeta.atc_names) || {};
+      this.extSurfaces = []; this.extNames = new Set(); this.extAtcOwner = new Map(); this.extRxOwner = new Map(); this.classMembersExt = new Map();
+      this._nearPool = this.surfaces;   // 철자 변형(near-miss) 후보: 핵심 + (있으면) 확장 이름
+      this._coll = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator('ko') : null;
+      if (!this.ext) return;
+      const lowerOf = (arr) => arr.filter(Boolean).map(t => String(t).toLowerCase());
+      const nameIdx = new Map();   // 검증용 이름 → 그 이름을 가진 확장 성분(2개 이상이면 어느 성분인지 정할 수 없어 쓰지 않는다)
+      for (const r of this.ext.entities) {
+        const ko = (r.ko || []).map(x => x.n);
+        const v = {
+          id: r.id, type: 'EXT', ext: true, core: !!r.core && this.byId.has(r.id), rxcui: r.rxcui || null,
+          label_ko: ko[0] || '', label_en: r.label_en || '', alt_ko: ko.slice(1), ko_base: r.ko_base || [], ko_alias: r.ko_alias || [],
+          alt_en: r.alt_en || [], brands_ko: r.brands_ko || [], atc_codes: r.atc || [], atc_class: r.atc_class || [],
+          review_status: r.review_status || 'draft', grade: r.grade || '-', rec: r
+        };
+        v._n = lowerOf([v.label_ko, v.label_en, ...v.alt_ko, ...v.ko_base, ...v.alt_en]); v._b = lowerOf(v.brands_ko); v._a = lowerOf(v.ko_alias);
+        this.extAll.push(v); this.extById.set(v.id, v);
+        for (const t of [...v._n, ...v._b, ...v._a]) this.extNames.add(t);
+        if (v.core) { this.extOfCore.set(v.id, v); continue; }
+        this.extList.push(v);
+        for (const c of v.atc_codes) { if (!this.extAtcOwner.has(c)) this.extAtcOwner.set(c, []); this.extAtcOwner.get(c).push(v.id); }
+        if (v.rxcui) this.extRxOwner.set(v.rxcui, v.id);
+        // 답변 검증에 쓰는 이름은 성분 이름(한글 3자 이상 · 영문 7자 이상)만이다. 상품명·별칭은 자동 추출이라 검증에는 쓰지 않는다(검색에만 쓴다).
+        for (const [t, lang] of [...[v.label_ko, ...v.alt_ko, ...v.ko_base].map(t => [t, 'ko']), ...[v.label_en, ...v.alt_en].map(t => [t, 'en'])]) {
+          const lower = String(t || '').toLowerCase();
+          if (lang === 'ko' ? lower.length < 3 : (lower.length < 7 || EXT_EN_STOP.has(lower) || !/[a-z]{3}/.test(lower))) continue;
+          if (!nameIdx.has(lower)) nameIdx.set(lower, { ids: new Set(), text: t, lang });
+          nameIdx.get(lower).ids.add(v.id);
+        }
+      }
+      for (const [lower, o] of nameIdx) {
+        if (o.ids.size !== 1 || this.knownNames.has(lower) || this.classWords.has(lower)) continue;
+        this.extSurfaces.push({ text: o.text, lower, vtm: this.extById.get([...o.ids][0]), kind: 'ingredient', lang: o.lang, ext: true });
+      }
+      this.extSurfaces.sort((a, b) => b.text.length - a.text.length);
+      this._nearPool = this.surfaces.concat(this.extSurfaces);
+      for (const cl of this.classes) this.classMembersExt.set(cl, this.extList.filter(v => v.atc_codes.some(c => cl.atc.some(p => c.startsWith(p)))));
+    }
+
+    anyById(id) { return this.byId.get(id) || this.extById.get(id) || null; }
+    hasId(id) { return this.byId.has(id) || this.extById.has(id); }
+    _nm(v) { return v.label_ko || v.label_en; }
+    nameOfId(id) { const v = this.anyById(id); return v ? this._nm(v) : id; }
+    _cmpName(a, b) {
+      const x = String(a.label_ko || a.label_en), y = String(b.label_ko || b.label_en);
+      return (this._coll ? this._coll.compare(x, y) : x.localeCompare(y, 'ko')) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    }
+
+    // 확장 수록 검색 — 핵심 사전 search() 와 같은 점수 체계(이름 일치 100·접두 80·포함 60, 상품명은 1점·별칭은 2점 낮게, ATC 70, RxCUI 95, ID 95).
+    // 결과: {ext: 확장 성분(뷰), vtm: 핵심 VTM 또는 null, score, via}. 핵심 성분(core:true)이 상품명·별칭으로 찾아지면 vtm 에 핵심 VTM 이 들어 있다(화면은 핵심 목록에 합친다).
+    // 이름 검색은 두 글자 이상부터(한 글자는 수천 건이 걸려 쓸모가 없다). ID 표기: MT:KRI:slug · MT:VTM:숫자 · 주소 표기 #k-slug.
+    searchExt(q, opts = {}) {
+      if (!this.ext) return [];
+      const nq = normalizeQuery(q); if (!nq) return [];
+      const mk = (v, score, via) => ({ ext: v, vtm: v.core ? this.byId.get(v.id) : null, score, via });
+      const hashK = /^#?k-([a-z0-9-]+)$/.exec(nq);
+      if (hashK || /mt\s*:\s*(?:vtm|kri)\s*:/.test(nq)) {
+        const out = [], seen = new Set(), idRe = /mt\s*:\s*(vtm|kri)\s*:\s*([a-z0-9_]+)/g; let im;
+        const push = (id) => { const v = this.extById.get(id); if (v && !seen.has(id)) { seen.add(id); out.push(mk(v, 95, 'ID 일치')); } };
+        if (hashK) push('MT:KRI:' + hashK[1].replace(/-/g, '_'));
+        while ((im = idRe.exec(nq))) push(`MT:${im[1].toUpperCase()}:${im[2]}`);
+        return out;
+      }
+      const idm = /^(?:rxcui\s*[:=#]?\s*|#?v-)(\d+)$/.exec(nq);
+      const k = idm ? idm[1] : nq, nameOk = k.length >= 2 && !idm;
+      const grade = (names, drop, label) => {   // 이름 목록에서 가장 높은 점수와 이유. drop: 일치 점수에서 깎는 값(이름 0 · 상품명 1 · 별칭 2)
+        let sc = 0, via = null;
+        for (const n of names) {
+          if (n === k) return [100 - drop, label + ' 일치'];
+          if (n.startsWith(k)) { if (80 - drop > sc) { sc = 80 - drop; via = label + ' 접두'; } }
+          else if (n.includes(k) && 60 - drop > sc) { sc = 60 - drop; via = label + ' 포함'; }
+        }
+        return [sc, via];
+      };
+      const hits = [];
+      for (const v of this.extAll) {
+        let score = 0, via = null;
+        if (nameOk) for (const [names, drop, label] of [[v._n, 0, '이름'], [v._b, 1, '상품명'], [v._a, 2, '별칭']]) { const [sc, w] = grade(names, drop, label); if (sc > score) { score = sc; via = w; } }
+        if (!score) {
+          if (v.rxcui && v.rxcui === k) { score = 95; via = 'RxCUI'; }
+          else if (!idm && k.length >= 3 && v.atc_codes.some(c => c.toLowerCase().startsWith(k))) { score = 70; via = 'ATC 코드'; }
+        }
+        if (score) hits.push(mk(v, score, via));
+      }
+      if (opts.classes !== false) {   // 분류 별칭: 이미 찾은 성분은 더 높은 점수일 때만 바꾼다
+        const at = new Map(hits.map((h, i) => [h.ext.id, i]));
+        for (const c of this.searchClass(nq)) for (const v of c.extMembers) {
+          const via = '분류: ' + c.cl.label;
+          if (at.has(v.id)) { const h = hits[at.get(v.id)]; if (c.score > h.score) { h.score = c.score; h.via = via; } }
+          else { at.set(v.id, hits.length); hits.push(mk(v, c.score, via)); }
+        }
+      }
+      return hits.sort((a, b) => (b.score - a.score) || this._cmpName(a.ext, b.ext));
+    }
+
+    atcPath(code) { return [code[0], code.slice(0, 3), code.slice(0, 4), code.slice(0, 5)].map(c => ({ code: c, name: this.atcLabel(c) })); }
+
+    // 확장 성분 상세(화면용): ATC(출처 표시)·한글 이름 후보(출처 표시)·국내 등재 현황·연결 등급 설명.
+    describeExt(id) {
+      const v = this.extById.get(id); if (!v) return null; const r = v.rec;
+      const legend = (this.extMeta && this.extMeta.grade_legend) || {};
+      return {
+        ext: v, rec: r, coreVtm: this.byId.get(id) || null,
+        atc: (r.atc || []).map(code => ({ code, src: (r.atc_src || {})[code] || '', path: this.atcPath(code) })),
+        atcClass: (r.atc_class || []).map(code => ({ code, name: this.atcLabel(code) })),
+        names: (r.ko || []).map(x => ({ ...x })), grade: v.grade, gradeText: legend[v.grade] || '', kr: r.kr || null
+      };
+    }
+
+    _contextForExt(v) {
+      const kr = v.rec.kr;
+      const o = {
+        id: v.id, tier: 'ext', name_ko: v.label_ko || null, name_en: v.label_en || null,
+        alt: [...v.alt_ko, ...v.ko_base, ...v.alt_en], brands_ko: v.brands_ko.slice(0, 5), rxcui: v.rxcui, review_status: v.review_status,
+        note: '확장 수록(공개 자료 자동 수집·약사 검수 전). 한글 이름은 후보',
+        atc: v.atc_codes.map(code => ({ code, class4: this.atcLabel(code.slice(0, 5)) }))
+      };
+      if (kr && kr.items) o.kr_listed = { items: kr.items, forms: kr.forms, strengths_sample: (kr.strengths || []).slice(0, 8), note: '심평원 약가마스터 등재 제품 규격(용법·용량 아님)' };
+      return o;
+    }
+
     // ---------- 분류 별칭 검색 ----------
     // "PPI"·"진통제"·"항응고제"처럼 약 하나가 아니라 분류를 가리키는 말. 일치한 분류마다 {cl, alias, score, members} 를 점수 순으로 돌려준다.
     // 점수: 별칭(또는 분류 이름)과 같음 88 · 앞부분이 같음 72(세 글자 이상) · 중간에 들어 있음 62(세 글자 이상). 띄어쓰기는 보지 않고 끝의 "계열·계·류"는 뗀다.
@@ -195,7 +327,7 @@
           const o = best.get(s.cl); if (!o || score > o.score) best.set(s.cl, { alias: s.alias, score });
         }
       }
-      return [...best].map(([cl, o]) => ({ cl, alias: o.alias, score: o.score, members: this.classMembers.get(cl) || [] })).sort((a, b) => b.score - a.score);
+      return [...best].map(([cl, o]) => ({ cl, alias: o.alias, score: o.score, members: this.classMembers.get(cl) || [], extMembers: this.classMembersExt.get(cl) || [] })).sort((a, b) => b.score - a.score);
     }
 
     describe(vtmId) {
@@ -213,13 +345,14 @@
     // 열: sibling(같은 ATC 세부군의 다른 성분) · group(ATC 4단계) · atc(ATC 5단계 코드) · vtm · vmp · amp
     // 표시 상한을 넘으면 'more' 노드("외 N개")로 알린다. 숫자는 totals(전체)와 shown(표시)을 모두 돌려준다.
     graph(vtmId, opts = {}) {
-      const v = this.byId.get(vtmId); if (!v || v.type !== 'VTM') return null;
+      const v = this.byId.get(vtmId) || this.extById.get(vtmId); if (!v || (v.type !== 'VTM' && !v.ext)) return null;
       const o = Object.assign({ maxAtc: 6, maxSiblings: 6, maxVmp: 10, ampPerVmp: 2, maxAmp: 14 }, opts);
       const nodes = [], edges = [], seen = new Set();
       const add = n => { if (seen.has(n.id)) return n; seen.add(n.id); nodes.push(n); return n; };
       const edge = (from, to, rel) => { if (!edges.some(e => e.from === from && e.to === to && e.rel === rel)) edges.push({ from, to, rel }); };
       const totals = { atc: 0, siblings: 0, vmp: 0, amp: 0 }, shown = { atc: 0, siblings: 0, vmp: 0, amp: 0 };
-      add({ id: v.id, kind: 'vtm', col: 'vtm', line1: v.label_ko || v.label_en, line2: `${v.label_en} · RxCUI ${v.rxcui}`, title: `${v.label_ko} (${v.label_en}) · ${v.id} · RxCUI ${v.rxcui}`, action: null });
+      const rxTxt = v.rxcui ? ` · RxCUI ${v.rxcui}` : '';
+      add({ id: v.id, kind: 'vtm', col: 'vtm', line1: v.label_ko || v.label_en, line2: v.ext ? (v.label_ko ? `${v.label_en}${rxTxt}` : (v.rxcui ? `RxCUI ${v.rxcui}` : '확장 수록')) : `${v.label_en} · RxCUI ${v.rxcui}`, title: v.ext ? `${v.label_ko ? v.label_ko + ' (' + v.label_en + ')' : v.label_en} · ${v.id}${rxTxt} · 확장 수록(자동 수집·약사 검수 전)` : `${v.label_ko} (${v.label_en}) · ${v.id} · RxCUI ${v.rxcui}`, action: null });
       // ATC 코드·세부군
       const codes = v.atc_codes || []; totals.atc = codes.length;
       const shownCodes = codes.slice(0, o.maxAtc); shown.atc = shownCodes.length;
@@ -233,10 +366,11 @@
       }
       if (totals.atc > shown.atc) add({ id: 'more:atc', kind: 'more', col: 'atc', line1: `외 ${totals.atc - shown.atc}개`, line2: 'ATC 코드', title: `표시 상한(${o.maxAtc}개) 때문에 ATC 코드 ${totals.atc - shown.atc}개를 생략했습니다. 전체는 오른쪽 상세에 있습니다.`, action: null });
       // 같은 세부군의 다른 성분
-      const sibs = this.vtms.filter(u => u.id !== v.id && (u.atc_codes || []).some(c => groupCodes.some(g => c.startsWith(g)))).sort((a, b) => String(a.label_ko).localeCompare(String(b.label_ko), 'ko'));
+      const inGroup = u => u.id !== v.id && (u.atc_codes || []).some(c => groupCodes.some(g => c.startsWith(g)));
+      const sibs = this.vtms.filter(inGroup).sort((a, b) => String(a.label_ko).localeCompare(String(b.label_ko), 'ko')).concat(this.extList.filter(inGroup).sort((a, b) => this._cmpName(a, b)));
       totals.siblings = sibs.length; const shownSibs = sibs.slice(0, o.maxSiblings); shown.siblings = shownSibs.length;
       for (const u of shownSibs) {
-        add({ id: u.id, kind: 'sibling', col: 'sibling', line1: u.label_ko || u.label_en, line2: u.label_en, title: `${u.label_ko} (${u.label_en}) · ${u.id} — 눌러서 이 성분으로 이동`, action: { type: 'select', id: u.id } });
+        add({ id: u.id, kind: 'sibling', col: 'sibling', line1: u.label_ko || u.label_en, line2: u.label_ko ? u.label_en : '확장 수록', title: `${u.label_ko ? u.label_ko + ' (' + u.label_en + ')' : u.label_en} · ${u.id}${u.ext ? ' · 확장 수록' : ''} — 눌러서 이 성분으로 이동`, action: { type: 'select', id: u.id } });
         for (const g of groupCodes) if ((u.atc_codes || []).some(c => c.startsWith(g))) edge(u.id, 'grp:' + g, 'sameGroup');
       }
       if (totals.siblings > shown.siblings) add({ id: 'more:sibling', kind: 'more', col: 'sibling', line1: `외 ${totals.siblings - shown.siblings}개`, line2: '같은 세부군 성분', title: `표시 상한(${o.maxSiblings}개) 때문에 ${totals.siblings - shown.siblings}개를 생략했습니다.`, action: null });
@@ -294,7 +428,8 @@
     }
 
     // ---------- 언급 추출 ----------
-    findMentions(text) {
+    // opts.ext === true 이면 확장 수록 성분의 이름도 찾는다(핵심 이름과 겹치는 자리는 핵심이 우선, 한글은 단어 시작·조사/접미 끝맺음일 때만).
+    findMentions(text, opts = {}) {
       const lower = text.toLowerCase(); const cands = [];
       for (const s of this.surfaces) {
         let from = 0; const t = s.lower;
@@ -313,14 +448,35 @@
       cands.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.start - b.start);
       const taken = []; const out = [];
       for (const c of cands) { if (taken.some(r => c.start < r[1] && c.end > r[0])) continue; taken.push([c.start, c.end]); out.push(c); }
+      if (opts.ext && this.extSurfaces.length) {
+        const xc = [];
+        for (const s of this.extSurfaces) {
+          let from = 0; const t = s.lower;
+          while (true) {
+            const i = lower.indexOf(t, from); if (i < 0) break; from = i + 1; const e = i + t.length;
+            if (s.lang === 'en') { if (isEnLetter(lower[i - 1]) || isEnLetter(lower[e])) continue; }
+            else {
+              if (/[가-힣A-Za-z0-9]/.test(lower[i - 1] || '')) continue;               // 다른 말의 뒷부분으로 우연히 맞는 것
+              let re = e; while (re < lower.length && HANGUL.test(lower[re])) re++;
+              const tail = text.slice(e, re); if (tail && !PARTICLE_CHAIN.test(tail) && !NOUN_SUFFIX.test(tail)) continue;   // 더 긴 다른 말의 앞부분인 것
+            }
+            xc.push({ start: i, end: e, text: text.slice(i, e), vtm: s.vtm, kind: s.kind, lang: s.lang, ext: true });
+          }
+        }
+        xc.sort((a, b) => (b.end - b.start) - (a.end - a.start) || a.start - b.start);
+        for (const c of xc) { if (taken.some(r => c.start < r[1] && c.end > r[0])) continue; taken.push([c.start, c.end]); out.push(c); }
+      }
       return out.sort((a, b) => a.start - b.start);
     }
 
     // 질문에서 사전 항목(VTM id)을 찾는다: 이름 언급 + 토큰 검색(이름 일치/접두 이상만)
     retrieve(question, max = 5) {
       const ids = []; const push = (id) => { if (!ids.includes(id)) ids.push(id); };
-      this.findMentions(question).forEach(m => push(m.vtm.id));
-      question.split(/[\s,，、]+/).filter(t => t.length >= 2).forEach(t => this.search(t, { classes: false }).filter(x => x.score >= 80).slice(0, 2).forEach(x => push(x.vtm.id)));
+      this.findMentions(question, { ext: true }).forEach(m => push(m.vtm.id));
+      question.split(/[\s,，、]+/).filter(t => t.length >= 2).forEach(t => {
+        this.search(t, { classes: false }).filter(x => x.score >= 80).slice(0, 2).forEach(x => push(x.vtm.id));
+        if (this.ext) this.searchExt(t, { classes: false }).filter(x => x.score >= 80).slice(0, 2).forEach(x => push(x.vtm ? x.vtm.id : x.ext.id));
+      });
       return ids.slice(0, max);
     }
 
@@ -328,6 +484,7 @@
     contextFor(vtmIds, opts = {}) {
       const maxStrengths = opts.maxStrengths || 12;
       return vtmIds.map(id => {
+        if (!this.byId.has(id) && this.extById.has(id)) return this._contextForExt(this.extById.get(id));
         const d = this.describe(id), v = d.vtm;
         const strengths = [...(this.strengthsOf.get(id) || [])].sort((a, b) => a - b).slice(0, maxStrengths);
         return {
@@ -340,21 +497,23 @@
     }
     buildGroundedPrompt(question, vtmIds) {
       const ctx = this.contextFor(vtmIds);
+      const extUsed = ctx.some(c => c.tier === 'ext');
       const system = [
         '당신은 약무용어 사전에 근거해서만 답하는 보조자입니다.',
         '규칙 1) 아래 <사전> 항목에 있는 사실(이름, RxCUI, ATC 코드/계열, 단위용량)만 사용하고, 항목 ID(예: MT:VTM:7646)를 근거로 표기하세요.',
         '규칙 2) <사전>에 없는 약물·코드·용량은 추측하지 말고 "사전에 없어 확인할 수 없음"이라고 답하세요.',
         '규칙 3) 개인별 복용량·진단·처방 판단은 하지 말고, 의사·약사 상담을 안내하세요.',
-        '규칙 4) 단위용량은 미국 RxNorm 기준이며 국내 허가 규격과 다를 수 있음을 명시하세요.'
+        '규칙 4) 단위용량은 미국 RxNorm 기준이며 국내 허가 규격과 다를 수 있음을 명시하세요.',
+        ...(extUsed ? ['규칙 5) tier 가 "ext" 인 항목은 확장 수록(공개 자료 자동 수집·약사 검수 전)입니다. 한글 이름은 후보이고 국내 등재 규격은 제품 규격일 뿐 용법·용량이 아니므로, 이 항목에서 나온 사실에는 "확장 수록 자료 기준"이라고 밝히세요.'] : [])
       ].join('\n');
-      const body = ctx.length ? JSON.stringify(ctx, null, 1) : `(이 질문과 일치하는 사전 항목이 없음. 사전 전체에는 ${this.vtms.length}개 성분이 수록되어 있으나 이 질문의 약물은 포함되어 있지 않음)`;
+      const body = ctx.length ? JSON.stringify(ctx, null, 1) : `(이 질문과 일치하는 사전 항목이 없음. 사전 전체에는 ${this.vtms.length}개 성분${this.extList.length ? '(핵심)과 확장 수록 ' + this.extList.length + '개 성분' : ''}이 수록되어 있으나 이 질문의 약물은 포함되어 있지 않음)`;
       const user = '<사전>\n' + body + '\n</사전>\n\n질문: ' + question;
       return { system, user, context: ctx };
     }
 
     // ---------- 답변 검증 ----------
     verify(text) {
-      const findings = []; const mentions = this.findMentions(text);
+      const findings = []; const mentions = this.findMentions(text, { ext: true });
       const sentBounds = []; { const re = /[!?。\n]|\.(?!\d)/g; let last = 0, m; while ((m = re.exec(text))) { sentBounds.push([last, m.index + 1]); last = m.index + 1; } sentBounds.push([last, text.length]); }
       const sentOf = (pos) => sentBounds.find(b => pos >= b[0] && pos < b[1]) || [0, text.length];
       const mentionsIn = (b) => mentions.filter(m => m.start >= b[0] && m.end <= b[1]);
@@ -364,6 +523,7 @@
       // 1) 알려진 약물 언급 + 철자 변형(near-miss)
       const claimed = []; // near-miss 영역(알려진 이름 뒤에 붙은 비허용 접미)
       for (const m of mentions) {
+        if (m.ext) { F('ok', 'known_term_ext', m.start, m.end, `확장 수록 일치: ${this._nm(m.vtm)} (${m.vtm.id}) — 자동 수집·약사 검수 전`, { vtm: m.vtm.id, ext: true }); continue; }
         let end = m.end, flagged = false;
         if (m.lang === 'ko' && m.start > 0 && HANGUL.test(text[m.start - 1])) {
           let rs = m.start; while (rs > 0 && HANGUL.test(text[rs - 1])) rs--;
@@ -400,23 +560,23 @@
         }
         if (w === null) w = wStrip;
         if (w.length < 4) continue;
-        if (this.knownNames.has(w.toLowerCase()) || this.classWords.has(w.toLowerCase())) continue;
+        if (this.knownNames.has(w.toLowerCase()) || this.classWords.has(w.toLowerCase()) || this.extNames.has(w.toLowerCase())) continue;
         const stem = KO_STEMS.find(st => w.endsWith(st));
-        const near = this.surfaces.filter(s => s.lang === 'ko' && s.kind === 'ingredient' && s.text.length >= 4).map(s => [lev(w, s.text), s]).sort((a, b) => a[0] - b[0])[0];
+        const near = this._nearPool.filter(s => s.lang === 'ko' && s.kind === 'ingredient' && s.text.length >= 4).map(s => [lev(w, s.text), s]).sort((a, b) => a[0] - b[0])[0];
         if (!stem && !(near && near[0] <= 1)) continue;
-        if (near && near[0] <= (stem ? 2 : 1)) F('warn', 'near_miss', s0, s0 + w.length, `'${w}'은(는) 사전에 없으며 '${near[1].text}'과(와) 비슷합니다(철자 변형 의심).`, { suggest: near[1].text });
+        if (near && near[0] <= (stem ? 2 : 1)) F('warn', 'near_miss', s0, s0 + w.length, `'${w}'은(는) 사전에 없으며 '${near[1].text}'${near[1].ext ? '(확장 수록)' : ''}과(와) 비슷합니다(철자 변형 의심).`, { suggest: near[1].text });
         else F('warn', 'unknown_drug', s0, s0 + w.length, `'${w}'은(는) 약물명 어미(-${stem})를 가졌으나 사전에 없습니다. 실존 약물일 수도, 생성된 이름일 수도 있어 확인이 필요합니다.`);
       }
       // 영어
       const enRe = /[A-Za-z][A-Za-z\-]{5,}/g; let em;
       while ((em = enRe.exec(text))) {
         const w = em[0], s0 = em.index; if (covered(s0, s0 + w.length)) continue;
-        const lw = w.toLowerCase(); if (this.knownNames.has(lw)) continue;
+        const lw = w.toLowerCase(); if (this.knownNames.has(lw) || this.extNames.has(lw)) continue;
         const stem = EN_STEMS.find(st => lw.endsWith(st) && lw.length >= 7);
-        const near = this.surfaces.filter(s => s.lang === 'en' && s.kind === 'ingredient' && s.text.length >= 7).map(s => [lev(lw, s.lower), s]).sort((a, b) => a[0] - b[0])[0];
+        const near = this._nearPool.filter(s => s.lang === 'en' && s.kind === 'ingredient' && s.text.length >= 7).map(s => [lev(lw, s.lower), s]).sort((a, b) => a[0] - b[0])[0];
         const tol = lw.length >= 9 ? 2 : 1;
         if (!stem && !(near && near[0] <= tol)) continue;
-        if (near && near[0] <= (stem ? 2 : tol)) F('warn', 'near_miss', s0, s0 + w.length, `'${w}'은(는) 사전에 없으며 '${near[1].text}'과(와) 비슷합니다(철자 변형 의심).`, { suggest: near[1].text });
+        if (near && near[0] <= (stem ? 2 : tol)) F('warn', 'near_miss', s0, s0 + w.length, `'${w}'은(는) 사전에 없으며 '${near[1].text}'${near[1].ext ? '(확장 수록)' : ''}과(와) 비슷합니다(철자 변형 의심).`, { suggest: near[1].text });
         else F('warn', 'unknown_drug', s0, s0 + w.length, `'${w}'은(는) 약물명 어미(-${stem})를 가졌으나 사전에 없습니다. 확인이 필요합니다.`);
       }
 
@@ -425,26 +585,27 @@
       while ((am = atcRe.exec(text))) {
         const code = am[0], s0 = am.index, e0 = s0 + code.length, b = sentOf(s0), ms = mentionsIn(b);
         const owners = new Set(); for (const [c, ids] of this.atcOwner) if (c.startsWith(code)) ids.forEach(i => owners.add(i));
+        for (const [c, ids] of this.extAtcOwner) if (c.startsWith(code)) ids.forEach(i => owners.add(i));
         if (!ms.length) {
           if (!owners.size) F('warn', 'atc_unverifiable', s0, e0, `ATC 코드 ${code}: 같은 문장에 사전 약물이 없고, 사전의 어떤 약물 코드와도 일치하지 않아 검증할 수 없습니다.`);
           continue;
         }
         const ok = ms.find(m => (m.vtm.atc_codes || []).some(c => c.startsWith(code)));
-        if (ok) F('ok', 'atc_ok', s0, e0, `ATC ${code} ↔ ${ok.vtm.label_ko} 일치`);
+        if (ok) F('ok', 'atc_ok', s0, e0, `ATC ${code} ↔ ${this._nm(ok.vtm)} 일치${ok.vtm.ext ? '(확장 수록 자료 기준)' : ''}`);
         else {
-          const nm = nearest(ms, s0, e0), ownerNames = [...owners].map(i => this.byId.get(i).label_ko).join(', ');
+          const nm = nearest(ms, s0, e0), ownerNames = [...owners].map(i => this.nameOfId(i)).join(', ');
           if (COMBO_CTX.test(text.slice(b[0], b[1]))) { F('info', 'combo_context', s0, e0, `ATC ${code}: 복합제 맥락이라 단일 성분 사전으로는 검증할 수 없습니다.`); continue; }
-          F('error', 'atc_mismatch', s0, e0, `ATC ${code}는 '${nm.vtm.label_ko}'의 코드가 아닙니다. 사전 기준 ${nm.vtm.label_ko}: ${(nm.vtm.atc_codes || []).join(', ')}.` + (ownerNames ? ` (${code}는 ${ownerNames}의 코드)` : ''), { expected: nm.vtm.atc_codes });
+          F(nm.vtm.ext ? 'warn' : 'error', 'atc_mismatch', s0, e0, `ATC ${code}는 '${this._nm(nm.vtm)}'의 코드가 아닙니다. ${nm.vtm.ext ? '확장 수록 자료(자동 수집·검수 전)' : '사전'} 기준 ${this._nm(nm.vtm)}: ${(nm.vtm.atc_codes || []).join(', ') || (nm.vtm.ext ? '(없음)' : '')}.` + (ownerNames ? ` (${code}는 ${ownerNames}의 코드)` : ''), { expected: nm.vtm.atc_codes, ext: !!nm.vtm.ext });
         }
       }
       // 4) RxCUI
       const rxRe = /rxcui\s*[:=]?\s*(\d{2,7})/gi; let rm;
       while ((rm = rxRe.exec(text))) {
-        const id = rm[1], s0 = rm.index, e0 = s0 + rm[0].length, b = sentOf(s0), ms = mentionsIn(b), owner = this.rxcuiOwner.get(id);
+        const id = rm[1], s0 = rm.index, e0 = s0 + rm[0].length, b = sentOf(s0), ms = mentionsIn(b), owner = this.rxcuiOwner.get(id) || this.extRxOwner.get(id);
         if (!owner) { F('warn', 'rxcui_unverifiable', s0, e0, `RxCUI ${id}는 사전에 없어 검증할 수 없습니다.`); continue; }
         if (!ms.length) continue;
         if (ms.some(m => m.vtm.id === owner)) F('ok', 'rxcui_ok', s0, e0, `RxCUI ${id} 일치`);
-        else { const nm = nearest(ms, s0, e0); F('error', 'rxcui_mismatch', s0, e0, `RxCUI ${id}는 '${this.byId.get(owner).label_ko}'의 식별자이며 '${nm.vtm.label_ko}'가 아닙니다.`); }
+        else { const nm = nearest(ms, s0, e0); F('error', 'rxcui_mismatch', s0, e0, `RxCUI ${id}는 '${this.nameOfId(owner)}'의 식별자이며 '${this._nm(nm.vtm)}'가 아닙니다.`); }
       }
       // 5) 계열(ATC 분류) 주장 — 더 긴 용어에 포함된 짧은 용어는 제외(예: '비스테로이드성 소염진통제' 속 '스테로이드'/'진통제')
       const lowerAll = text.toLowerCase(), clsHits = [];
@@ -464,14 +625,15 @@
         const b = sentOf(i), ms = mentionsIn(b); if (!ms.length) continue;
         const consistent = ms.find(m => (m.vtm.atc_codes || []).some(c => cl.atc.some(p => c.startsWith(p))));
         const distinct = new Set(ms.map(m => m.vtm.id)).size;
-        if (consistent) F('ok', 'class_ok', i, e, `계열 '${cl.label}' ↔ ${consistent.vtm.label_ko} 일치(ATC ${cl.atc.join('/')})`);
+        if (consistent) F('ok', 'class_ok', i, e, `계열 '${cl.label}' ↔ ${this._nm(consistent.vtm)} 일치(ATC ${cl.atc.join('/')})${consistent.vtm.ext ? ' — 확장 수록 자료 기준' : ''}`);
         else if (COMBO_CTX.test(text.slice(b[0], b[1]))) F('info', 'combo_context', i, e, `계열 '${cl.label}': 복합제 맥락이라 단일 성분 사전으로는 검증할 수 없습니다.`);
-        else { const nm = nearest(ms, i, e); F(distinct === 1 ? 'error' : 'warn', 'class_mismatch', i, e, `'${nm.vtm.label_ko}'은(는) 사전 기준 '${cl.label}'(ATC ${cl.atc.join('/')})에 속하지 않습니다. 사전 ATC: ${(nm.vtm.atc_codes || []).join(', ')}.`, { expected: nm.vtm.atc_codes }); }
+        else { const nm = nearest(ms, i, e); F(distinct === 1 && !nm.vtm.ext ? 'error' : 'warn', 'class_mismatch', i, e, `'${this._nm(nm.vtm)}'은(는) ${nm.vtm.ext ? '확장 수록 자료(자동 수집·검수 전)' : '사전'} 기준 '${cl.label}'(ATC ${cl.atc.join('/')})에 속하지 않습니다. 사전 ATC: ${(nm.vtm.atc_codes || []).join(', ')}.`, { expected: nm.vtm.atc_codes, ext: !!nm.vtm.ext }); }
       }
       // 6) 단위용량 (약물 언급 직후 창)
       const numRe = /(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(mg|mcg|μg|µg|㎍|㎎|g|밀리그램|마이크로그램|그램)(?![A-Za-z\/])/gi;
       for (let i = 0; i < mentions.length; i++) {
-        const m = mentions[i]; const b = sentOf(m.start);
+        const m = mentions[i]; if (m.ext) continue;   // 확장 수록 성분은 단위용량 목록(RxNorm 미국 규격)이 없어 검증하지 않는다
+        const b = sentOf(m.start);
         const stop = Math.min(b[1], i + 1 < mentions.length ? mentions[i + 1].start : text.length, m.end + 30);
         const win = text.slice(m.end, stop); numRe.lastIndex = 0; let nm;
         while ((nm = numRe.exec(win))) {

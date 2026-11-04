@@ -23,6 +23,8 @@ if (!/^\d+\.\d+\.\d+$/.test(VERSION)) throw new Error(`package.json 의 version 
 for (const f of ['medterm-data.js', 'bench.js', 'core.js']) {
   if (!existsSync(path.join(JS_DIR, f))) throw new Error(`${f}를 찾지 못했습니다: ${JS_DIR} (MEDTERM_JS 환경변수로 폴더를 지정하세요)`);
 }
+// 확장 수록 자료(medterm-ext-data.js)는 있으면 핵심 자료 바로 뒤에 함께 담는다. 없으면 핵심 사전만으로 이전과 같이 동작한다.
+const EXT_JS = existsSync(path.join(JS_DIR, 'medterm-ext-data.js')) ? ['medterm-ext-data.js'] : [];
 
 /* 1) 토큰 → CSS 변수 (라이트 기본, 다크는 시스템 설정 또는 data-theme="dark") */
 const t = JSON.parse(read(ROOT, 'tokens.json'));
@@ -74,7 +76,7 @@ async function bundle(enableProxy, surface) {
 
 /* 4) HTML 조립 */
 const esc = (s) => s.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
-const classic = ['medterm-data.js', 'bench.js', 'core.js'].map((f) => `<script>\n${esc(read(JS_DIR, f))}\n</script>`).join('\n');
+const classic = ['medterm-data.js', ...EXT_JS, 'bench.js', 'core.js'].map((f) => `<script>\n${esc(read(JS_DIR, f))}\n</script>`).join('\n');
 const NOTICE = '<!-- MedTerm-KR 화면(React). 포함된 오픈소스: React(MIT), React Flow·@xyflow/react(MIT), Tailwind CSS(MIT). 글꼴(SIL OFL 1.1): Pretendard © Kil Hyung-jin · Gaegu © The Gaegu Project Authors. 고지문: THIRD_PARTY_NOTICES.txt -->';
 
 const standalone = `<!doctype html>

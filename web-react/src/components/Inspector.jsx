@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
-import { mt } from '../lib/mt.js';
+import { useEffect, useMemo, useRef } from 'react';
+import { mt, nameOf } from '../lib/mt.js';
 import { Btn, Chip, StatusBadge, inertProps } from './ui.jsx';
 import { IconArrow, IconClose } from './icons.jsx';
 import { Thumb } from './Thumb.jsx';
+import { CoreExtBlock, ExtDetail } from './ExtParts.jsx';
 
 const AMP_SHOWN = 6;
 
@@ -58,6 +59,8 @@ function Detail({ d }) {
       ))}
       {!d.atc.length && <div className="text-small text-mut">ATC 코드 없음</div>}
 
+      <CoreExtBlock id={v.id} />
+
       <h4 className="mb-1 mt-5 text-body-bold">계층: VTM → VMP(성분·용량·제형) → AMP(제품) · VMP {d.vmps.length}개</h4>
       <div className="mb-2 text-small text-mut">VMP/AMP는 미국 RxNorm 기준입니다. 국내 허가 제품(MFDS)은 아직 연동되지 않았습니다.</div>
       {forms.map((f, i) => {
@@ -92,8 +95,12 @@ function Detail({ d }) {
  * 넓은 화면(≥1100px) 오른쪽 고정 단 · 700~1099px 오른쪽 서랍 · 휴대폰(≤699px) 아래에서 올라오는 시트(손잡이 + 둥근 위 모서리).
  * 아래 고정 줄에 주된 행동 버튼(관계 그래프 보기)이 있다(이미 관계 그래프 탭이면 필요 없으므로 숨긴다).
  */
-export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, onOpenGraph, showGraphCta = true }) {
-  const d = useMemo(() => (id ? mt.describe(id) : null), [id]);
+export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, onOpenGraph, onSelect, showGraphCta = true }) {
+  const d = useMemo(() => (id && mt.byId.has(id) ? mt.describe(id) : null), [id]); // 핵심 사전의 성분
+  const dx = useMemo(() => (id && !mt.byId.has(id) ? mt.describeExt(id) : null), [id]); // 확장 수록의 성분
+  const bodyRef = useRef(null);
+  useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [id]); // 다른 성분을 고르면 위에서부터 보여 준다
+  const title = d ? d.vtm.label_ko : dx ? nameOf(dx.ext) : '';
   return (
     <aside
       id="inspector"
@@ -106,7 +113,7 @@ export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, o
     >
       <div aria-hidden="true" className="mx-auto mt-2 hidden h-1 w-10 flex-none rounded-pill bg-edge opacity-40 lt-tree:block" />
       <div className="flex flex-none items-center justify-between gap-2 border-b border-line py-2.5 pl-3.5 pr-4">
-        <h2 id="insp-title" className="text-small-bold text-mut">{d ? `${d.vtm.label_ko} · 상세` : '상세 정보'}</h2>
+        <h2 id="insp-title" className="text-small-bold text-mut">{d || dx ? `${title} · 상세` : '상세 정보'}</h2>
         <button
           ref={closeRef}
           type="button"
@@ -117,10 +124,10 @@ export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, o
           <IconClose size={16} /> 닫기
         </button>
       </div>
-      <div id="detail" className="min-h-0 flex-1 overflow-auto py-3 pl-3 pr-4">
-        {d ? <Detail key={id} d={d} /> : <p className="px-2 py-4 text-mut">왼쪽 트리나 검색 결과에서 성분을 선택하면 코드, ATC 경로, 제형·용량·제품 계층이 여기에 표시됩니다.</p>}
+      <div id="detail" ref={bodyRef} className="min-h-0 flex-1 overflow-auto py-3 pl-3 pr-4">
+        {d ? <Detail key={id} d={d} /> : dx ? <ExtDetail key={id} d={dx} onSelect={onSelect} /> : <p className="px-2 py-4 text-mut">왼쪽 트리나 검색 결과에서 성분을 선택하면 코드, ATC 경로, 제형·용량·제품 계층이 여기에 표시됩니다.</p>}
       </div>
-      {d && showGraphCta && (
+      {(d || dx) && showGraphCta && (
         <div className="flex-none border-t border-line bg-surface px-4 py-3">
           <Btn size="lg" className="w-full" onClick={onOpenGraph}>
             관계 그래프 보기 <IconArrow size={18} />

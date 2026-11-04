@@ -7,8 +7,10 @@ import { Badge, Btn, Card, INPUT_CLS, StatusBadge, cx } from './ui.jsx';
 import { IconChevron, IconClose, IconSearch } from './icons.jsx';
 import { PillArt } from './PillArt.jsx';
 import { Thumb } from './Thumb.jsx';
+import { ExtCard, nf } from './ExtParts.jsx';
 
-const PAGE = 12; // 한 번에 보여 주는 카드 수(더 보기로 12개씩 늘어남)
+const PAGE = 12; // 핵심 수록: 한 번에 보여 주는 카드 수(더 보기로 12개씩 늘어남)
+const PAGE_X = 24; // 확장 수록은 수가 많아 24개씩
 
 /** 분류 칩: 누르면 그 ATC 대분류로 목록을 거르고, 다시 누르면 풀린다. */
 function Pill({ on, children, ...rest }) {
@@ -52,33 +54,77 @@ function ResultCard({ v, via, on, onSelect }) {
   );
 }
 
+/** "더 보기 (n)" 단추와 "k / n개 표시 중" */
+function MoreBtn({ shown, total, onMore }) {
+  if (total <= shown) return null;
+  return (
+    <div className="mt-4 flex flex-col items-center gap-1.5">
+      <Btn variant="secondary" size="lg" className="lt-tree:w-full" onClick={onMore}>
+        더 보기 ({total - shown})
+      </Btn>
+      <p className="text-small text-mut">{shown} / {total}개 표시 중</p>
+    </div>
+  );
+}
+
+// 확장 수록 목록은 한글 이름이 있는 것을 가나다순으로 먼저, 한글 이름이 없는 것(영문 이름)을 그 뒤에 둔다.
+const byKoFirst = (a, b) => (a.label_ko ? 0 : 1) - (b.label_ko ? 0 : 1) || mt._cmpName(a, b);
+
 export function SearchTab({ selectedId, onSelect }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState(''); // '' = 전체, 아니면 ATC 대분류 글자
   const [limit, setLimit] = useState(PAGE);
+  const [limitX, setLimitX] = useState(PAGE_X);
   const inputRef = useRef(null);
-  const hits = useMemo(() => mt.search(q), [q]);
+  const coreHits = useMemo(() => mt.search(q), [q]);
+  const extHits = useMemo(() => mt.searchExt(q), [q]); // 확장 수록(공개 자료 자동 수집 초안)
+  // 핵심 성분이 확장 자료(심평원 상품명·별칭 등)로 찾아진 경우는 핵심 목록에 합친다(같은 성분을 두 번 보여 주지 않는다).
+  const hits = useMemo(() => {
+    const have = new Set(coreHits.map((h) => h.vtm.id));
+    const extra = [];
+    for (const x of extHits) {
+      if (x.vtm && !have.has(x.vtm.id)) { have.add(x.vtm.id); extra.push({ vtm: x.vtm, score: x.score, via: `확장 자료 · ${x.via}` }); }
+    }
+    return extra.length ? coreHits.concat(extra).sort((a, b) => b.score - a.score) : coreHits;
+  }, [coreHits, extHits]);
+  const xhits = useMemo(() => extHits.filter((x) => !x.vtm), [extHits]);
   const classHits = useMemo(() => mt.searchClass(q), [q]); // "PPI"·"ACE 억제제" 같은 분류 이름: 분류 안내 카드용
   const az = useMemo(buildAz, []);
   const asked = q.trim().length > 0;
 
   // 후보가 하나뿐이거나 이름·RxCUI가 정확히 일치하면 상세를 바로 연다(입력을 가리지 않도록 서랍은 열지 않는다).
+  // 핵심과 확장이 같은 점수면 핵심이 먼저다.
   useEffect(() => {
-    if (hits.length && (hits.length === 1 || hits[0].score >= 95)) onSelect(hits[0].vtm.id, { open: false });
+    const c = hits[0];
+    const x = xhits[0];
+    const top = c && (!x || c.score >= x.score) ? { id: c.vtm.id, score: c.score } : x ? { id: x.ext.id, score: x.score } : null;
+    if (top && (hits.length + xhits.length === 1 || top.score >= 95)) onSelect(top.id, { open: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hits]);
+  }, [hits, xhits]);
 
-  // 검색어나 분류가 바뀌면 처음 12개부터 다시 보여 준다.
-  useEffect(() => { setLimit(PAGE); }, [q, cat]);
+  // 검색어나 분류가 바뀌면 처음부터 다시 보여 준다.
+  useEffect(() => { setLimit(PAGE); setLimitX(PAGE_X); }, [q, cat]);
 
   // 검색어가 있으면 검색 결과, 없으면 수록 성분 전체(가나다순). 분류 칩이 켜져 있으면 그 대분류에 속한 것만.
   const rows = useMemo(() => {
     const base = asked ? hits.map((h) => ({ v: h.vtm, via: h.via })) : az.map((a) => ({ v: a.v }));
     return cat ? base.filter((r) => groupsOf(r.v).includes(cat)) : base;
   }, [asked, hits, az, cat]);
+  // 확장 수록: 검색어가 있으면 검색 결과, 없으면 분류 칩이 켜진 때만 그 분류의 목록(전체 3천여 개를 한꺼번에 늘어놓지 않는다).
+  const xrows = useMemo(() => {
+    const base = asked
+      ? xhits.map((h) => ({ v: h.ext, via: h.via }))
+      : cat ? mt.extList.filter((v) => groupsOf(v).includes(cat)).sort(byKoFirst).map((v) => ({ v })) : [];
+    return cat ? base.filter((r) => groupsOf(r.v).includes(cat)) : base;
+  }, [asked, xhits, cat]);
   const shown = rows.slice(0, limit);
+  const xshown = xrows.slice(0, limitX);
   const total = az.length;
+  const nExt = mt.extList.length;
+  const nAll = total + nExt;
   const c = META.counts;
+  const nResult = rows.length + xrows.length;
+  const nothing = asked && !hits.length && !xhits.length;
 
   return (
     <>
@@ -87,7 +133,9 @@ export function SearchTab({ selectedId, onSelect }) {
         <PillArt className="pointer-events-none absolute right-2 top-2 h-[5.25rem] w-auto lt-tree:right-1.5 lt-tree:top-3 lt-tree:h-[4.5rem]" />
         <div className="relative pr-24 lt-tree:pr-20">
           <h2 id="hero-title" className="text-heading-l text-ink">어떤 성분을 찾으세요?</h2>
-          <p className="mt-1 text-small text-mut">성분 {c.VTM}개 · 제형·용량(VMP) {c.VMP}개 · 제품(AMP) {c.AMP}개가 수록되어 있습니다. <span className="whitespace-nowrap">(자료 기준 {META.built_at})</span></p>
+          <p className="mt-1 text-small text-mut">
+            핵심 성분 {c.VTM}개 · 제형·용량(VMP) {c.VMP}개 · 제품(AMP) {c.AMP}개{nExt ? <>, 확장 수록 {nf(nExt)}개 성분(자동 수집 초안)</> : null}이 수록되어 있습니다. <span className="whitespace-nowrap">(자료 기준 {META.built_at})</span>
+          </p>
         </div>
         <div className="relative mt-4">
           <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mut"><IconSearch /></span>
@@ -138,12 +186,12 @@ export function SearchTab({ selectedId, onSelect }) {
       <section aria-labelledby="cat-title" className="mb-4">
         <h2 id="cat-title" className="mb-2 text-body-bold">분류로 찾기 <span className="text-small font-normal text-mut">ATC 대분류 · 한글 이름은 검수 전 초안</span></h2>
         <div role="group" aria-label="ATC 대분류로 걸러 보기" className="chip-row">
-          <Pill on={!cat} onClick={() => setCat('')}>전체 <span className={cx('text-graph-l1', !cat ? 'text-on-pri-2' : 'text-mut')}>{total}</span></Pill>
+          <Pill on={!cat} onClick={() => setCat('')}>전체 <span className={cx('text-graph-l1', !cat ? 'text-on-pri-2' : 'text-mut')}>{nf(nAll)}</span></Pill>
           {ATC_GROUPS.map((g) => {
             const on = cat === g.letter;
             return (
               <Pill key={g.letter} on={on} title={g.en || undefined} onClick={() => setCat(on ? '' : g.letter)}>
-                <b>{g.letter}</b> {g.ko} <span className={cx('text-graph-l1', on ? 'text-on-pri-2' : 'text-mut')}>{g.n}</span>
+                <b>{g.letter}</b> {g.ko} <span className={cx('text-graph-l1', on ? 'text-on-pri-2' : 'text-mut')}>{nf(g.n + g.nx)}</span>
               </Pill>
             );
           })}
@@ -151,29 +199,41 @@ export function SearchTab({ selectedId, onSelect }) {
       </section>
 
       <div role="status" aria-live="polite" className="sr-only">
-        {asked ? `검색 결과 ${rows.length}개` : cat ? `${ATC1_KO[cat] || cat} 분류 ${rows.length}개` : ''}
+        {asked ? `검색 결과 ${nResult}개` : cat ? `${ATC1_KO[cat] || cat} 분류 ${nResult}개` : ''}
       </div>
+
+      {/* 확장 수록 안내: 검색어도 분류도 없을 때만. 3천여 개를 한꺼번에 늘어놓지 않고 검색·분류로 찾게 한다. */}
+      {!asked && !cat && nExt > 0 && (
+        <Card id="ext-hint" className="!mb-3.5 text-small text-mut">
+          <b className="text-ink">확장 수록 {nf(nExt)}개 성분</b>은 검색하면 나옵니다(이름·상품명·ATC 코드·RxCUI, 두 글자부터). 위의 분류 칩을 누르면 그 분류의 확장 수록 성분을 목록으로 볼 수 있습니다.
+          공개 자료(RxNorm·심평원 약가마스터·Wikidata)로 자동 수집·연결한 초안이며 약사 검수 전입니다.
+        </Card>
+      )}
 
       {/* 분류 이름으로 찾았을 때: 어떤 분류인지, 사전에 그 분류의 성분이 있는지(없으면 "확인 필요") */}
       {asked && classHits.length > 0 && (
         <div id="class-info" aria-label="분류 안내" className="mb-1">
-          {classHits.slice(0, 3).map((c) => (
-            <Card key={c.cl.label} className="!mb-2 text-small text-mut">
-              {c.alias !== c.cl.label && <><b className="text-ink">‘{c.alias}’</b>은(는) </>}분류 <b className="text-ink">{c.cl.label}</b>(ATC {c.cl.atc.join('·')})입니다.{' '}
-              {c.members.length > 0
-                ? <>이 사전에 있는 이 분류의 성분 {c.members.length}개를 아래에 보여 드립니다.</>
-                : <>이 분류는 알고 있지만, 현재 이 사전({META.counts.VTM}개 성분)에는 이 분류에 수록된 성분이 없습니다. <b className="text-ink">확인이 필요하다</b>는 뜻이지, 이 분류의 약이 없다는 뜻은 아닙니다.</>}
-            </Card>
-          ))}
+          {classHits.slice(0, 3).map((k) => {
+            const nc = k.members.length;
+            const nx = (k.extMembers || []).length;
+            return (
+              <Card key={k.cl.label} className="!mb-2 text-small text-mut">
+                {k.alias !== k.cl.label && <><b className="text-ink">‘{k.alias}’</b>은(는) </>}분류 <b className="text-ink">{k.cl.label}</b>(ATC {k.cl.atc.join('·')})입니다.{' '}
+                {nc + nx > 0
+                  ? <>이 사전에 있는 이 분류의 성분 {nc + nx}개{nx > 0 ? <>(핵심 {nc}개 · 확장 수록 {nx}개)</> : null}를 아래에 보여 드립니다.</>
+                  : <>이 분류는 알고 있지만, 현재 이 사전({nExt ? `핵심 ${total}개 + 확장 ${nf(nExt)}개` : `${total}개`} 성분)에는 이 분류에 수록된 성분이 없습니다. <b className="text-ink">확인이 필요하다</b>는 뜻이지, 이 분류의 약이 없다는 뜻은 아닙니다.</>}
+              </Card>
+            );
+          })}
           {classHits.length > 3 && <p className="mb-2 text-small text-mut">그 밖에 {classHits.length - 3}개 분류와도 일치합니다.</p>}
         </div>
       )}
-      {asked && !hits.length && !classHits.length && (
+      {nothing && !classHits.length && (
         <Card className="text-small text-mut">
-          사전에 없습니다 — <b className="text-ink">확인이 필요하다</b>는 뜻입니다. 이 사전은 현재 {META.counts.VTM}개 성분만 수록하므로, 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.
+          사전에 없습니다 — <b className="text-ink">확인이 필요하다</b>는 뜻입니다. 이 사전은 현재 {nf(nAll)}개 성분{nExt ? `(핵심 ${total}개 + 확장 ${nf(nExt)}개)` : ''}만 수록하므로, 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.
         </Card>
       )}
-      {asked && hits.length > 0 && !rows.length && (
+      {asked && (hits.length > 0 || xhits.length > 0) && !rows.length && !xrows.length && (
         <Card className="text-small text-mut">이 분류에는 검색 결과가 없습니다. 위에서 ‘전체’를 눌러 분류를 풀어 보세요.</Card>
       )}
 
@@ -190,14 +250,25 @@ export function SearchTab({ selectedId, onSelect }) {
               </li>
             ))}
           </ul>
-          {rows.length > shown.length && (
-            <div className="mt-4 flex flex-col items-center gap-1.5">
-              <Btn variant="secondary" size="lg" className="lt-tree:w-full" onClick={() => setLimit((n) => n + PAGE)}>
-                더 보기 ({rows.length - shown.length})
-              </Btn>
-              <p className="text-small text-mut">{shown.length} / {rows.length}개 표시 중</p>
-            </div>
-          )}
+          <MoreBtn shown={shown.length} total={rows.length} onMore={() => setLimit((n) => n + PAGE)} />
+        </section>
+      )}
+
+      {xrows.length > 0 && (
+        <section aria-labelledby="xlist-title" id="ext-list" className={rows.length > 0 ? 'mt-7' : undefined}>
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+            <h2 id="xlist-title" className="text-body-bold">확장 수록 <span className="font-normal text-mut">{nf(xrows.length)}</span></h2>
+            <span className="text-small text-mut">{asked ? '검색 결과' : '가나다순'} · 자동 수집 · 약사 검수 전</span>
+          </div>
+          <p className="mb-2 text-small text-mut">공개 자료(RxNorm·심평원 약가마스터·Wikidata)로 자동 수집·연결한 초안입니다. 한글 이름은 후보이고, 국내 등재 현황은 제품 규격일 뿐 허가·급여·용법 판단의 근거가 아닙니다.</p>
+          <ul className="feed-grid">
+            {xshown.map((r) => (
+              <li key={r.v.id}>
+                <ExtCard v={r.v} via={r.via} on={r.v.id === selectedId} onSelect={onSelect} />
+              </li>
+            ))}
+          </ul>
+          <MoreBtn shown={xshown.length} total={xrows.length} onMore={() => setLimitX((n) => n + PAGE_X)} />
         </section>
       )}
     </>

@@ -10,10 +10,11 @@ export const ATC1_KO = {
 };
 const ORDER = Object.keys(ATC1_KO);
 
-/** 성분이 가진 모든 ATC 코드의 대분류 글자(첫 코드의 글자가 앞). 코드가 없으면 빈 배열. */
+/** 성분이 가진 모든 ATC 코드의 대분류 글자(첫 코드의 글자가 앞). 코드가 없으면 빈 배열.
+ *  확장 수록 중 7자리 코드 없이 분류 수준 코드(예: L01E)만 있는 것은 그 글자를 쓴다. */
 export function groupsOf(v) {
   const out = [];
-  for (const c of v.atc_codes || []) {
+  for (const c of [...(v.atc_codes || []), ...(v.atc_class || [])]) {
     const g = c.charAt(0).toUpperCase();
     if (g && !out.includes(g)) out.push(g);
   }
@@ -29,11 +30,13 @@ export const tintOf = (letter) => {
   return i < 0 ? 0 : i % 4;
 };
 
-/** 사전에 실제로 있는 대분류 목록: { letter, ko, en, n(성분 수) } — 글자 순. */
+/** 사전에 실제로 있는 대분류 목록: { letter, ko, en, n(핵심 수록 성분 수), nx(확장 수록 성분 수) } — 글자 순. */
 export const ATC_GROUPS = (() => {
   const count = new Map();
+  const countX = new Map();
   for (const v of mt.vtms) for (const g of groupsOf(v)) count.set(g, (count.get(g) || 0) + 1);
-  return [...count.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([letter, n]) => ({ letter, ko: ATC1_KO[letter] || letter, en: mt.atcLabel(letter) || '', n }));
+  for (const v of mt.extList) for (const g of groupsOf(v)) countX.set(g, (countX.get(g) || 0) + 1);
+  return [...new Set([...count.keys(), ...countX.keys()])]
+    .sort((a, b) => a.localeCompare(b))
+    .map((letter) => ({ letter, ko: ATC1_KO[letter] || letter, en: mt.atcLabel(letter) || '', n: count.get(letter) || 0, nx: countX.get(letter) || 0 }));
 })();

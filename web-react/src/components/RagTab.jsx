@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { mt } from '../lib/mt.js';
+import { mt, nameOf } from '../lib/mt.js';
 import { RESEARCH_FORMAT, buildResearchPrompt } from '../lib/researchPrompt.js';
 import { MOCK_ANSWER, QUESTION_EXAMPLE } from '../lib/samples.js';
 import { VerifyResult } from './VerifyTab.jsx';
@@ -98,11 +98,11 @@ export function RagTab({ onSelect }) {
             <h3 className="mb-1.5 mt-3 text-body-bold">검색된 사전 항목 ({found.ids.length})</h3>
             <ul>
               {found.ids.map((id) => {
-                const v = mt.byId.get(id);
+                const v = mt.anyById(id); // 핵심 성분 또는 확장 수록 성분
                 return (
                   <li key={id} className="mb-2">
                     <button type="button" onClick={() => onSelect(id)} className="block min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-left hover:border-pri">
-                      <b>{v.label_ko}</b> <span className="text-small text-mut">{v.label_en} · {id}</span>
+                      <b>{nameOf(v)}</b> <span className="text-small text-mut">{v.label_ko ? `${v.label_en} · ` : ''}{id}{v.ext ? ' · 확장 수록(자동 수집·약사 검수 전)' : ''}</span>
                     </button>
                   </li>
                 );

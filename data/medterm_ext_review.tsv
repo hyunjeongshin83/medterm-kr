@@ -1,0 +1,401 @@
+id	label_en	grade	items	atc	ko	cand_or_suggest
+MT:KRI:ginkgo_biloba_leaf_ext	ginkgo biloba leaf ext	d	304	N06DX02	은행엽건조엑스,은행엽엑스	ginkgo biloba leaf extract
+MT:KRI:rebamipide	rebamipide	d	148	A02BX14,S01XA20	레바미피드	
+MT:KRI:eperisone	eperisone	d	144	M03BX09	에페리손염산염	
+MT:KRI:dexibuprofen	dexibuprofen	d	128	M01AE14	덱시부프로펜	
+MT:KRI:sarpogrelate	sarpogrelate	d	126		사르포그렐레이트염산염	
+MT:KRI:amino_acids	amino acids	d	105	B05BA01		
+MT:KRI:choline_alfoscerate	choline alfoscerate	d	98	N07AX02	콜린알포세레이트	
+MT:KRI:milk_thistle_fruit_ext	milk thistle fruit ext	d	93	A05BA03	밀크시슬열매건조엑스,카르두스마리아누스엑스	milk thistle fruit extract
+MT:KRI:levosulpiride	levosulpiride	d	82		레보설피리드	
+MT:KRI:limaprost	limaprost	d	77	B01AC28	리마프로스트알파덱스	
+MT:KRI:artemisiae_argyi_folium_ethanol_ext	artemisiae argyi folium ethanol ext	d	65			
+MT:KRI:almagate	almagate	d	54	A02AD03	알마게이트	
+MT:KRI:r_thioctic_acid	r-thioctic acid	d	51	A16AX01	알티옥트산트로메타민염	
+MT:KRI:lafutidine	lafutidine	d	48	A02BA08	라푸티딘	
+MT:KRI:s_amlodipine	s-amlodipine	d	47	C08CA17	에스암로디핀베실산염이수화물,에스암로디핀니코틴산염	amlodipine
+MT:KRI:kallidinogenase	kallidinogenase	d	46	C04AF01	칼리디노게나제	
+MT:KRI:clonixin_lysinate	clonixin lysinate	d	45		클로닉신리시네이트,클로닉신리신	
+MT:KRI:dobesilate	dobesilate	d	44	C05BX01	도베실산칼슘수화물	
+MT:KRI:viscum_album	viscum album	d	40			
+MT:KRI:teneligliptin	teneligliptin	d	38	A10BH08	테네리글립틴염산염수화물,테네리글립틴이토실산염이수화물	
+MT:KRI:bromelain	bromelain	d	37	M09AB03	브로멜라인	bromelains
+MT:KRI:diacerhein	diacerhein	d	37	M01AX21	디아세레인	diacetylrhein
+MT:KRI:acebrophylline	acebrophylline	d	34		아세브로필린	
+MT:KRI:biphenyl_dimethyl_dicarboxylate	biphenyl dimethyl dicarboxylate	d	34		비페닐디메틸디카르복실레이트,비페닐디메칠디카르복실레이트	
+MT:KRI:vitis_vinifera_leaf_ext	vitis vinifera leaf ext	d	31		포도엽건조엑스,비티스비니페라엽건조엑스	vitis vinifera leaf extract, vitis vinifera leaf oil
+MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl_e9339d	omega-3-acid ethyl esters90 (as epa ethylester 0.46g	d	29	C10AX06		
+MT:KRI:pelargonium_sidoides_ethanol_ext	pelargonium sidoides ethanol ext	d	29			
+MT:KRI:ramosetron	ramosetron	d	29		라모세트론염산염	
+MT:KRI:erythropoietin	erythropoietin	d	28	B03XA01	사람에리스로포이에틴유전자재조합,재조합인에리스로포이에틴	
+MT:KRI:ivy_leaf_ethanol_fluid_ext	ivy leaf ethanol fluid ext	d	27	R05CA12		
+MT:KRI:diquafosol	diquafosol	d	25	S01XA33,S01XA20	디쿠아포솔나트륨	
+MT:KRI:pelargonium_sidoides_ethanol_ext_glyceri	pelargonium sidoides ethanol ext. ᆞglycerin mixed	d	25			
+MT:KRI:pranlukast	pranlukast	d	24	R03DC02	프란루카스트수화물	
+MT:KRI:zea_mays_l_ext	zea mays l. ext	d	24		옥수수불검화정량추출물	
+MT:KRI:cyclosporin	cyclosporin	d	22	S01XA18	사이클로스포린,시클로스포린	cyclosporine
+MT:KRI:irsogladine	irsogladine	d	22	A02BX16	이르소글라딘말레산염	
+MT:KRI:ornithine_l_aspartate	ornithine-l-aspartate	d	20	A05BA06		
+MT:KRI:cephazedone	cephazedone	d	19	J01DB06	세파제돈나트륨	
+MT:KRI:naftopidil	naftopidil	d	19		나프토피딜	
+MT:KRI:clostridium_botulinum_toxin_type_a	clostridium botulinum toxin type a	d	18	M03AX01		
+MT:KRI:zaltoprofen	zaltoprofen	d	18		잘토프로펜	
+MT:KRI:2_deoxy_2_fluoro_d_glucose_injection	2-deoxy-2-fluoro-d-glucose injection	d	17	V09IX04		
+MT:KRI:human_placenta_ext	human placenta ext	d	17		자하거추출물	
+MT:KRI:diclofenac_dimethyl_aminoethanol	diclofenac-β-dimethyl-aminoethanol	d	16	M01AB05	디클로페낙베타디메칠아미노에탄올,디클로페낙베타디메틸아미노에탄올	
+MT:KRI:dimecrotate	dimecrotate	d	16		디메크로틴산마그네슘	
+MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl	omega-3-acid ethyl esters90 (as epa ethylester 0.92g	d	16	C10AX06		
+MT:KRI:tegoprazan	tegoprazan	d	16	A02BC09	테고프라잔	
+MT:KRI:ivy_leaf_ethanol_ext	ivy leaf ethanol ext	d	15	R05CA12		
+MT:KRI:tolterodine_l_tartrate	tolterodine l-tartrate	d	14	G04BD07	엘주석산톨터로딘	
+MT:KRI:fimasartan	fimasartan	d	13	C09CA10	피마사르탄칼륨삼수화물	
+MT:KRI:prednisolone_valeroacetate	prednisolone valeroacetate	d	13	D07AA03	프레드니솔론발레로아세테이트,길초산초산프레드니솔론	
+MT:KRI:cefmenoxime	cefmenoxime	d	12	J01DD05	염산세프메녹심,세프메녹심염산염	
+MT:KRI:centella_titrated_ext	centella titrated ext	d	12		센텔라정량추출물	
+MT:KRI:nafamostat_mesilate	nafamostat mesilate	d	12		나파모스타트메실산염	
+MT:KRI:afloqualone	afloqualone	d	11		아플로쿠알론	
+MT:KRI:darbepoetin	darbepoetin α	d	11	B03XA02	다베포에틴알파	
+MT:KRI:microemulsion_cyclosporine	microemulsion cyclosporine	d	11	L04AD01	사이클로스포린	
+MT:KRI:ossopan_substance	ossopan substance	d	11		오소판물질	
+MT:KRI:pertechnetate	pertechnetate	d	11	V09FX01		
+MT:KRI:arginine_tidiacicate	arginine tidiacicate	d	10	A05BA07	아르기닌티디아시케이트	
+MT:KRI:azelnidipine	azelnidipine	d	10		아젤니디핀	
+MT:KRI:fraction_flavonoid_purifiee_micronise	fraction flavonoid purifiee micronise	d	10	C05CA53	미세정제플라보노이드분획물,미세정제플라보노이드분획추출물	
+MT:KRI:polydeoxyribonucleotide	polydeoxyribonucleotide	d	10		폴리데옥시리보뉴클레오티드나트륨,폴리데옥시리보뉴클레오타이드나트륨	
+MT:KRI:proteolytic_peptide_from_porcine_brain	proteolytic peptide from porcine brain	d	10		돼지뇌펩티드	
+MT:KRI:benidipine	benidipine	d	9	C08CA15	베니디핀염산염	
+MT:KRI:caffeine_and	caffeine and	d	9		벤조산나트륨카페인	
+MT:KRI:cefminox	cefminox	d	9	J01DC12	세프미녹스나트륨수화물,세프미녹스나트륨	
+MT:KRI:fe	fe	d	9	B03AB08,B03AB07	수크로오스수산화제이철착염,수산화제이철수크로오스복염	
+MT:KRI:itopride	itopride	d	9	A03FA07	이토프리드염산염	
+MT:KRI:lactobacillus_acidophillus	lactobacillus acidophillus	d	9	A07FA01	락토바실루스아시도필루스균	lactobacillus acidophilus
+MT:KRI:polmacoxib	polmacoxib	d	9	M01AH07	폴마콕시브	
+MT:KRI:bdde_bridged_gel	bdde bridged gel	d	8	M09AX01		
+MT:KRI:blonanserin	blonanserin	d	8		블로난세린	
+MT:KRI:fexuprazan	fexuprazan	d	8	A02BC10	펙수프라잔염산염	
+MT:KRI:flubendazol	flubendazol	d	8	P02CA05	플루벤다졸	flubendazole
+MT:KRI:inactivated_hepatitis_b_virus	inactivated hepatitis b virus	d	8	J07BC01		
+MT:KRI:methoxy_polyethylene_glycol_epoetin	methoxy polyethylene glycol-epoetin β	d	8	B03XA03		methoxy polyethylene glycol-epoetin beta
+MT:KRI:red_clover_ext	red clover ext	d	8		건조레드클로버엑스	
+MT:KRI:voglibose	voglibose	d	8	A10BF03	보글리보스	
+MT:KRI:benzoylperoxide	benzoylperoxide	d	7	D10AE01	가수과산화벤조일	benzoyl peroxide
+MT:KRI:salbutamol	salbutamol	d	7	R03AC02,R03CC02	살부타몰황산염,황산살부타몰	
+MT:KRI:water_for_injection	water for injection	d	7			
+MT:KRI:alkyldiaminoethylglycine	alkyldiaminoethylglycine	d	6		알킬디아미노에틸글리신염산염액,염산알킬디아미노에칠글리신액	
+MT:KRI:arginine_l_aspartate	arginine-l-aspartate	d	6			
+MT:KRI:artemisiae_argyi_folium_isopropanol_soft	artemisiae argyi folium isopropanol soft ext	d	6			
+MT:KRI:dapoxetine	dapoxetine	d	6	G04BX14	다폭세틴염산염	
+MT:KRI:dioctahedral_smectite	dioctahedral smectite	d	6	A07BC05	디옥타헤드랄스멕타이트	
+MT:KRI:doxofylline	doxofylline	d	6	R03DA11	독소필린	
+MT:KRI:ferric_hydroxide_polymaltose_complex	ferric hydroxide polymaltose complex	d	6	B03AB05	수산화제이철폴리말토스복염,폴리말토오스수산화제이철착염	
+MT:KRI:flutrimazol	flutrimazol	d	6	D01AC16	플루트리마졸	flutrimazole
+MT:KRI:hederae_helicis_folia_etoh_ext	hederae helicis folia etoh ext	d	6	R05CA12		
+MT:KRI:hemocoagulase	hemocoagulase	d	6	B02BX03	헤모코아귤라제	
+MT:KRI:hyoscine_butylbromide	hyoscine butylbromide	d	6	A03BB01	부틸스코폴라민브롬화물,브롬화부틸스코폴라민	
+MT:KRI:lactulose_cone	lactulose cone	d	6	A06AD11	락툴로오즈농축액,락툴로오스농축액	
+MT:KRI:pelubiprofen	pelubiprofen	d	6	M01AE20	펠루비프로펜	
+MT:KRI:pranoprofen	pranoprofen	d	6	S01BC09	프라노프로펜	
+MT:KRI:artemisiae_argyi_folium_isopropanol_ext	artemisiae argyi folium isopropanol ext	d	5			
+MT:KRI:beraprost	beraprost	d	5	B01AC19	베라프로스트나트륨	
+MT:KRI:camostat_mesilate	camostat mesilate	d	5	B02AB04	카모스타트메실산염	
+MT:KRI:cefpiramide	cefpiramide	d	5	J01DD11	세프피라미드나트륨	
+MT:KRI:centella_asiatica_ext	centella asiatica ext	d	5	D03AX14	센텔라정량추출물	centella asiatica extract
+MT:KRI:chondroitin	chondroitin	d	5	M01AX25	황산콘드로이틴나트륨	
+MT:KRI:elcatonin	elcatonin	d	5	H05BA04	엘카토닌	melatonin
+MT:KRI:enterococcus_faecium_strain_cernelle_68	enterococcus faecium strain cernelle 68	d	5	A07FA01		
+MT:KRI:ferritinic_iron	ferritinic iron	d	5			
+MT:KRI:follitropin	follitropin-α	d	5	G03GA05	폴리트로핀알파유전자재조합	
+MT:KRI:inosiplex	inosiplex	d	5	J05AX05	이노시플렉스	
+MT:KRI:interferon_1a	interferon β-1a	d	5	L03AB07		
+MT:KRI:isepamicin	isepamicin	d	5	J01GB11	황산이세파마이신	
+MT:KRI:japanese_encephalitis_vaccine	japanese encephalitis vaccine	d	5	J07BA02	건조세포배양일본뇌염백신	
+MT:KRI:lactobacillus_casei_var_rhamnosus	lactobacillus casei var. rhamnosus	d	5	A07FA01	락토바실루스카제이변종람노수스	
+MT:KRI:moroctocog	moroctocog α	d	5	B02BD02	모록토코그알파	
+MT:KRI:pancrease	pancrease	d	5	A09AA02	판크레아스분말	
+MT:KRI:pancrelipase	pancrelipase	d	5	A09AA02	판크레리파제	
+MT:KRI:phellinus_linteus_mycelliun_ext	phellinus linteus mycelliun ext	d	5		상황균사체엑스	phellinus linteus mycelium extract
+MT:KRI:sofalcone	sofalcone	d	5		소팔콘	
+MT:KRI:tiquizium	tiquizium	d	5		티퀴지움브로마이드	
+MT:KRI:arotinolol	arotinolol	d	4		아로티놀롤염산염	
+MT:KRI:bamiphylline	bamiphylline	d	4	R03DA08	염산바미필린	aminophylline, bamifylline
+MT:KRI:bucillamine	bucillamine	d	4	M01CC02	부시라민	
+MT:KRI:carbomere	carbomere	d	4	S01XA20	카보머	carbomer
+MT:KRI:caroverine	caroverine	d	4	A03AX11	염산카로베린	
+MT:KRI:cefbuperazone	cefbuperazone	d	4	J01DC13	세프부페라존나트륨	cefoperazone
+MT:KRI:cimetropium	cimetropium	d	4	A03BB05	시메트로퓸브롬화물	
+MT:KRI:diomagnite	diomagnite	d	4		디오마그나이트	
+MT:KRI:echinacea_ext	echinacea ext	d	4		에키나시아엑스	
+MT:KRI:harpagophyti_ext	harpagophyti ext	d	4		하르파고피티엑스	
+MT:KRI:hederacoside_c_2_5mg	hederacoside c 2.5mg	d	4	R05CA12		
+MT:KRI:hepatitis_a_vaccine_inactivated_and	hepatitis a vaccine inactivated and	d	4	J07BC02		
+MT:KRI:human_blood_coagulation_factor_viii	human blood coagulation factor viii	d	4	B02BD02	건조열처리	
+MT:KRI:human_serum_albumin	human serum albumin	d	4	B05AA01	사람혈청알부민	
+MT:KRI:ibudilast	ibudilast	d	4		이부딜라스트	
+MT:KRI:menotrophin	menotrophin	d	4	G03GA02	메노트로핀	
+MT:KRI:menotrophin_hp	menotrophin hp	d	4	G03GA02	메노트로핀에이치피	
+MT:KRI:methylol_cephalexin_lysinate	methylol cephalexin lysinate	d	4	J01DB01	메틸올세팔렉신리시네이트	
+MT:KRI:mirodenafil	mirodenafil	d	4		미로데나필	
+MT:KRI:mirogabalin	mirogabalin	d	4	N02BF03	미로가발린베실산염	
+MT:KRI:omega_3_acid_ethyl_esters90	omega-3-acid ethyl esters90	d	4	C10AX06		
+MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl_801ed1	omega-3-acid ethyl esters90 (as epa ethylester 0.23g	d	4	C10AX06		
+MT:KRI:oxygen_gas_10l	oxygen gas 10l	d	4			
+MT:KRI:s_pantoprazole	s-pantoprazole	d	4	A02BC02		pantoprazole
+MT:KRI:udenafil	udenafil	d	4	G04BE11	유데나필	
+MT:KRI:vi_capsular_polysaccharide_of_salmonella	vi capsular polysaccharide of salmonella typhi	d	4	J07AP03	정제브이아이장티푸스백신	
+MT:KRI:acetyl_l_carnitine	acetyl l-carnitine	d	3	N06BX12	염산아세틸엘카르니틴	acetylcarnitine
+MT:KRI:alprostadil_cyclodextrin	alprostadil α-cyclodextrin	d	3	C01EA01	알프로스타딜알파덱스	
+MT:KRI:bacterial_lysates	bacterial lysates	d	3		표준화	
+MT:KRI:belotecan	belotecan	d	3	L01CE04	벨로테칸	
+MT:KRI:benzethonium_cl	benzethonium. cl	d	3	R02AA09	벤제토늄염화물	
+MT:KRI:bilberry_fruit_ext	bilberry fruit ext	d	3		바키늄미르틸루스엑스	
+MT:KRI:cefcapene	cefcapene	d	3	J01DD17	세프카펜피복실염산염수화물	
+MT:KRI:cilnidipine	cilnidipine	d	3	C08CA14	실니디핀	
+MT:KRI:dihydroxydibutylether	dihydroxydibutylether	d	3		디히드록시디부틸에테르	dihydroxybutyl ether
+MT:KRI:diluted_nitroglycerin	diluted nitroglycerin	d	3	C05AE01,C01DA02	희석니트로글리세린	
+MT:KRI:enarodustat	enarodustat	d	3		에나로두스타트	
+MT:KRI:enavogliflozin	enavogliflozin	d	3	A10BK09	이나보글리플로진	
+MT:KRI:etizolam	etizolam	d	3	N05BA19	에티졸람	
+MT:KRI:flomoxef	flomoxef	d	3	J01DC14	플로목세프나트륨	
+MT:KRI:fluoropropyl_cit	fluoropropyl-cit	d	3			
+MT:KRI:gabexate_mesilate	gabexate mesilate	d	3		가벡세이트메실산염	
+MT:KRI:hydroxypropylmethylcellulose	hydroxypropylmethylcellulose	d	3	S01KA02		hydroxypropyl methylcellulose 2910, hydroxypropyl methylcellulose 2208
+MT:KRI:ketoprofen_lysinate	ketoprofen lysinate	d	3	M02AA10,M01AE03	케토프로펜리신	
+MT:KRI:live_attenuated_varicella_virus	live attenuated varicella virus	d	3	J07BK01	수두생바이러스백신	
+MT:KRI:lung_surfactant	lung surfactant	d	3			
+MT:KRI:mebendazol	mebendazol	d	3	P02CA01	메벤다졸	mebendazole
+MT:KRI:methyl_n	methyl-n	d	3			
+MT:KRI:pancreatin_tablet	pancreatin tablet	d	3	A09AA02		
+MT:KRI:perindopril_tertbutylamine	perindopril tertbutylamine	d	3	C09AA04		
+MT:KRI:rota_virus_live_attenuated	rota virus,live attenuated	d	3	J07BH01	경구용약독화로타생바이러스백신	
+MT:KRI:s_atenolol	s-atenolol	d	3	C07AB11	에스아테놀롤	atenolol
+MT:KRI:sacubitril_valsartan	sacubitril valsartan	d	3	C09DX04		
+MT:KRI:serenoa_repens_lipidosterolic_ext	serenoa repens lipidosterolic ext	d	3	G04CX02	세레노아레펜스리피도스테롤추출물	
+MT:KRI:soluble_azulene	soluble azulene	d	3		수용성아줄렌	
+MT:KRI:spherical_adsorptive_carbon	spherical adsorptive carbon	d	3		구형흡착탄	
+MT:KRI:teprenone	teprenone	d	3	A02BX15	테프레논	
+MT:KRI:tetrakis_copper_i_tetrafluoroborate	tetrakis copper(i)tetrafluoroborate	d	3	V09GA01		
+MT:KRI:zastaprazan	zastaprazan	d	3	A02BC12	자스타프라잔시트르산염	
+MT:KRI:3_deoxy_3_fluorothymidine	3`-deoxy-3`-fluorothymidine	d	2	V09IX04		
+MT:KRI:agalsidase	agalsidase β	d	2	A16AB04	아갈시다제베타	
+MT:KRI:alacepril	alacepril	d	2		알라세프릴	
+MT:KRI:asfotase	asfotase α	d	2	A16AB13	아스포타제알파	
+MT:KRI:bcg_vaccine	bcg vaccine	d	2	J07AN01	일본균주,피내용건조비씨지백신	
+MT:KRI:bendazac	bendazac	d	2		벤다작리신수화물	
+MT:KRI:benzathine_penicillin_g	benzathine penicillin g	d	2	J01CE08		
+MT:KRI:beroctocog	beroctocog α	d	2	B02BD02	베록토코그알파	
+MT:KRI:carbetocin	carbetocin	d	2	H01BB03	카르베토신	
+MT:KRI:carduus_marianus_ext	carduus marianus ext	d	2	A05BA03	카르두스마리아누스엑스	
+MT:KRI:cefroxadine	cefroxadine	d	2	J01DB11	세프록사딘	
+MT:KRI:cerebrolysin	cerebrolysin	d	2		돼지뇌펩티드	
+MT:KRI:chorionic_gonadotropin	chorionic gonadotropin-α	d	2	G03GA08	코리오고나도트로핀알파	chorionic gonadotropin
+MT:KRI:chromate	chromate	d	2	V09GX03		
+MT:KRI:cimicifugae_ethanol_ext	cimicifugae ethanol ext	d	2	G02CX04		
+MT:KRI:colistin_methanesulfonate	colistin methanesulfonate	d	2	J01XB01	콜리스틴메탄설포네이트나트륨,콜리스틴메탄설폰나트륨	
+MT:KRI:decitabine_50mg	decitabine 50mg	d	2	L01BC08	데시타빈	
+MT:KRI:duloxetine_as_duloxetine	duloxetine (as duloxetine	d	2	N06AX21	둘록세틴염산염	
+MT:KRI:enviomycin	enviomycin	d	2	J04AB06	황산엔비오마이신	
+MT:KRI:ergoloid	ergoloid	d	2	C04AE01	에르고로이드메실레이트	
+MT:KRI:estrogen	estrogen	d	2	G03CA57	결합형에스트로겐	estrogens
+MT:KRI:ethyl_esters_of_the_iodised_fatty_acids_	ethyl esters of the iodised fatty acids of poppyseed oil	d	2	V08AD01	아이오다이즈드오일	
+MT:KRI:ethyl_p_piperidinoacetylaminobenzoate	ethyl p-piperidinoacetylaminobenzoate	d	2			
+MT:KRI:evocalcet	evocalcet	d	2	H05BX06	에보칼세트	
+MT:KRI:fe_iii	fe iii	d	2	B03AB05	폴리말토오스수산화제이철착염	
+MT:KRI:filgotinib	filgotinib	d	2	L04AF04	필고티닙말레산염	
+MT:KRI:fmau	fmau	d	2			
+MT:KRI:follitropin_c6f673	follitropin	d	2		인난포자극호르몬유전자재조합,폴리트로핀유전자재조합	urofollitropin
+MT:KRI:freeze_dried_human_antithrombin_iii	freeze-dried human antithrombin iii	d	2	B01AB02		
+MT:KRI:green_tea_ext	green tea ext	d	2			green tea extract
+MT:KRI:human_anti_hepatitis_b_immunoglobulin	human anti-hepatitis b immunoglobulin	d	2	J06BB04	비형간염사람면역글로불린	
+MT:KRI:human_tetanus_immunoglobulin	human tetanus immunoglobulin	d	2	J06BB02	항파상풍사람면역글로불린	
+MT:KRI:immunocyanin	immunocyanin	d	2	L03AX10	이뮤노시아닌	
+MT:KRI:immunoglobulin_anti_d	immunoglobulin anti-d	d	2	J06BB01		immunoglobulin a
+MT:KRI:influenza_virus_antigen_inactivated_and	influenza virus antigen inactivated and	d	2	J07BB02		
+MT:KRI:influenza_virus_antigen_type_a_inactivat	influenza virus antigen type a inactivated and	d	2	J07BB02	신종인플루엔자분할백신	
+MT:KRI:iron_hydoxide_sucrose_complex	iron hydoxide sucrose complex	d	2		수산화제이철수크로오스복염,수크로스수산화제이철착염	
+MT:KRI:levocloperastine_fendizoate	levocloperastine fendizoate	d	2	R05DB21	펜디조산레보클로페라스틴,펜티조산레보클로페라스틴	
+MT:KRI:live_attenuated_japanese_encephalitis_vi	live attenuated japanese encephalitis virus	d	2	J07BA03	일본뇌염생바이러스백신	
+MT:KRI:live_salmonella_typhoid_ty21a_strain	live salmonella typhoid ty21a strain	d	2	J07AP01	경구용장티푸스백신	
+MT:KRI:meta_iodobenzylguanidine	meta-iodobenzylguanidine	d	2	V09IX01,V09IX02		3-iodobenzylguanidine
+MT:KRI:mizoribine	mizoribine	d	2		미조리빈	
+MT:KRI:molsidomin	molsidomin	d	2	C01DX12	몰시도민	molsidomine
+MT:KRI:n_2_l_alanyl_l_glutamine	n(2)-l-alanyl-l-glutamine	d	2	B05XB02		
+MT:KRI:n_3_fluoropropyl_2_carbomethoxy_3_4_123i	n-(3-fluoropropyl)-2β-carbomethoxy-3β-(4-[123i]iodophenyl)tropane	d	2			
+MT:KRI:nicotine_resinate	nicotine resinate	d	2	N07BA01	니코틴레지네이트	
+MT:KRI:nipradilol	nipradilol	d	2		니프라딜롤	
+MT:KRI:oxidized_regenerated_cellulose	oxidized regenerated cellulose	d	2	B02BC02	산화재생셀룰로오스	
+MT:KRI:ozagrel	ozagrel	d	2		오자그렐나트륨,오자그렐염산염일수화물	
+MT:KRI:peginterferon_1a	peginterferon β-1a	d	2	L03AB13		peginterferon beta-1a
+MT:KRI:phthalaldehyde	ο-phthalaldehyde	d	2		오토프탈알데하이드	o-phthalaldehyde
+MT:KRI:pilsicainide	pilsicainide	d	2		필시카이니드염산염수화물	
+MT:KRI:pinazepam	pinazepam	d	2	N05BA14	피나제팜	
+MT:KRI:placenta_hydrolysate	placenta hydrolysate	d	2		자하거가수분해물	human placenta hydrolysate
+MT:KRI:pronase_b	pronase b	d	2		프로나제비,프로테아제	
+MT:KRI:propacetamol	propacetamol	d	2	N02BE05	프로파세타몰염산염	
+MT:KRI:radotinib	radotinib	d	2		라도티닙염산염	
+MT:KRI:recombinant_blood_coagulation_factor_ix	recombinant blood coagulation factor ix	d	2	B02BD04		
+MT:KRI:recombinant_blood_coagulation_factor_vii	recombinant blood coagulation factor viii	d	2	B02BD02		
+MT:KRI:recombinant_human_epidermal_growth_facto	recombinant human epidermal growth factor	d	2		재조합인간상피세포성장인자	
+MT:KRI:recombinant_human_tissue_type_plasminoge	recombinant human tissue-type plasminogen activator	d	2	B01AD02	알테플라제	
+MT:KRI:red_clover_ethanol_ext	red clover ethanol ext	d	2			
+MT:KRI:ribostamycin	ribostamycin	d	2	J01GB10	황산리보스타마이신	
+MT:KRI:sennoside	sennoside	d	2	A06AB06	센노사이드	sennoside b
+MT:KRI:st_john_s_wort_methanol_ext	st. john's wort methanol ext	d	2	N06AX25		
+MT:KRI:standardized_bacteria_culture	standardized bacteria culture	d	2			
+MT:KRI:tetrofosmin_sulfosalicylate	tetrofosmin sulfosalicylate	d	2	V09GA02	설포살리실산테트로포스민	
+MT:KRI:thymosin_1	thymosin-α1	d	2		싸이모신알파원	
+MT:KRI:tosufloxacin	tosufloxacin	d	2	S01AE09,J01MA22	토수플록사신토실산염수화물	
+MT:KRI:tripegfilgrastim	tripegfilgrastim	d	2	L03AA14	리페그필그라스팀	lipegfilgrastim, pegfilgrastim
+MT:KRI:vitamin_a_oil	vitamin a oil	d	2			
+MT:KRI:vitamin_k1	vitamin-k1	d	2	B02BA01	피토나디온주사액	vitamin k1
+MT:KRI:vitis_vinifera_ext	vitis vinifera ext	d	2		포도씨건조엑스	
+MT:KRI:18f_florbetaben	18f florbetaben	d	1	V09AX06		
+MT:KRI:3_3_diphosphono_1_2_propanedicarboxylate	3,3-diphosphono-1,2-propanedicarboxylate tetrasodium	d	1			
+MT:KRI:5_hydroxytriptophan	5-hydroxytriptophan	d	1			5-hydroxytryptophan
+MT:KRI:6_iodomethyl_19_norcholest_5_10_en_3_ol_	6β-iodomethyl-19-norcholest-5(10)-en-3β-ol(i-131)	d	1	V09XA01		
+MT:KRI:absorbable_collagen_hemostat	absorbable collagen hemostat	d	1	B02BC07	흡수성콜라겐헤모스탯	
+MT:KRI:acepifylline	acepifylline	d	1	R03DA09	아세피필린	
+MT:KRI:acitazanolast	acitazanolast	d	1		아시타자노라스트	
+MT:KRI:aclatonium_napadisilate	aclatonium napadisilate	d	1		나파디실산아크라토늄	
+MT:KRI:agalsidase_960c2f	agalsidase α	d	1	A16AB03	아갈시다제알파	
+MT:KRI:agomelatine	agomelatine	d	1	N06AX22	아고멜라틴	
+MT:KRI:alglucosidase	alglucosidase α	d	1	A16AB07	알글루코시다제알파	
+MT:KRI:allogeneic_skin_derived_keratinocyte	allogeneic skin-derived keratinocyte	d	1		바솔동종피부유래각질세포	
+MT:KRI:anagliptin	anagliptin	d	1		아나글립틴	
+MT:KRI:antilymphocyte_immunoglobuline	antilymphocyte immunoglobuline	d	1	L04AA04	인체흉선세포로면역시킨레빗트의항흉선면역글로부린	antilymphocyte immunoglobulin
+MT:KRI:antivenin_agkistrodon_halys	antivenin agkistrodon halys	d	1	J06AA03	건조살무사항독소	
+MT:KRI:arginine_thiazolidine_carboxylate	arginine thiazolidine carboxylate	d	1		아르기닌치아졸리딘카르복실레이트	lysine thiazolidine carboxylate
+MT:KRI:arnica_montana	arnica montana	d	1			
+MT:KRI:artichokes	artichokes	d	1		아르티초쿠스연조엑스	
+MT:KRI:autologous_keratinocytes	autologous keratinocytes	d	1		자기유래피부각질세포	
+MT:KRI:autologus_adipose_derived_mesenchymal_st	autologus adipose-derived mesenchymal stem cell	d	1		자가지방유래중간엽줄기세포	
+MT:KRI:avocado_soya_unsaponifiables	avocado soya unsaponifiables	d	1	M01AX26		
+MT:KRI:bacteria_culture_of_lactobacillus_rhamno	bacteria culture of lactobacillus rhamnosus r0011 and lactobacillus helveticus r0052	d	1	A07FA01		
+MT:KRI:bacterial_lysates_7mg	bacterial lysates 7mg	d	1		표준화된동결건조균체용해물	
+MT:KRI:bcg_strain_tice	bcg strain tice	d	1	L03AX03		
+MT:KRI:benexate_betadex	benexate betadex	d	1		베넥세이트염산염베타덱스	
+MT:KRI:benzburomaron	benzburomaron	d	1	M04AB03	벤즈브로마론	benzbromarone
+MT:KRI:beroctocog_alfa	beroctocog alfa	d	1	B02BD02	베록토코그알파	efmoroctocog alfa
+MT:KRI:besifovir_dipivoxil	besifovir dipivoxil	d	1		베시포비르디피복실말레산염	
+MT:KRI:cadralazine	cadralazine	d	1	C02DB04	카드랄라진	
+MT:KRI:carbonyl_iron	carbonyl iron	d	1		카르보닐철	
+MT:KRI:carboxymethylcysteine_s	carboxymethylcysteine-s	d	1	R05CB03		
+MT:KRI:cefatrizine_propylene_glycol	cefatrizine propylene glycol	d	1	J01DB07	세파트리진프로필렌글리콜	
+MT:KRI:centella_titrated_extract	centella titrated extract	d	1		센텔라정량추출물	
+MT:KRI:cinepazide	cinepazide	d	1	C04AX27	시네파지드말레산염	
+MT:KRI:clevudine	clevudine	d	1	J05AF12	클레부딘	
+MT:KRI:clinofibrate	clinofibrate	d	1		클리노피브레이트	clofibrate
+MT:KRI:clofazimin	clofazimin	d	1	J04BA01	클로파지민	clofazimine
+MT:KRI:clostridium_botulinum_toxin_type_a_haema	clostridium botulinum toxin type a haemagglutinin complex	d	1	M03AX01		
+MT:KRI:conestat	conestat α	d	1	B06AC04		
+MT:KRI:cucurbita_semen_oil_ext	cucurbita semen oil ext	d	1		쿠쿠르비트종자유엑스	
+MT:KRI:damoctocog_alfa_pegol_500i_u	damoctocog alfa pegol 500i.u	d	1	B02BD02		
+MT:KRI:delamanid	delamanid	d	1	J04AK06	델라마니드	
+MT:KRI:dexaltin_nk	dexaltin nk	d	1	A01AC02	덱사메타손	
+MT:KRI:diethylamine_chromocarb	diethylamine chromocarb	d	1		디에칠아민크로모카르브	
+MT:KRI:diflupredinate	diflupredinate	d	1	D07AC19	디플루프레드네이트	difluprednate
+MT:KRI:dilazep_2hcl	dilazep 2hcl	d	1	C01DX10	딜라제프염산염수화물	
+MT:KRI:dinutuximab_beta	dinutuximab beta	d	1	L01FX06	디누툭시맙베타	
+MT:KRI:e_coli_strain_nissle_1917	e.coli strain nissle 1917	d	1	A07FA03		
+MT:KRI:ecabet	ecabet	d	1		에카베트나트륨수화물	
+MT:KRI:efonidipine	efonidipine	d	1		에포니디핀염산염	
+MT:KRI:elosulfase	elosulfase α	d	1	A16AB12	엘로설파제알파	
+MT:KRI:enoxolone	enoxolone	c	1	A01AD11	글리시레틴산	glycyrrhetinic acid
+MT:KRI:eparlestat	eparlestat	d	1		에팔레스타트	
+MT:KRI:eptacog	eptacog α	d	1	B02BD08		
+MT:KRI:essential_phospholipids_substance	essential phospholipids substance	d	1		필수인지질성물질	
+MT:KRI:etofylline_nicotinate	etofylline nicotinate	d	1	C04AD04	에토필린니코티네이트	
+MT:KRI:evogliptin	evogliptin	d	1	A10BH07	에보글립틴타르타르산염	
+MT:KRI:fish_oil	fish oil	d	1	B05BA02		fish oils
+MT:KRI:florapronol	florapronol	d	1			
+MT:KRI:flotufolastat_18f	flotufolastat 18f	d	1	V09IX18		flotufolastat
+MT:KRI:fluoroestradiol	fluoroestradiol	d	1	V09IX11		
+MT:KRI:follitropin_13e4d3	follitropin-β	d	1	G03GA06		
+MT:KRI:follitropin_delta	follitropin delta	d	1	G03GA10	폴리트로핀델타	follitropin beta
+MT:KRI:foscarnet_trisodium	foscarnet trisodium	d	1	J05AD01	포스카네트나트륨수화물	
+MT:KRI:free_dried_rabies_vaccine_produced_on_ve	free-dried rabies vaccine produced on vero cell line inactivated and	d	1			
+MT:KRI:freeze_dried_lactobacillus_casei_var_rha	freeze-dried lactobacillus casei var. rhamnosus culture	d	1	A07FA01	락토바실루스카제이변종람노수스	
+MT:KRI:gadoxetic_acid_as_gadolinium_oxide_0_453	gadoxetic acid (as gadolinium oxide 0.45312g	d	1	V08CA10		
+MT:KRI:galactosidase	galactosidase	d	1	A09AA04	아스퍼길루스	
+MT:KRI:gelatin_sponge	gelatin sponge	d	1	B02BC01	정제된특수처치젤라틴	
+MT:KRI:gelatine_mfg	gelatine mfg	d	1	B05AA06		
+MT:KRI:gemigliptin	gemigliptin	d	1	A10BH06		
+MT:KRI:glutara	glutara	d	1		글루타랄농축액	glutaral, glutarate
+MT:KRI:hantan_virus	hantan virus	d	1		신증후출혈열백신	
+MT:KRI:hepatitis_b_immunoglobulins	hepatitis b immunoglobulins	d	1	J06BB04		hepatitis b immune globulin
+MT:KRI:heptaplatin	heptaplatin	d	1		헵타플라틴	
+MT:KRI:homartropin	homartropin	d	1	S01FA05	호마트로핀브롬화수소산염	homatropine
+MT:KRI:house_dust_mite_allergen_extract_1000au	house dust mite allergen extract 1000au	d	1	V01AA03	유지요법,집먼지진드기정제추출물	
+MT:KRI:house_dust_mite_allergen_extract_300au	house dust mite allergen extract 300au	d	1	V01AA03	집먼지진드기정제추출물,초기요법	
+MT:KRI:human_blood_coagulation_factor_ix_comple	human blood coagulation factor ix complex	d	1	B02BD04		
+MT:KRI:human_chorionic_gonadotrophin	human chorionic gonadotrophin	d	1	G03GA01	태반성성선자극호르몬	chorionic gonadotropin
+MT:KRI:human_fibrinogen	human fibrinogen	d	1	B02BB01	건조사람피브리노겐	
+MT:KRI:human_immunoglobulin	human immunoglobulin	d	1	J06BA01	사람면역글로불린	
+MT:KRI:human_immunoglobulin_g	human immunoglobulin-g	d	1	J06BA02		
+MT:KRI:human_plasma_fraction_with_a_factor_xiii	human plasma fraction with a factor xiii 250i.u	d	1	B02BD07		
+MT:KRI:human_varicella_zoster_immunoglobulin	human varicella zoster immunoglobulin	d	1	J06BB03		
+MT:KRI:hydrous_benzoyl_peroxide	hydrous benzoyl peroxide	d	1	D10AE01	가수과산화벤조일	
+MT:KRI:ilaprazole	ilaprazole	d	1	A02BC11	일라프라졸	
+MT:KRI:imidafenacin	imidafenacin	d	1	G04BD14	이미다페나신	
+MT:KRI:influenza_virus_antigen	influenza virus antigen	d	1	J07BB02		influenza b virus antigen
+MT:KRI:influenza_virus_antigen_type_a	influenza virus antigen type a	d	1	J07BB02	신종인플루엔자분할백신	
+MT:KRI:interferon_1b	interferon β-1b	d	1	L03AB08		
+MT:KRI:isotonic_sea_water	isotonic sea water	d	1	R01AX10	멸균등장해수	
+MT:KRI:lavender_flower_oil	lavender flower oil	d	1		라벤더꽃유	
+MT:KRI:levofolinate	levofolinate	d	1	V03AF10	레보폴린산	
+MT:KRI:live_attenuated_yellow_fever_virus_17d	live attenuated yellow fever virus 17d	d	1	J07BL01	관납용,약독황열생바이러스백신	
+MT:KRI:lobeglitazone	lobeglitazone	d	1	A10BG04	로베글리타존황산염	
+MT:KRI:lutetium_oxodotreotide	lutetium oxodotreotide	d	1	V10XX04		
+MT:KRI:lutropin	lutropin α	d	1	G03GA07	루트로핀알파	
+MT:KRI:macroaggregated_human_serum_albumin	macroaggregated human serum albumin	d	1	V09GA04	거대응집사람혈청알부민	
+MT:KRI:malotilate	malotilate	d	1		말로틸레이트	
+MT:KRI:melilotus_ext	melilotus ext	d	1		멜릴로투스엑스	melilotus extract
+MT:KRI:metadoxine	metadoxine	d	1	A05BA09	메타독신	
+MT:KRI:methyldigoxin	β-methyldigoxin	d	1	C01AA08	메타메칠디곡신	
+MT:KRI:microfibrillar_collagen	microfibrillar collagen	d	1	B02BC07		
+MT:KRI:mifamurtide	mifamurtide	d	1	L03AX15	마이파머티드	
+MT:KRI:mitiglinide	mitiglinide	d	1	A10BX08	미티글리니드칼슘수화물	
+MT:KRI:n_acetylaspartyl_glutamate	n-acetylaspartyl glutamate	d	1			
+MT:KRI:n_isopropyl_4_iodoamphetamine	n-isopropyl-4-iodoamphetamine	d	1	V09AB01		
+MT:KRI:nadifloxacin	nadifloxacin	d	1	D10AF05	나디플록사신	
+MT:KRI:nalfurafine	nalfurafine	d	1	V03AX02	날푸라핀염산염	
+MT:KRI:nitroglycerin_diluted	nitroglycerin diluted	d	1	C01DA02	희석한니트로글리세린용액	
+MT:KRI:olive_oil_and_soybean_oil	olive oil and soybean oil	d	1	B05BA02	플라스틱백	
+MT:KRI:oryzanol	γ-oryzanol	d	1			
+MT:KRI:p_aminomethyl_benzoic_acid	p-aminomethyl benzoic acid	d	1	B02AA03		4-aminomethylbenzoic acid
+MT:KRI:pegteograstim	pegteograstim	d	1	L03AA17	페그테오그라스팀	
+MT:KRI:pelargonium_sidoides_ext	pelargonium sidoides ext	d	1			
+MT:KRI:perfluorobutane	perfluorobutane	d	1	V08DA06	과플루오르부탄	
+MT:KRI:peroxyacetic_acid	peroxyacetic acid	d	1			peracetic acid
+MT:KRI:petasites_hybridus_co2_extracts	petasites hybridus co2 extracts	d	1		페타시테스히브리두스엽이산화탄소엑스	petasites hybridus root extract, petasites hybridus leaf extract
+MT:KRI:piprinhydrinate	piprinhydrinate	d	1	R06AA07	피프린히드리네이트	
+MT:KRI:plantago_seed_plantago_seed_cortex	plantago seed/plantago seed cortex	d	1	A06AC01		
+MT:KRI:pneumococal_7_valents_conjugate_vaccine	pneumococal 7 valents conjugate vaccine	d	1	J07AL02		
+MT:KRI:pneumococcal_vaccines	pneumococcal vaccines	d	1	J07AL01	폐렴구균백신	
+MT:KRI:polypeptide	polypeptide	d	1		돼지비장가수분해분말	
+MT:KRI:polysaccharides_from_streptococcus_pneum	polysaccharides from streptococcus pneumoniae	d	1	J07AL01	폐렴구균백신	
+MT:KRI:polyvinyl_alcohol_iodine	polyvinyl alcohol iodine	d	1			
+MT:KRI:psyllium_husk	psyllium husk	d	1	A06AC01	차전자피	
+MT:KRI:pulvis_aconiti_tuberis_purificatum	pulvis aconiti tuberis purificatum	d	1		정제부자	
+MT:KRI:pyrazinobutazone	pyrazinobutazone	d	1		피라지노부타존	
+MT:KRI:pyroxylin	pyroxylin	d	1		피록실린	
+MT:KRI:quercus_stenophylla_ext	quercus stenophylla ext	d	1		백가시나무엑스	
+MT:KRI:rabies_human_immunoglobulin	rabies human immunoglobulin	d	1			
+MT:KRI:radium_223	radium-223	d	1	V10XX03		
+MT:KRI:recombinant_blood_coagulation_factor_ix_	recombinant blood coagulation factor ix-fc fusion protein eftrenonacog α	d	1	B02BD04		
+MT:KRI:recombinant_blood_coagulation_factor_vii_38ee45	recombinant blood coagulation factor viii-single chain	d	1	B02BD02		
+MT:KRI:recombinant_blood_coagulation_factor_vii_560c30	recombinant blood coagulation factor viii-fc fusion protein	d	1	B02BD02		
+MT:KRI:recombinant_varicella_zoster_virus_glyco	recombinant varicella zoster virus glycoprotein e	d	1	J07BK03		varicella zoster virus glycoprotein e
+MT:KRI:revaprazan	revaprazan	d	1		레바프라잔염산염	
+MT:KRI:risedronate_2_5	risedronate 2.5	d	1	M05BA07		
+MT:KRI:rupatadine	rupatadine	d	1	R06AX28	루파타딘푸마르산염	
+MT:KRI:salcatonin	salcatonin	d	1	H05BA01	살카토닌	
+MT:KRI:salicis_cortex_ethanol_dry_ext	salicis cortex ethanol dry ext	d	1			
+MT:KRI:salt_of_chenodesoxycholic_acid_and_ursod	salt of chenodesoxycholic acid and ursodesoxycholic acid	d	1		케노데스옥시콜린산과우르소데스옥시콜린산의삼수화물마그네슘염	
+MT:KRI:sebelipase	sebelipase α	d	1	A16AB14	세벨리파제알파	
+MT:KRI:sitosterol	β-sitosterol	d	1			sitosterols
+MT:KRI:sitosterol_c279f4	sitosterol	d	1		시토스테롤	sitosterols
+MT:KRI:sivelestat	sivelestat	d	1		시베레스타트나트륨수화물	
+MT:KRI:smallpox_vaccine	smallpox vaccine	d	1	J07BX01		
+MT:KRI:streptococcus_faecalis_bio_4r	streptococcus faecalis bio-4r	d	1	A07FA01		
+MT:KRI:sulprostone	sulprostone	d	1	G02AD05	설프로스톤	
+MT:KRI:sultamicillin	sultamicillin	d	1	J01CR04	설타미실린토실산염수화물	

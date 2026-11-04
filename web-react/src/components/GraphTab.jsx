@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BaseEdge, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore } from '@xyflow/react';
-import { mt } from '../lib/mt.js';
+import { mt, nameOf } from '../lib/mt.js';
 import { Card, IconBtn, cx } from './ui.jsx';
 
 /* ───────── 노드·간선 모양 ─────────
@@ -21,7 +21,8 @@ const MAX_ZOOM = 2;
 
 function MtNode({ data }) {
   const { kind, action, title, line1, id } = data;
-  const line2 = kind === 'vtm' ? (mt.byId.get(id)?.label_en ?? data.line2) : data.line2;
+  const nv = kind === 'vtm' ? mt.anyById(id) : null; // 한글 이름이 있는 성분은 아래 줄에 영문 이름, 없는 확장 성분은 core.js가 정한 줄(RxCUI 등)
+  const line2 = nv && nv.label_ko ? nv.label_en : data.line2;
   const box = cx('flex h-full w-full flex-col items-stretch justify-center overflow-hidden rounded-md border px-[7px] text-center', KIND_CLS[kind]);
   const inner = (
     <>
@@ -184,9 +185,11 @@ function focusWhenVisible(selector, tries = 30) {
 function GraphCard({ id, onAction, focusRequest }) {
   const flow = useMemo(() => buildFlow(id, onAction), [id, onAction]);
   const { g, L } = flow;
-  const v = mt.byId.get(id);
+  const v = mt.anyById(id);
   const { totals: T, shown: S } = g;
-  const note = `ATC 코드 ${S.atc}/${T.atc} · 같은 세부군 성분 ${S.siblings}/${T.siblings} · 제형·용량(VMP) ${S.vmp}/${T.vmp} · 제품(AMP) ${S.amp}/${T.amp} (표시/전체)`;
+  const note = v.ext
+    ? `ATC 코드 ${S.atc}/${T.atc} · 같은 세부군 성분 ${S.siblings}/${T.siblings} (표시/전체) · 확장 수록 성분이라 제형·용량(VMP)·제품(AMP)은 없음`
+    : `ATC 코드 ${S.atc}/${T.atc} · 같은 세부군 성분 ${S.siblings}/${T.siblings} · 제형·용량(VMP) ${S.vmp}/${T.vmp} · 제품(AMP) ${S.amp}/${T.amp} (표시/전체)`;
 
   const wrapRef = useRef(null);
   const [size, setSize] = useState(null);
@@ -211,11 +214,11 @@ function GraphCard({ id, onAction, focusRequest }) {
   return (
     <Card>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h3 id="graph-title" className="text-body-bold">{v.label_ko} · 관계 그래프</h3>
+        <h3 id="graph-title" className="text-body-bold">{nameOf(v)} · 관계 그래프</h3>
         <GraphToolbarSlot flow={flow} size={size} />
       </div>
       <div id="graph-note" className="text-small text-mut">{note}</div>
-      <GraphCanvas flow={flow} size={size} wrapRef={wrapRef} height={canvasH} label={`${v.label_ko}의 관계 그래프: ${note}`} />
+      <GraphCanvas flow={flow} size={size} wrapRef={wrapRef} height={canvasH} label={`${nameOf(v)}의 관계 그래프: ${note}`} />
       <Legend />
       <p className="mt-2 text-small text-mut">
         끌어서(휴대폰은 좌우로 밀어서) 이동하고 −/＋ 버튼으로 크기를 바꿉니다(Ctrl+휠도 가능). 키보드는 그래프 칸에 포커스한 뒤 방향키로 이동, + − 로 확대·축소, 0 으로 가운데 정렬합니다.
@@ -224,6 +227,12 @@ function GraphCard({ id, onAction, focusRequest }) {
       <p className="mt-1.5 text-small text-mut">
         “같은 세부군 성분”은 <b>이 사전에 수록된 성분 안에서만</b> 찾습니다(실제 같은 계열 약물 전체가 아닙니다). VMP·AMP는 미국 RxNorm 기준이고 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다. 표시 개수에는 상한이 있어 일부는 “외 N개”로 줄여 표시하며, 전체 목록은 오른쪽 상세에 있습니다.
       </p>
+      {(v.ext || mt.extList.length > 0) && (
+        <p id="graph-ext-note" className="mt-1.5 text-small text-mut">
+          같은 세부군 성분에는 핵심 수록 성분이 먼저, 확장 수록 성분(자동 수집·약사 검수 전)이 그 뒤에 나옵니다.
+          {v.ext ? ' 이 성분은 확장 수록이라 제형·용량(VMP)·제품(AMP) 단계 없이 ATC 분류와 같은 세부군 성분만 그립니다.' : ''}
+        </p>
+      )}
     </Card>
   );
 }

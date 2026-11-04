@@ -21,6 +21,8 @@ async function open(browser, w, h, o = {}) {
   page.errs = []; page.failedUrls = failed;
   page.on('pageerror', (e) => page.errs.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) page.errs.push(m.type() + ': ' + m.text()); });
+  // noExt: 확장 수록 자료를 읽지 못하게 막아(쓰기 불가 속성) 핵심 사전만으로 화면이 예전처럼 동작하는지 본다.
+  if (o.noExt) await page.addInitScript(() => { Object.defineProperty(window, 'MEDTERM_EXT', { value: undefined, writable: false, configurable: false }); });
   await page.goto(URL + (o.hash ? '#' + o.hash : '')); await page.waitForSelector('#root > *'); await page.waitForTimeout(250);
   return { ctx, page };
 }
@@ -100,7 +102,7 @@ const overflow = (page) => page.evaluate(() => {
     const { ctx, page } = await open(browser, 1440, 1000, { hash: OME });
     await tabTo(page, '관계 그래프');
     await page.waitForSelector('.react-flow__node');
-    const exp = await page.evaluate((id) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES); const g = m.graph(id), L = m.layoutGraph(g); return { nodes: L.nodes.length + L.headers.length, edges: L.edges.length, w: L.width, h: L.height, totals: g.totals, shown: g.shown }; }, OME);
+    const exp = await page.evaluate((id) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const g = m.graph(id), L = m.layoutGraph(g); return { nodes: L.nodes.length + L.headers.length, edges: L.edges.length, w: L.width, h: L.height, totals: g.totals, shown: g.shown }; }, OME);
     const got = await page.evaluate(() => ({ nodes: document.querySelectorAll('.react-flow__node').length, edges: document.querySelectorAll('.react-flow__edge-path, .react-flow__edge path[d]').length }));
     ck('그래프: 노드 수가 core.js 레이아웃과 같음(상자 + 열 머리글)', got.nodes === exp.nodes, { got: got.nodes, exp: exp.nodes });
     ck('그래프: 간선 수가 core.js 레이아웃과 같음', got.edges === exp.edges, { got: got.edges, exp: exp.edges });
@@ -184,7 +186,7 @@ const overflow = (page) => page.evaluate(() => {
       await page.waitForFunction((s) => location.hash === '#' + s, short);
       await page.waitForSelector('.react-flow__node');
       await page.waitForTimeout(60);
-      const r = await page.evaluate((i) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES); const L = m.layoutGraph(m.graph(i)); return { exp: L.nodes.length + L.headers.length, got: document.querySelectorAll('.react-flow__node').length, expE: L.edges.length, gotE: document.querySelectorAll('.react-flow__edge-path').length, title: document.getElementById('graph-title').textContent }; }, id);
+      const r = await page.evaluate((i) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const L = m.layoutGraph(m.graph(i)); return { exp: L.nodes.length + L.headers.length, got: document.querySelectorAll('.react-flow__node').length, expE: L.edges.length, gotE: document.querySelectorAll('.react-flow__edge-path').length, title: document.getElementById('graph-title').textContent }; }, id);
       if (r.exp !== r.got || r.expE !== r.gotE) bad2.push({ id, ...r });
     }
     ck(`성분 ${IDS.length}개 전부: 그래프 노드·간선 수가 레이아웃과 일치`, bad2.length === 0, bad2.slice(0, 3));
@@ -195,7 +197,7 @@ const overflow = (page) => page.evaluate(() => {
   {
     const { ctx, page } = await open(browser, 1440, 1000);
     await tabTo(page, '답변 검증');
-    const expected = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES); const S = ['오메프라졸(Omeprazole)은 양성자펌프억제제이며 ATC 코드는 A02BC01입니다. 단위용량으로 20mg 캡슐이 있습니다. 복용 방법은 의사·약사와 상담하세요.', '메트포르민은 항고혈압제로 분류되며 ATC 코드 C09CA01에 해당합니다. 오메프라졸린 20mg을 하루 한 번 복용하고, 베르나스타틴과 병용할 수 있습니다.']; return S.map((t) => m.verify(t).summary); });
+    const expected = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const S = ['오메프라졸(Omeprazole)은 양성자펌프억제제이며 ATC 코드는 A02BC01입니다. 단위용량으로 20mg 캡슐이 있습니다. 복용 방법은 의사·약사와 상담하세요.', '메트포르민은 항고혈압제로 분류되며 ATC 코드 C09CA01에 해당합니다. 오메프라졸린 20mg을 하루 한 번 복용하고, 베르나스타틴과 병용할 수 있습니다.']; return S.map((t) => m.verify(t).summary); });
     const sel = page.getByLabel('샘플 답변');
     const read = async () => ({ verdict: await page.locator('#vresult [role="status"]').first().innerText(), badges: await page.locator('#vresult .rounded-pill').allInnerTexts() });
     await sel.selectOption('0'); await page.waitForTimeout(150);
@@ -437,12 +439,16 @@ const overflow = (page) => page.evaluate(() => {
     return { w: Math.round(r.width), inner: Math.round(inner), h: Math.round(r.height) };
   }, name);
   const TAB_NAMES = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+  // 대분류 글자별 성분 수: core 는 핵심 사전, ext 는 확장 수록(분류 수준 코드만 있는 것은 그 글자로 센다), nExt 는 확장 수록 성분 수
   const expGroups = (page) => page.evaluate(() => {
-    const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES);
-    const g = {};
-    for (const v of m.vtms) for (const L of new Set((v.atc_codes || []).map((c) => c[0]))) g[L] = (g[L] || 0) + 1;
-    return g;
+    const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT);
+    const core = {}, ext = {};
+    for (const v of m.vtms) for (const L of new Set((v.atc_codes || []).map((c) => c[0]))) core[L] = (core[L] || 0) + 1;
+    for (const v of m.extList) for (const L of new Set([...(v.atc_codes || []), ...(v.atc_class || [])].map((c) => c[0]))) ext[L] = (ext[L] || 0) + 1;
+    const g = {}; for (const L of new Set([...Object.keys(core), ...Object.keys(ext)])) g[L] = (core[L] || 0) + (ext[L] || 0);
+    return { core, ext, g, nExt: m.extList.length };
   });
+  const nf = (n) => Number(n).toLocaleString('ko-KR');
 
   // 14-1. 휴대폰 390×844 (터치)
   {
@@ -456,9 +462,9 @@ const overflow = (page) => page.evaluate(() => {
     ck('휴대폰: 이름으로 탭을 찾으면 정확히 하나씩(중복 탭 없음)', named === 5, named);
     ck('휴대폰: 검색 입력 높이 48px 이상 · 입력 칸이 히어로 안에 있음', (await rect(page, '#q')).h >= 48 && (await page.evaluate(() => !!document.getElementById('q').closest('section[aria-labelledby="hero-title"]'))));
     // 분류 칩
-    const exp = await expGroups(page);
+    const EX = await expGroups(page), exp = EX.g;
     const chips = await page.evaluate(() => [...document.querySelectorAll('.chip-row > button')].map((e) => { const r = e.getBoundingClientRect(); return { t: e.innerText.replace(/\s+/g, ' ').trim(), h: Math.round(r.height), on: e.getAttribute('aria-pressed') }; }));
-    ck('분류 칩: 전체 + 사전에 있는 대분류마다 하나, 칩 안의 숫자가 사전의 성분 수와 같음', chips.length === 1 + Object.keys(exp).length && chips[0].t === `전체 ${IDS.length}` && chips.slice(1).every((c) => { const L = c.t[0]; return Number(c.t.split(' ').pop()) === exp[L]; }), { chips: chips.map((c) => c.t), exp });
+    ck('분류 칩: 전체 + 사전에 있는 대분류마다 하나, 칩 안의 숫자가 사전의 성분 수(핵심 + 확장 수록)와 같음', chips.length === 1 + Object.keys(exp).length && chips[0].t === `전체 ${nf(IDS.length + EX.nExt)}` && chips.slice(1).every((c) => { const L = c.t[0]; return Number(c.t.split(' ').pop().replace(/,/g, '')) === exp[L]; }), { chips: chips.map((c) => c.t), exp });
     ck('분류 칩: 모두 44px 이상, 처음에는 "전체"만 눌림', chips.every((c) => c.h >= 44) && chips[0].on === 'true' && chips.slice(1).every((c) => c.on === 'false'), chips.map((c) => c.h));
     const rowScroll = await page.evaluate(() => { const e = document.querySelector('.chip-row'); return { sw: e.scrollWidth, cw: e.clientWidth, ox: getComputedStyle(e).overflowX, wrap: getComputedStyle(e).flexWrap }; });
     ck('분류 칩: 휴대폰에서는 한 줄로 옆으로 밀어 봄(줄 안에서만 스크롤, 문서는 넘치지 않음)', rowScroll.ox === 'auto' && rowScroll.wrap === 'nowrap' && rowScroll.sw > rowScroll.cw && (await overflow(page)).doc === 0, rowScroll);
@@ -479,7 +485,8 @@ const overflow = (page) => page.evaluate(() => {
     // 분류 칩으로 거르기
     const cChip = page.locator('.chip-row > button', { hasText: /^C / });
     await cChip.tap(); await page.waitForTimeout(150);
-    ck('"C 심혈관" 칩: 눌림 표시, 목록이 그 분류 성분만(개수가 사전과 같음), 제목에도 개수', (await cChip.getAttribute('aria-pressed')) === 'true' && (await nCards(page)) === exp.C && (await page.locator('#list-title').innerText()).includes(String(exp.C)), { cards: await nCards(page), exp: exp.C });
+    const cCore = EX.core.C, cExt = EX.ext.C;
+    ck('"C 심혈관" 칩: 눌림 표시, 핵심 목록은 그 분류 성분만(개수가 사전과 같음), 확장 수록 목록은 24개씩(제목에 전체 개수)', (await cChip.getAttribute('aria-pressed')) === 'true' && (await page.locator('#panel-search section[aria-labelledby="list-title"] ul > li').count()) === cCore && (await page.locator('#list-title').innerText()).includes(String(cCore)) && (await page.locator('#ext-list ul > li').count()) === Math.min(24, cExt) && (await page.locator('#xlist-title').innerText()).includes(nf(cExt)), { cards: await nCards(page), cCore, cExt });
     await cChip.tap(); await page.waitForTimeout(150);
     ck('같은 칩을 다시 누르면 풀려서 전체로 돌아감(12개 · 전체 눌림)', (await cChip.getAttribute('aria-pressed')) === 'false' && (await nCards(page)) === 12 && (await page.locator('.chip-row > button').first().getAttribute('aria-pressed')) === 'true');
     // 검색 + 지우기
@@ -606,7 +613,8 @@ const overflow = (page) => page.evaluate(() => {
     const built = await page.evaluate(() => MEDTERM_DATA.meta.built_at);
     ck('검색 첫 화면: 수록 개수 옆에 자료 기준일', (await page.locator('#hero-title').locator('xpath=..').innerText()).includes(`자료 기준 ${built}`), built);
     await page.fill('#q', '없는약이름xyz');
-    ck(`사전에 없을 때 안내: "이 사전은 현재 ${IDS.length}개 성분만 수록" + 확인 필요`, (await page.locator('#panel-search').innerText()).includes(`이 사전은 현재 ${IDS.length}개 성분만 수록하므로`));
+    const nExt0 = await page.evaluate(() => MEDTERM_EXT.entities.filter((e) => !e.core).length);
+    ck(`사전에 없을 때 안내: "이 사전은 현재 ${nf(IDS.length + nExt0)}개 성분(핵심 ${IDS.length}개 + 확장 ${nf(nExt0)}개)만 수록" + 확인 필요`, (await page.locator('#panel-search').innerText()).includes(`이 사전은 현재 ${nf(IDS.length + nExt0)}개 성분(핵심 ${IDS.length}개 + 확장 ${nf(nExt0)}개)만 수록하므로`) && (await page.locator('#panel-search').innerText()).includes('확인이 필요하다'));
     await page.fill('#q', '');
     await page.fill('#tree-filter', '없는이름zzz'); await page.waitForTimeout(150);
     ck('트리 거르기 결과 없음 안내: "이 사전에 아직 수록되지 않았다는 뜻"', (await page.locator('#tree').innerText()).includes('이 사전에 아직 수록되지 않았다는 뜻일 수 있습니다'));
@@ -667,30 +675,38 @@ const overflow = (page) => page.evaluate(() => {
   // 16-1. 데스크톱 1440
   {
     const { ctx, page } = await open(browser, 1440, 1000);
-    const items = async () => (await page.locator('#panel-search ul > li').allInnerTexts()).map((t) => t.replace(/\s+/g, ' '));
+    const txt = (sel) => async () => (await page.locator(sel).allInnerTexts()).map((t) => t.replace(/\s+/g, ' '));
+    const items = txt('#panel-search ul > li'); // 핵심 + 확장 수록 모두
+    const coreItems = txt('#panel-search section[aria-labelledby="list-title"] ul > li'); // 핵심 사전 목록
+    const extItems = txt('#ext-list ul > li'); // 확장 수록 목록(24개씩)
     const type = async (q) => { await page.fill('#q', q); await page.waitForTimeout(200); };
     const info = async () => ((await page.locator('#class-info').count()) ? (await page.locator('#class-info').innerText()).replace(/\s+/g, ' ') : '');
+    const cls = (q) => page.evaluate((qq) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const c = m.searchClass(qq)[0]; return { core: c.members.length, ext: c.extMembers.length }; }, q);
 
     await type('PPI');
-    let li = await items();
+    const ppi = await cls('PPI');
+    let li = await coreItems(), xi = await extItems();
     const ppiNames = ['오메프라졸', '에스오메프라졸', '판토프라졸'];
-    ck('검색 "PPI": 분류 별칭으로 성분 3개(오메프라졸·에스오메프라졸·판토프라졸)가 나옴', li.length === 3 && ppiNames.every((n) => li.some((t) => t.includes(n))), li);
-    ck('검색 "PPI": 결과 카드마다 일치 이유 "분류: 양성자펌프억제제"', li.every((t) => t.includes('분류: 양성자펌프억제제')), li);
+    ck('검색 "PPI": 핵심 목록에 성분 3개(오메프라졸·에스오메프라졸·판토프라졸) · 확장 수록 목록에 분류 성분(24개씩)', li.length === 3 && ppi.core === 3 && ppiNames.every((n) => li.some((t) => t.includes(n))) && ppi.ext >= 1 && xi.length === Math.min(24, ppi.ext), { li, ppi, nx: xi.length });
+    ck('검색 "PPI": 결과 카드마다 일치 이유 "분류: 양성자펌프억제제" (핵심·확장 모두)', li.concat(xi).every((t) => t.includes('분류: 양성자펌프억제제')), li.concat(xi).filter((t) => !t.includes('분류: 양성자펌프억제제')).slice(0, 2));
+    ck('검색 "PPI": 확장 수록 카드에는 "확장·약사 검수 전" 표시(핵심 카드에는 "초안·약사 검수 전")', xi.every((t) => t.includes('확장·약사 검수 전')) && li.every((t) => t.includes('초안·약사 검수 전') && !t.includes('확장·약사 검수 전')), { xi: xi.slice(0, 1), li: li.slice(0, 1) });
     let inf = await info();
-    ck('검색 "PPI": 분류 안내에 분류 이름 · ATC A02BC · 성분 3개', inf.includes('PPI') && inf.includes('양성자펌프억제제') && inf.includes('A02BC') && inf.includes('3개'), inf);
+    ck('검색 "PPI": 분류 안내에 분류 이름 · ATC A02BC · 핵심 3개 · 확장 수록 개수', inf.includes('PPI') && inf.includes('양성자펌프억제제') && inf.includes('A02BC') && inf.includes('핵심 3개') && inf.includes(`확장 수록 ${ppi.ext}개`), inf);
     ck('검색 "PPI": 성분 여러 개이므로 상세를 마음대로 열지 않음', (await page.locator('#detail').innerText()).includes('성분을 선택하면') && (await page.evaluate(() => location.hash)) === '', await page.evaluate(() => location.hash));
     ck('검색 "PPI": "사전에 없습니다" 안내는 나오지 않음', !(await page.locator('#panel-search').innerText()).includes('사전에 없습니다'));
 
     await type('진통제');
-    li = await items();
+    li = await coreItems();
     ck('검색 "진통제": 성분 6개 이상 + 분류 안내', li.length >= 6 && (await info()).includes('진통제'), { n: li.length });
 
     await type('ACE 억제제');
     inf = await info();
-    ck('검색 "ACE 억제제": 성분 목록은 비고, 분류는 알지만 사전에 성분이 없다고 안내(확인 필요)', (await items()).length === 0 && inf.includes('ACE 억제제') && inf.includes('C09A') && inf.includes('수록된 성분이 없') && inf.includes('확인이 필요'), inf);
+    const ace = await cls('ACE 억제제');
+    ck('검색 "ACE 억제제": 핵심 사전에는 없고 확장 수록에만 있음 — 핵심 목록은 비고 확장 수록 목록에 성분이 나오며, 안내에 "핵심 0개 · 확장 수록 n개"', (await coreItems()).length === 0 && ace.core === 0 && ace.ext >= 1 && (await extItems()).length === Math.min(24, ace.ext) && inf.includes('ACE 억제제') && inf.includes('C09A') && inf.includes('핵심 0개') && inf.includes(`확장 수록 ${ace.ext}개`) && !inf.includes('수록된 성분이 없'), { ace, inf });
     ck('검색 "ACE 억제제": 일반 "사전에 없습니다" 카드와 겹쳐 나오지 않음', (await page.locator('#panel-search').innerText()).split('사전에 없습니다').length === 1);
     await type('베타차단제');
-    ck('검색 "베타차단제": 같은 안내', (await info()).includes('베타차단제') && (await info()).includes('수록된 성분이 없') && (await items()).length === 0, await info());
+    const beta = await cls('베타차단제');
+    ck('검색 "베타차단제": 같은 모양(핵심 0개 · 확장 수록 n개)', (await info()).includes('베타차단제') && (await info()).includes('핵심 0개') && (await info()).includes(`확장 수록 ${beta.ext}개`) && (await coreItems()).length === 0 && beta.ext >= 1, await info());
     await type('없는약이름xyz');
     ck('검색 "없는약이름xyz": 분류 안내 없이 기존 "사전에 없습니다 — 확인이 필요" 카드', (await info()) === '' && (await page.locator('#panel-search').innerText()).includes('사전에 없습니다') && (await page.locator('#panel-search').innerText()).includes('확인이 필요하다'));
 
@@ -704,7 +720,7 @@ const overflow = (page) => page.evaluate(() => {
     await type('MT:VTM:999999');
     ck('검색 "MT:VTM:999999"(사전에 없는 ID): "사전에 없습니다 — 확인 필요"', (await items()).length === 0 && (await page.locator('#panel-search').innerText()).includes('확인이 필요하다'));
     await type('ＰＰＩ');
-    ck('검색 "ＰＰＩ"(전각): "PPI" 와 같은 결과 3개', (await items()).length === 3);
+    ck('검색 "ＰＰＩ"(전각): "PPI" 와 같은 결과(핵심 3개 + 확장 수록)', (await coreItems()).length === 3 && (await extItems()).length === Math.min(24, ppi.ext));
     await type('오메프라졸'.normalize('NFD'));
     ck('검색: 조합형(NFD) 한글 "오메프라졸" 도 찾음', (await items()).length >= 1 && (await page.locator('#detail h3').first().innerText()).includes('오메프라졸'));
     await type('');
@@ -720,7 +736,8 @@ const overflow = (page) => page.evaluate(() => {
     ck('휴대폰: 분류 안내 카드가 바깥틀 안에 들어옴(좌우 여백 15px 이상)', b && b.x >= 15 && b.r <= 375, b);
     ck('휴대폰: 분류 안내 가로 넘침 없음', (await overflow(page)).doc === 0 && (await overflow(page)).center === 0, await overflow(page));
     await page.fill('#q', 'PPI'); await page.waitForTimeout(200);
-    ck('휴대폰: "PPI" 결과 카드 3개 · 가로 넘침 없음', (await nCards(page)) === 3 && (await overflow(page)).doc === 0, await nCards(page));
+    const ppiM = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const c = m.searchClass('PPI')[0]; return { core: c.members.length, ext: c.extMembers.length }; });
+    ck('휴대폰: "PPI" 결과 카드(핵심 3개 + 확장 수록) · 가로 넘침 없음', (await nCards(page)) === ppiM.core + Math.min(24, ppiM.ext) && ppiM.core === 3 && (await overflow(page)).doc === 0, { n: await nCards(page), ppiM });
     await snap(page, 'r16_class_phone');
     noErr('분류 검색(390)', page); await ctx.close();
   }
@@ -754,6 +771,398 @@ const overflow = (page) => page.evaluate(() => {
     const sums2 = await page.locator('#detail details > summary').allInnerTexts();
     ck('상세(푸로세미드): 모든 제형 요약에 한글 제형명(· 로 구분)이 붙음', sums2.length >= 3 && sums2.every((s) => s.includes(' · ')), sums2);
     await ctx.close();
+  }
+
+  /* ───── 17. 확장 수록 자료를 끈 상태(핵심 사전만): v1.0.1 과 같은 화면 ───── */
+  // 확장 자료가 없는 빌드(또는 읽기 실패)에서도 화면이 예전처럼 동작해야 한다. window.MEDTERM_EXT 를 비워서 확인한다.
+  const VERIFY_TEXT = '메트포르민은 항고혈압제로 분류되며 ATC 코드 C09CA01에 해당합니다. 오메프라졸린 20mg을 하루 한 번 복용하고, 베르나스타틴과 병용할 수 있습니다.';
+  // 17-1. 데스크톱 1440
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { noExt: true });
+    const type = async (s) => { await page.fill('#q', s); await page.waitForTimeout(200); };
+    const liN = () => page.locator('#panel-search ul > li').count();
+    const info = async () => ((await page.locator('#class-info').count()) ? (await page.locator('#class-info').innerText()).replace(/\s+/g, ' ') : '');
+    const hero = (await page.locator('#hero-title').locator('xpath=..').innerText()).replace(/\s+/g, ' ');
+    ck('핵심만: 첫 화면 안내에 핵심 개수만 나오고 "확장" 글자가 없음', hero.includes(`핵심 성분 ${IDS.length}개`) && !hero.includes('확장'), hero);
+    ck('핵심만: 확장 수록 안내 카드(#ext-hint)와 확장 목록(#ext-list)이 없음', (await page.locator('#ext-hint, #ext-list').count()) === 0);
+    const coreG = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES); const c = {}; for (const v of m.vtms) for (const L of new Set((v.atc_codes || []).map((x) => x[0]))) c[L] = (c[L] || 0) + 1; return c; });
+    const chipsT = (await page.locator('.chip-row > button').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
+    ck(`핵심만: 분류 칩은 "전체 ${IDS.length}" + 대분류별 핵심 개수(천 단위 쉼표 없음)`, chipsT[0] === `전체 ${IDS.length}` && chipsT.length === 1 + Object.keys(coreG).length && chipsT.slice(1).every((t) => Number(t.split(' ').pop()) === coreG[t[0]]), { chipsT, coreG });
+    ck(`핵심만: 처음 목록은 "수록 성분 ${IDS.length}" 중 12개 + "더 보기 (${IDS.length - 12})"`, (await liN()) === 12 && (await page.locator('#list-title').innerText()).includes(String(IDS.length)) && (await page.getByRole('button', { name: /^더 보기/ }).innerText()).includes(`(${IDS.length - 12})`));
+
+    await type('PPI');
+    let inf = await info();
+    ck('핵심만: "PPI" → 성분 3개, 분류 안내는 "3개"만(확장 수록 문구 없음)', (await liN()) === 3 && inf.includes('3개') && inf.includes('A02BC') && !inf.includes('확장'), { n: await liN(), inf });
+    await type('ACE 억제제');
+    inf = await info();
+    ck('핵심만: "ACE 억제제" → 예전과 같은 "수록된 성분이 없" + "확인이 필요" 안내, 목록은 비어 있음', (await liN()) === 0 && inf.includes('C09A') && inf.includes(`이 사전(${IDS.length}개 성분)`) && inf.includes('수록된 성분이 없') && inf.includes('확인이 필요'), inf);
+    await type('없는약이름xyz');
+    const empty = (await page.locator('#panel-search').innerText()).replace(/\s+/g, ' ');
+    ck(`핵심만: 사전에 없을 때 "이 사전은 현재 ${IDS.length}개 성분만 수록하므로" + 확인 필요(확장 문구 없음)`, empty.includes(`이 사전은 현재 ${IDS.length}개 성분만 수록하므로`) && empty.includes('확인이 필요하다') && !empty.includes('확장'), empty.slice(0, 200));
+    await type('에페리손');
+    ck('핵심만: 확장 수록에만 있는 성분(에페리손)은 찾지 못하고 "사전에 없습니다 — 확인 필요"', (await liN()) === 0 && (await page.locator('#panel-search').innerText()).includes('사전에 없습니다'));
+    await type('리피토');
+    const coreLip = await page.evaluate(() => new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES).search('리피토').length);
+    ck('핵심만: 상품명 검색 "리피토" 결과 수가 핵심 사전만으로 계산한 값과 같음(확장 자료 상품명은 쓰이지 않음)', (await liN()) === coreLip, { ui: await liN(), core: coreLip });
+    await type('오메프라졸');
+    ck('핵심만: 오메프라졸 상세는 예전처럼 열리고 확장 수록 국내 등재 블록은 없음', (await page.locator('#detail h3').first().innerText()).includes('오메프라졸') && (await page.locator('#detail [data-core-ext], #detail [data-kr]').count()) === 0 && (await page.evaluate(() => location.hash)) === '#v-7646');
+    await tabTo(page, '관계 그래프');
+    await page.waitForSelector('.react-flow__node');
+    const gx = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES); const g = m.graph('MT:VTM:7646'), L = m.layoutGraph(g); return { nodes: L.nodes.length + L.headers.length, note: `ATC 코드 ${g.shown.atc}/${g.totals.atc} · 같은 세부군 성분 ${g.shown.siblings}/${g.totals.siblings} · 제형·용량(VMP) ${g.shown.vmp}/${g.totals.vmp} · 제품(AMP) ${g.shown.amp}/${g.totals.amp} (표시/전체)` }; });
+    ck('핵심만: 관계 그래프는 핵심 사전만으로 그린 결과와 같음(노드 수 · 개수 안내 문장)', (await page.locator('.react-flow__node').count()) === gx.nodes && (await page.locator('#graph-note').innerText()) === gx.note, { got: await page.locator('#graph-note').innerText(), exp: gx });
+    ck('핵심만: 그래프 아래 "확장 수록" 안내 문단이 없음', (await page.locator('#graph-ext-note').count()) === 0);
+    await tabTo(page, '답변 검증');
+    await page.fill('#vtext', VERIFY_TEXT); await page.locator('#panel-verify').getByRole('button', { name: '검증', exact: true }).click(); await page.waitForTimeout(250);
+    const vx = await page.evaluate((t) => { const s = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES).verify(t).summary; return `오류(사전과 불일치) ${s.error} 확인 필요 ${s.warn} 정보 ${s.info} 일치 ${s.ok}`; }, VERIFY_TEXT);
+    const vb = (await page.locator('#vresult').innerText()).replace(/\s+/g, ' ');
+    ck('핵심만: 답변 검증 결과 개수가 핵심 사전만으로 계산한 값과 같고 "확장 수록 일치"가 나오지 않음', vb.includes(vx) && !vb.includes('확장 수록'), { vx, vb: vb.slice(0, 200) });
+    await tabTo(page, '근거 기반 질의');
+    await ragFind(page, '에페리손은 어떤 약인가요?');
+    const rp = await page.locator('#panel-rag pre').innerText();
+    ck(`핵심만: 질의문 — 확장 항목이 없으면 "일치하는 사전 항목이 없습니다 … 사전에는 ${IDS.length}개 성분만" 이고 "확장" 글자가 없음`, rp.includes('이 질문과 일치하는 사전 항목이 없습니다') && rp.includes(`사전에는 ${IDS.length}개 성분만 수록`) && !rp.includes('확장'), rp.slice(-400));
+    await ragFind(page, '오메프라졸 알려줘');
+    const rp2 = await page.locator('#panel-rag pre').innerText();
+    ck('핵심만: 핵심 성분 질문의 질의문에도 "확장"·규칙 6)이 없음', !rp2.includes('확장') && !rp2.includes('6) '));
+    await tabTo(page, '데이터·한계');
+    const ab = await page.locator('#panel-about').innerText();
+    ck('핵심만: 정보 탭에 "확장 수록" 절·문장이 없고, 한계 문장은 핵심 개수만 말함', !ab.includes('확장') && ab.includes(`핵심 수록 성분 ${IDS.length}개)`), ab.slice(0, 120));
+    noErr('확장 끈 상태(1440)', page); await snap(page, 'r17_noext'); await ctx.close();
+
+    // 확장 주소(#v-625, #k-eperisone)는 확장 자료가 없으면 읽지 않는다
+    for (const h of ['v-625', 'k-eperisone']) {
+      const o = await open(browser, 1440, 1000, { noExt: true, hash: h });
+      ck(`핵심만: 주소 #${h} 는 무시되고 상세는 비어 있음(오류 없음)`, (await o.page.locator('#detail').innerText()).includes('성분을 선택하면') && o.page.errs.length === 0, o.page.errs);
+      await o.ctx.close();
+    }
+  }
+  // 17-2. 휴대폰 390: 확장을 끈 상태의 첫 화면(v1.0.1 과 같은 12개 · 더 보기)
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true, dpr: 2, noExt: true });
+    ck(`핵심만(휴대폰): 카드 12개 + "더 보기 (${IDS.length - 12})" + 확장 안내 없음 + 가로 넘침 없음`, (await nCards(page)) === 12 && (await page.getByRole('button', { name: /^더 보기/ }).innerText()).includes(`(${IDS.length - 12})`) && (await page.locator('#ext-hint').count()) === 0 && (await overflow(page)).doc === 0);
+    noErr('확장 끈 상태(390)', page); await ctx.close();
+  }
+
+  /* ───── 18. 확장 수록(v1.1.0): 검색 · 상세 · 그래프 · 검증 · 질의 · 정보 탭 · 휴대폰 · 다크 ───── */
+  const hx = (id) => (id.startsWith('MT:VTM:') ? 'v-' + id.slice(7) : 'k-' + id.slice(7).replace(/_/g, '-')); // 주소 규칙(mt.js 의 hashOf 와 같음)
+  const nfx = (n) => Number(n || 0).toLocaleString('ko-KR');
+  const clean = (s) => String(s).replace(/\s+/g, ' ').trim();
+  const SRC_NAMES = { R: 'RxNorm', H: '심평원', W: 'Wikidata', A: 'RxClass ATC명' };
+  const srcT = (s) => [...String(s || '')].map((c) => SRC_NAMES[c] || c).join(' · ');
+  const koSrcT = (k) => [(k.s || '').includes('H') ? (k.c ? `심평원 품목명 ${nfx(k.c)}건` : '심평원 품목명') : '', (k.s || '').includes('W') ? 'Wikidata' : ''].filter(Boolean).join(' · ');
+  // 시험에 쓸 확장 성분은 데이터 파일(MEDTERM_EXT)에서 읽는다(숫자·이름을 시험 안에 베껴 두지 않는다)
+  const XD = await (async () => {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    const r = await page.evaluate(() => {
+      const E = MEDTERM_EXT;
+      const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, E);
+      const by = (id) => E.entities.find((e) => e.id === id);
+      const nm = (id) => { const t = m.anyById(id); return t ? t.label_ko || t.label_en : id; };
+      const ents = E.entities.filter((e) => !e.core);
+      const pick = (f) => ents.find(f);
+      const o = {
+        meta: E.meta, nExt: ents.length,
+        zero: pick((e) => e.kr && !e.kr.items && !e.kr.combo && !e.kr.codes && !(e.kr.strengths || []).length).id,
+        codesOnly: pick((e) => e.kr && !e.kr.items && !e.kr.combo && e.kr.codes > 0).id,
+        noKr: pick((e) => !e.kr).id,
+        epe: by('MT:KRI:eperisone'), amb: by('MT:VTM:625'), aga: by('MT:KRI:agalsidase'),
+      };
+      o.agaNear = o.aga.near.map((n) => ({ id: n.id, name: nm(n.id) }));
+      o.ambName = nm('MT:VTM:625');
+      return o;
+    });
+    await ctx.close(); return r;
+  })();
+  ck('확장 자료: 읽기 전용 점검용 기준 성분(에페리손·암브록솔·아갈시다제)과 세 가지 심평원 자료 상태(전부 0 · 성분코드만 · 심평원 자료 없음) 예시가 데이터에 있음', !!(XD.epe && XD.amb && XD.aga && XD.zero && XD.codesOnly && XD.noKr && XD.nExt > 3000), { n: XD.nExt, zero: XD.zero, codesOnly: XD.codesOnly, noKr: XD.noKr });
+
+  // 18-1. 데스크톱 1440: 첫 화면 · 검색 · 상세
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    const hero = clean(await page.locator('#hero-title').locator('xpath=..').innerText());
+    ck(`확장: 첫 화면 안내에 "확장 수록 ${nfx(XD.nExt)}개 성분(자동 수집 초안)"`, hero.includes(`확장 수록 ${nfx(XD.nExt)}개 성분(자동 수집 초안)`), hero);
+    ck('확장: 검색어·분류가 없으면 확장 목록은 펼치지 않고 안내 카드(#ext-hint)만 — 핵심 12개 + 더 보기', (await page.locator('#ext-hint').count()) === 1 && (await page.locator('#ext-list').count()) === 0 && (await nCards(page)) === 12 && clean(await page.locator('#ext-hint').innerText()).includes(`확장 수록 ${nfx(XD.nExt)}개 성분은 검색하면 나옵니다`));
+    ck(`확장: 분류 칩 "전체 ${nfx(IDS.length + XD.nExt)}"`, clean(await page.locator('.chip-row > button').first().innerText()) === `전체 ${nfx(IDS.length + XD.nExt)}`);
+
+    // (a) 심평원에만 있는 성분: 에페리손
+    const e = XD.epe;
+    await page.fill('#q', '에페리손'); await page.waitForTimeout(250);
+    const card = clean(await page.locator('#ext-list ul > li').first().innerText());
+    ck('확장 검색 "에페리손": 확장 수록 목록에 카드 하나(핵심 목록 없음) — 이름·영문·ATC·RxCUI 없음·등재 품목 수·배지·일치 이유', (await page.locator('#ext-list ul > li').count()) === 1 && (await page.locator('section[aria-labelledby="list-title"]').count()) === 0 && ['에페리손염산염', 'eperisone', 'ATC M03BX09', 'RxCUI 없음(심평원 전용)', `심평원 등재 단일성분 ${nfx(e.kr.items)}품목 · 복합제 ${nfx(e.kr.combo)}품목`, '확장·약사 검수 전', '이름 일치'].every((s) => card.includes(s)), card);
+    ck('확장 검색 "에페리손": 정확히 일치하므로 상세가 자동으로 열리고 주소는 #k-eperisone', (await page.evaluate(() => location.hash)) === '#k-eperisone' && (await page.locator('#detail h3').first().innerText()).includes('에페리손염산염'), await page.evaluate(() => location.hash));
+    const dt = clean(await page.locator('#detail').innerText());
+    const meta = XD.meta;
+    ck('확장 상세: "확장 수록" 배지 · 초안 배지 · 안내 상자(meta.notice 그대로)', (await page.locator('#detail [data-ext-detail]').count()) === 1 && dt.includes('확장 수록') && dt.includes('초안·약사 검수 전') && dt.includes(clean(meta.notice)), dt.slice(0, 220));
+    ck('확장 상세: 이름 표 — 한글 이름(후보)과 근거 "심평원 품목명 N건", 영문 이름·이명, 줄인 형태, 상품명(미검증 안내)', dt.includes('한글 이름(후보)') && e.ko.every((k) => dt.includes(`${k.n} · ${koSrcT(k)}`)) && dt.includes('영문 이름') && dt.includes(`이명: ${e.alt_en.join(', ')}`) && (e.ko_base || []).every((s) => dt.includes(s)) && dt.includes('줄인 형태') && dt.includes('상품명') && dt.includes(e.brands_ko[0]) && dt.includes('기계적으로 잘라 낸 것(미검증)이라 틀릴 수 있고'), dt.slice(220, 800));
+    ck('확장 상세: 식별자 · "RxCUI 없음(심평원 전용)" · 연결 등급 · 등급 설명 · 자료 출처', dt.includes('MT:KRI:eperisone · RxCUI 없음(심평원 전용)') && dt.includes(`연결 등급 ${e.grade}`) && dt.includes(clean(meta.grade_legend[e.grade])) && dt.includes(`자료 출처 ${srcT(e.src)}`), dt.slice(600, 1000));
+    ck('확장 상세: 국내 등재 현황(품목 수 · 투여 경로 · 제형 · 함량) + "제품 규격 정보이며 용법·용량이 아닙니다" + 등재≠허가 안내', dt.includes('국내 등재 현황 (심평원 약가마스터)') && dt.includes(`단일성분 ${nfx(e.kr.items)}품목 · 복합제 ${nfx(e.kr.combo)}품목`) && e.kr.routes.every((s) => dt.includes(s)) && e.kr.forms.every((s) => dt.includes(s)) && e.kr.strengths.every((s) => dt.includes(s)) && dt.includes('제품 규격 정보이며 용법·용량이 아닙니다') && dt.includes('‘등재’는 식약처 ‘허가’와 같은 뜻이 아니고'), dt.slice(900, 1500));
+    ck('확장 상세: ATC 경로(M03BX09)와 "코드 근거: 심평원", 제형·용량(VMP)·제품(AMP) 펼침 목록은 없음', dt.includes('M03BX09') && dt.includes(`코드 근거: ${srcT(e.atc_src.M03BX09)}`) && (await page.locator('#detail ol li').count()) >= 2 && (await page.locator('#detail details').count()) === (e.kr.strengths.length > 8 ? 1 : 0) && !dt.includes('VMP'));
+    ck('확장 상세: 오른쪽 단 제목에 "· 상세"가 붙고, 왼쪽 가나다순·트리는 핵심 32개 그대로', (await page.locator('#insp-title').innerText()).includes('에페리손염산염 · 상세') && (await page.locator('#tree [data-id]').count()) <= IDS.length);
+    await snap(page, 'r18_ext_detail');
+
+    // (b) RxNorm과 연결된 성분: 암브록솔(MT:VTM:625)
+    const a = XD.amb;
+    await page.fill('#q', '암브록솔'); await page.waitForTimeout(250);
+    ck('확장 검색 "암브록솔": 상세가 열리고 주소는 #v-625', (await page.evaluate(() => location.hash)) === '#v-625' && (await page.locator('#detail h3').first().innerText()).includes(XD.ambName), await page.evaluate(() => location.hash));
+    const dt2 = clean(await page.locator('#detail').innerText());
+    ck('확장 상세(암브록솔): RxCUI 625 · Wikidata QID · 연결 등급 a · 한글 이름 후보 모두(근거 표시)', dt2.includes('MT:VTM:625 · RxCUI 625') && dt2.includes(`Wikidata ${a.wd}`) && dt2.includes(`연결 등급 ${a.grade}`) && a.ko.length >= 2 && a.ko.every((k) => dt2.includes(`${k.n} · ${koSrcT(k)}`)), { ko: a.ko, dt2: dt2.slice(0, 400) });
+    ck('확장 상세(암브록솔): ATC 코드가 둘 이상이면 모두 경로로 보여 주고 코드마다 근거 출처를 적음', a.atc.length >= 2 && a.atc.every((c) => dt2.includes(c) && dt2.includes(`코드 근거: ${srcT(a.atc_src[c])}`)), { atc: a.atc, src: a.atc_src });
+    const rest = Math.max(0, a.kr.strengths.length - 8);
+    const det = page.locator('#detail details');
+    ck(`확장 상세(암브록솔): 함량 ${a.kr.strengths.length}종 — 처음 8개만 보이고 "나머지 ${rest}개 보기"는 접혀 있음`, rest > 0 && (await det.count()) === 1 && (await det.locator('summary').innerText()).includes(`나머지 ${rest}개 보기`) && (await det.evaluate((d) => d.open)) === false, { rest, n: await det.count() });
+    await det.locator('summary').click(); await page.waitForTimeout(120);
+    const lastS = a.kr.strengths[a.kr.strengths.length - 1];
+    ck('확장 상세(암브록솔): "나머지 보기"를 누르면 펼쳐지고 마지막 함량 칩이 보임', (await det.evaluate((d) => d.open)) === true && (await det.getByText(lastS, { exact: true }).first().isVisible()), lastS);
+    await snap(page, 'r18_ext_detail2');
+
+    // (c) 핵심 성분이 확장 자료(심평원 품목명에서 뽑은 상품명)로만 찾아진 경우: 핵심 사전이 모르는 상품명을 고른다
+    const BR = await page.evaluate(() => {
+      const A = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES), B = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, MEDTERM_EXT);
+      for (const v of B.vtms) { const x = B.extOfCore.get(v.id); if (!x) continue; for (const b of x.brands_ko) { if (!A.search(b).some((r) => r.vtm.id === v.id) && B.searchExt(b).some((h) => h.vtm && h.vtm.id === v.id)) return { id: v.id, name: v.label_ko, brand: b }; } }
+      return null;
+    });
+    ck('확장: 핵심 사전이 모르는 상품명을 가진 핵심 성분이 있음(합쳐 보이기 시험용)', !!BR, BR);
+    await page.fill('#q', BR.brand); await page.waitForTimeout(250);
+    const coreLi = page.locator('section[aria-labelledby="list-title"] ul > li', { hasText: BR.name });
+    const lip = clean(await coreLi.first().innerText());
+    ck(`확장 검색 "${BR.brand}"(상품명): 핵심 성분(${BR.name})이 핵심 목록에 한 번만 나오고 "확장 자료 · 상품명 일치", 확장 목록에는 같은 성분이 또 나오지 않음`, (await coreLi.count()) === 1 && lip.includes('확장 자료 · 상품명 일치') && lip.includes('초안·약사 검수 전') && !lip.includes('확장·약사 검수 전') && (await page.locator('#ext-list ul > li', { hasText: BR.name }).count()) === 0, lip);
+    const ce = clean(await page.locator('#detail [data-core-ext]').innerText());
+    ck(`확장 검색 "${BR.brand}": 핵심 상세가 열리고(#${hx(BR.id)}) 국내 등재 현황(확장 수록 · 자동 수집)과 자동 추출 상품명(미검증, 이 상품명 포함)이 덧붙음`, (await page.evaluate(() => location.hash)) === '#' + hx(BR.id) && (await page.locator('#detail [data-core-ext]').count()) === 1 && ce.includes('국내 등재 현황 (확장 수록 · 자동 수집·약사 검수 전)') && ce.includes('심평원 품목명에서 자동 추출한 상품명(미검증)') && ce.includes(BR.brand) && ce.includes('제품 규격 정보이며 용법·용량이 아닙니다'), ce.slice(0, 300));
+    await page.fill('#q', '');
+    await page.evaluate(() => { location.hash = 'v-7646'; }); await page.waitForTimeout(250);
+    const od = clean(await page.locator('#detail').innerText());
+    ck('확장: 핵심 성분 상세(오메프라졸)에도 국내 등재 현황이 덧붙고, 핵심 값(ATC · RxCUI · SNOMED CT)과 VMP 목록은 그대로', (await page.locator('#detail [data-core-ext]').count()) === 1 && ['A02BC01', 'RxCUI 7646', 'SNOMED CT', '국내 등재 현황 (확장 수록 · 자동 수집·약사 검수 전)'].every((s) => od.includes(s)) && (await page.locator('#detail details').count()) >= 2);
+
+    // (d) 분류 칩: 확장 수록 목록은 24개씩, 한글 이름이 있는 성분이 먼저
+    const EXG = await expGroups(page);
+    const mChip = page.locator('.chip-row > button', { hasText: /^M / });
+    await page.evaluate(() => { location.hash = ''; });
+    await mChip.click(); await page.waitForTimeout(200);
+    const names24 = await page.locator('#ext-list ul > li b').allInnerTexts();
+    const hasKo = names24.map((n) => /[가-힣]/.test(n));
+    ck('분류 칩 "M 근골격": 핵심 목록은 핵심 성분만, 확장 수록 목록은 24개(제목에 전체 개수) · 한글 이름 있는 성분이 앞', (await page.locator('section[aria-labelledby="list-title"] ul > li').count()) === EXG.core.M && (await page.locator('#ext-list ul > li').count()) === Math.min(24, EXG.ext.M) && clean(await page.locator('#xlist-title').innerText()).includes(nfx(EXG.ext.M)) && hasKo.every((x, i) => i === 0 || !(x && !hasKo[i - 1])), { names24, core: EXG.core.M, ext: EXG.ext.M });
+    const xMore = page.locator('#ext-list').getByRole('button', { name: /^더 보기/ });
+    ck(`분류 칩 "M 근골격": "더 보기 (${EXG.ext.M - 24})"와 "24 / ${EXG.ext.M}개 표시 중"`, (await xMore.innerText()).includes(`(${EXG.ext.M - 24})`) && clean(await page.locator('#ext-list').innerText()).includes(`24 / ${EXG.ext.M}개 표시 중`));
+    await xMore.click(); await page.waitForTimeout(150);
+    ck('"더 보기"를 누르면 24개 더(48개) 보이고 표시 개수가 갱신됨', (await page.locator('#ext-list ul > li').count()) === 48 && clean(await page.locator('#ext-list').innerText()).includes(`48 / ${EXG.ext.M}개 표시 중`));
+    await mChip.click(); await page.waitForTimeout(150);
+    ck('같은 칩을 다시 누르면 풀려서 확장 목록이 사라지고 안내 카드(#ext-hint)로 돌아감', (await page.locator('#ext-list').count()) === 0 && (await page.locator('#ext-hint').count()) === 1);
+
+    noErr('확장 검색·상세(1440)', page); await ctx.close();
+  }
+
+  // 18-2. 이름이 비슷한 항목 · 심평원 자료 상태 세 가지 · 직접 주소
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'k-agalsidase' });
+    const nd = XD.agaNear[0];
+    const adt = clean(await page.locator('#detail').innerText());
+    ck('이름이 비슷한 항목(아갈시다제): 안내문과 버튼이 보이고 "자동으로 합치지 않았습니다(확인 필요)"라고 말함', adt.includes('이름이 비슷한 항목') && adt.includes('자동으로 합치지 않았습니다(확인 필요)') && (await page.locator('#detail button', { hasText: nd.name }).count()) === 1, { nd, adt: adt.slice(-420) });
+    await page.locator('#detail button', { hasText: nd.name }).click(); await page.waitForTimeout(250);
+    ck(`이름이 비슷한 항목 버튼을 누르면 그 항목(${nd.name})의 상세로 이동하고 주소가 #${hx(nd.id)} 로 바뀜`, (await page.evaluate(() => location.hash)) === '#' + hx(nd.id) && (await page.locator('#detail h3').first().innerText()).includes(nd.name), { hash: await page.evaluate(() => location.hash), h3: await page.locator('#detail h3').first().innerText() });
+    ck('이동한 상세는 맨 위에서 시작함(스크롤 0)', (await page.evaluate(() => document.getElementById('detail').scrollTop)) === 0);
+    await page.evaluate(() => { location.hash = 'k-agalsidase'; }); await page.waitForTimeout(250);
+    ck('주소를 바꾸면 따라감(hashchange): 아갈시다제베타로 돌아옴', (await page.locator('#detail h3').first().innerText()).includes('아갈시다제베타'));
+    await page.fill('#q', '아갈시다제'); await page.waitForTimeout(250);
+    ck('검색 "아갈시다제": 이름이 비슷한 확장 성분이 2개(베타 · 알파)이면 상세를 마음대로 고르지 않음(목록만)', (await page.locator('#ext-list ul > li').count()) === 2);
+    noErr('이름이 비슷한 항목(1440)', page); await ctx.close();
+  }
+  {
+    // 심평원 자료 상태 세 가지 + 사전에 없는 주소
+    const run = async (id, label, fn) => {
+      const { ctx, page } = await open(browser, 1440, 1000, { hash: hx(id) });
+      const t = clean(await page.locator('#detail').innerText());
+      ck(label, await fn(t, page) && page.errs.length === 0, { id, t: t.slice(0, 500), errs: page.errs });
+      await ctx.close();
+    };
+    await run(XD.zero, '확장 상세: 심평원 성분 목록에는 있으나 연결된 품목·성분코드·함량이 전혀 없으면 "이 자료에서 연결된 등재 품목·제형·함량 정보는 없습니다(확인 필요)"', (t) => t.includes('이 자료에서 연결된 등재 품목·제형·함량 정보는 없습니다(확인 필요)') && !t.includes('제품 규격 정보이며'));
+    await run(XD.codesOnly, '확장 상세: 단일·복합 품목은 0이고 성분코드만 있으면 "확인된 품목 없음 · 성분코드(일반명코드) N개"로 적음', (t) => t.includes('확인된 품목 없음') && t.includes('성분코드(일반명코드)') && t.includes('제품 규격 정보이며 용법·용량이 아닙니다'));
+    await run(XD.noKr, '확장 상세: 심평원 자료가 없는 성분(RxNorm 전용)은 국내 등재 현황 블록 없이 이름·식별자·ATC만 보임', async (t, page) => (await page.locator('#detail [data-kr]').count()) === 0 && t.includes('연결 등급') && t.includes('자료 출처'));
+    for (const h of ['k-no-such-thing', 'v-99999999']) {
+      const { ctx, page } = await open(browser, 1440, 1000, { hash: h });
+      ck(`직접 주소 #${h}(사전에 없음): 상세는 비어 있고 오류 없음`, (await page.locator('#detail').innerText()).includes('성분을 선택하면') && page.errs.length === 0, page.errs);
+      await ctx.close();
+    }
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'v-625' });
+    ck('직접 주소 #v-625: 첫 화면부터 확장 성분 상세가 열리고 트리에서는 핵심 선택이 없음', (await page.locator('#detail h3').first().innerText()).includes(XD.ambName) && (await page.locator('#tree [aria-current="true"]').count()) === 0, await page.locator('#detail h3').first().innerText());
+    await ctx.close();
+  }
+
+  // 18-3. 관계 그래프(확장 성분)
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'k-eperisone' });
+    await tabTo(page, '관계 그래프');
+    await page.waitForSelector('.react-flow__node');
+    const exp = await page.evaluate((id) => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const g = m.graph(id), L = m.layoutGraph(g); return { nodes: L.nodes.length + L.headers.length, edges: L.edges.length, totals: g.totals, shown: g.shown, sib: L.nodes.filter((n) => n.kind === 'sibling').length }; }, 'MT:KRI:eperisone');
+    const got = await page.evaluate(() => ({ nodes: document.querySelectorAll('.react-flow__node').length, edges: document.querySelectorAll('.react-flow__edge-path, .react-flow__edge path[d]').length }));
+    ck('확장 그래프(에페리손): 노드·간선 수가 core.js 레이아웃과 같음', got.nodes === exp.nodes && got.edges === exp.edges, { got, exp });
+    const note = await page.locator('#graph-note').innerText();
+    ck('확장 그래프: 개수 안내에 "ATC 코드 a/b · 같은 세부군 성분 c/d (표시/전체) · 확장 수록 성분이라 제형·용량(VMP)·제품(AMP)은 없음"', note === `ATC 코드 ${exp.shown.atc}/${exp.totals.atc} · 같은 세부군 성분 ${exp.shown.siblings}/${exp.totals.siblings} (표시/전체) · 확장 수록 성분이라 제형·용량(VMP)·제품(AMP)은 없음`, note);
+    const gn = clean(await page.locator('#graph-ext-note').innerText());
+    ck('확장 그래프: 설명 문단에 "핵심 성분이 먼저, 확장 수록이 뒤" 순서와 "이 성분은 확장 수록이라 … VMP·AMP 단계 없이"가 있음', gn.includes('핵심 수록 성분이 먼저, 확장 수록 성분(자동 수집·약사 검수 전)이 그 뒤에 나옵니다') && gn.includes('이 성분은 확장 수록이라 제형·용량(VMP)·제품(AMP) 단계 없이'), gn);
+    ck('확장 그래프: 열 머리글에 제형·용량(VMP)·제품(AMP) 열이 없음', !(await page.locator('.react-flow__node', { hasText: /제형·용량|제품\(AMP\)/ }).count()));
+    await page.getByRole('button', { name: '전체 보기' }).click(); await page.waitForTimeout(150);
+    const inside = await page.evaluate(() => { const box = document.querySelector('[role="region"][aria-label*="관계 그래프"]').getBoundingClientRect(); return [...document.querySelectorAll('.react-flow__node')].every((n) => { const r = n.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }); });
+    ck('확장 그래프: "전체 보기"를 누르면 모든 상자가 캔버스 안에 들어옴', inside);
+    await snap(page, 'r18_ext_graph');
+    // 같은 세부군 성분 상자를 눌러 이동
+    const sib = page.locator('.react-flow__node button[aria-label*="눌러서 이 성분으로 이동"]').first();
+    if (exp.sib > 0) {
+      const lab = await sib.getAttribute('aria-label');
+      await sib.click(); await page.waitForTimeout(400);
+      ck('확장 그래프: 같은 세부군 성분 상자를 누르면 그 성분으로 이동(제목·주소가 바뀜)', (await page.evaluate(() => location.hash)) !== '#k-eperisone' && !(await page.locator('#graph-title').innerText()).startsWith('에페리손염산염'), { lab, hash: await page.evaluate(() => location.hash), t: await page.locator('#graph-title').innerText() });
+    } else ck('확장 그래프: 같은 세부군 성분이 없으면 눌러 이동할 상자도 없음', (await sib.count()) === 0);
+    // 핵심 성분(오메프라졸)의 그래프: 핵심이 먼저, 확장이 뒤
+    await page.evaluate(() => { location.hash = 'v-7646'; }); await page.waitForTimeout(400);
+    const core = await page.evaluate(() => { const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT); const g = m.graph('MT:VTM:7646'); return { sib: g.nodes.filter((n) => n.kind === 'sibling').map((n) => !!(m.anyById(n.id) || {}).ext), tot: g.totals.siblings }; });
+    const gn2 = clean(await page.locator('#graph-ext-note').innerText());
+    ck('핵심 성분 그래프(오메프라졸): 같은 세부군에 확장 수록 성분이 이어 붙어도 핵심 성분이 앞(core.js), 설명 문단에는 "이 성분은 확장 수록이라" 문장이 없음', core.sib.every((x, i) => i === 0 || !(!x && core.sib[i - 1])) && gn2.includes('핵심 수록 성분이 먼저') && !gn2.includes('이 성분은 확장 수록이라'), { core, gn2 });
+    noErr('확장 그래프(1440)', page); await ctx.close();
+  }
+
+  // 18-4. 답변 검증(확장 수록 성분)
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    await tabTo(page, '답변 검증');
+    const run = async (t) => { await page.fill('#vtext', t); await page.locator('#panel-verify').getByRole('button', { name: '검증', exact: true }).click(); await page.waitForTimeout(250); return clean(await page.locator('#vresult').innerText()); };
+    const sum = (t) => page.evaluate((x) => { const s = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT).verify(x).summary; return { s, line: `오류(사전과 불일치) ${s.error} 확인 필요 ${s.warn} 정보 ${s.info} 일치 ${s.ok}` }; }, t);
+
+    const T1 = '에페리손염산염은 ATC 코드 M03BX09에 속하는 근이완제입니다.';
+    const r1 = await run(T1), x1 = await sum(T1);
+    ck('답변 검증(확장): 이름과 ATC 코드가 맞으면 "일치" 2건 · 오류·확인 필요 0건 · 불일치 없음 판정', r1.includes(x1.line) && x1.s.ok >= 2 && x1.s.error === 0 && x1.s.warn === 0 && r1.includes('사전에 수록된 범위에서는 불일치가 발견되지 않았습니다'), { r1: r1.slice(0, 200), x1 });
+    ck('답변 검증(확장): 일치한 이름에 "확장 수록 일치: … 자동 수집·약사 검수 전" 설명이 붙음(마우스를 올리면 보임) — 사전 밖으로 취급하지 않음', (await page.locator('#vresult .ann-box span[title*="확장 수록 일치"]').count()) >= 1 && (await page.locator('#vresult .ann-box span[title*="ATC M03BX09"]').count()) >= 1);
+
+    const T2 = '에페리손은 ATC 코드 M03BX01에 해당합니다.';
+    const r2 = await run(T2), x2 = await sum(T2);
+    ck('답변 검증(확장): 확장 성분의 ATC 코드가 다르면 "오류"가 아니라 "확인 필요"(자료 출처가 달라 어긋날 수 있어서) · 판정은 "사람의 확인이 필요"', r2.includes(x2.line) && x2.s.error === 0 && x2.s.warn >= 1 && r2.includes('사람(약사)의 확인이 필요합니다') && r2.includes('확장 수록 자료(자동 수집·검수 전) 기준 에페리손염산염: M03BX09'), { r2: r2.slice(0, 400), x2 });
+
+    const T3 = '오메프라졸과 에페리손을 함께 설명합니다. 오메프라졸의 ATC 코드는 A02BC05입니다.';
+    const r3 = await run(T3), x3 = await sum(T3);
+    ck('답변 검증(확장 + 핵심): 핵심 성분의 코드 오류는 예전처럼 "오류"로 잡고(A02BC05는 에스오메프라졸 코드), 확장 성분은 일치로 셈', r3.includes(x3.line) && x3.s.error >= 1 && x3.s.ok >= 1 && r3.includes('사전과 불일치') && r3.includes('사전 기준 불일치가 발견되었습니다'), { r3: r3.slice(0, 400), x3 });
+
+    const T4 = '에페리손염산염 50 mg 정제가 있습니다.';
+    const r4 = await run(T4), x4 = await sum(T4);
+    ck('답변 검증(확장): 확장 성분에는 단위용량 검사를 하지 않음(미국 RxNorm 규격이 없어서) — 오류·확인 필요 없음', r4.includes(x4.line) && x4.s.error === 0 && x4.s.warn === 0, { r4: r4.slice(0, 200), x4 });
+    noErr('확장 답변 검증(1440)', page); await ctx.close();
+  }
+
+  // 18-5. 근거 기반 질의(확장 수록 성분)
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    await tabTo(page, '근거 기반 질의');
+    const e = XD.epe;
+    await ragFind(page, '에페리손은 어떤 약인가요?');
+    const li = clean(await page.locator('#panel-rag ul li button').first().innerText());
+    ck('질의(확장): 검색된 사전 항목에 에페리손이 나오고 "확장 수록(자동 수집·약사 검수 전)" 표시와 ID가 붙음', (await page.locator('#panel-rag ul li').count()) === 1 && li.includes('에페리손염산염') && li.includes('eperisone') && li.includes('MT:KRI:eperisone') && li.includes('확장 수록(자동 수집·약사 검수 전)'), li);
+    const pre = await page.locator('#panel-rag pre').innerText();
+    const [sysP, usrP = ''] = pre.split('\n\n[user]\n');
+    ck('질의문(확장): system 에 확장 규칙 6)("tier가 ext인 항목은 확장 수록 … 확장 수록 자료 기준이라고 밝히세요")이 더해짐', sysP.includes('6) tier가 "ext"인 항목은 공개 자료(RxNorm·심평원 약가마스터·Wikidata)로 자동 수집한 확장 수록(약사 검수 전)입니다') && sysP.includes('"확장 수록 자료 기준"이라고 밝히세요'), sysP.slice(-500));
+    ck('질의문(확장): 조사정보에 "확장 수록: 성분 N개 … 이 질의의 사전근거에 포함됨"과 "확장 필드" 설명 줄이 사전 줄 바로 뒤에 붙음', usrP.includes(`수록 성분 ${IDS.length}개\n확장 수록: 성분 ${XD.nExt}개(공개 자료 자동 수집·약사 검수 전) — 이 질의의 사전근거에 포함됨\n`) && usrP.includes('확장 필드: tier=ext는 확장 수록 항목 · kr_listed=심평원 약가마스터 등재 제품 규격(용법·용량·허가가 아님) · brands_ko=품목명에서 자동 추출한 상품명(미검증)'), usrP.slice(0, 700));
+    let items = null;
+    try { items = JSON.parse(usrP.split('<사전근거>\n')[1].split('\n</사전근거>')[0]); } catch (err) { items = String(err); }
+    const it = Array.isArray(items) ? items[0] : null;
+    ck('질의문(확장): 사전근거 JSON 이 읽히고 에페리손 항목에 tier=ext · 후보 이름 · 상품명(5개 이하) · kr_listed(등재 품목 수 · 용법·용량 아님 주석)가 들어 있음', Array.isArray(items) && items.length === 1 && it.id === 'MT:KRI:eperisone' && it.tier === 'ext' && it.name_ko === e.ko[0].n && it.review_status === 'draft' && it.brands_ko.length <= 5 && it.kr_listed.items === e.kr.items && it.kr_listed.note.includes('용법·용량 아님') && it.note.includes('확장 수록(공개 자료 자동 수집·약사 검수 전)') && it.atc[0].code === 'M03BX09', items);
+    await page.locator('#panel-rag ul li button').first().click(); await page.waitForTimeout(250);
+    ck('질의(확장): 검색된 항목을 누르면 그 성분의 상세가 열림(주소 #k-eperisone)', (await page.evaluate(() => location.hash)) === '#k-eperisone' && (await page.locator('#detail h3').first().innerText()).includes('에페리손염산염'));
+    await ragFind(page, '암브록솔과 오메프라졸 비교해 줘');
+    const pre2 = await page.locator('#panel-rag pre').innerText();
+    const u2 = pre2.split('\n\n[user]\n')[1] || '';
+    let it2 = null; try { it2 = JSON.parse(u2.split('<사전근거>\n')[1].split('\n</사전근거>')[0]); } catch (err) { it2 = String(err); }
+    ck('질의문(핵심 + 확장 섞임): 핵심 항목(오메프라졸)에는 tier 가 없고 확장 항목(암브록솔)에만 tier=ext, 확장 규칙 6)은 한 번만', Array.isArray(it2) && it2.some((c) => c.id === 'MT:VTM:7646' && !('tier' in c)) && it2.some((c) => c.id === 'MT:VTM:625' && c.tier === 'ext') && pre2.split('6) tier가').length === 2, it2);
+    await ragFind(page, Q);
+    const pre3 = await page.locator('#panel-rag pre').innerText();
+    ck('질의문(핵심 성분만): 확장 규칙 6)·"확장 수록:" 조사정보 줄·"확장 필드" 줄이 없어서 예전(R1)과 같은 모양', !pre3.includes('6) tier') && !pre3.includes('확장 수록:') && !pre3.includes('확장 필드') && !pre3.includes('"tier"'));
+    noErr('확장 질의(1440)', page); await ctx.close();
+  }
+
+  // 18-6. 데이터·한계 탭: 확장 수록 절의 숫자가 데이터 파일(meta.counts)과 같음
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    await tabTo(page, '데이터·한계');
+    const ab = clean(await page.locator('#panel-about').innerText());
+    const c = XD.meta.counts, g = c.grades || {}, lg = XD.meta.grade_legend || {};
+    const rows = [
+      ['확장 수록 성분 (핵심과 겹치는 성분 제외)', nfx(XD.nExt)],
+      ['RxNorm과 심평원에 모두 있어 연결된 성분 (핵심 포함)', nfx(c.rx_mapped)],
+      ['심평원에만 있는 성분 (RxCUI 없음)', nfx(c.kr_only)],
+      ['RxNorm에만 있는 성분 (심평원과 연결 안 됨)', nfx(c.rx_only)],
+      ['한글 이름 후보가 있는 성분', nfx(c.with_ko)],
+      ['상품명 후보가 있는 성분 / 상품명 수', `${nfx(c.with_brands)} / ${nfx(c.brand_names)}`],
+      ['ATC 코드가 있는 성분', nfx(c.with_atc)],
+      ['심평원 등재 품목(판매 중 표시) / 성분코드', `${nfx(c.active_items)} / ${nfx(c.hira_codes)}`],
+      ['이름이 비슷해 확인이 필요한 항목(자동으로 합치지 않음)', nfx(c.with_near)],
+      ['제외한 심평원 전용 항목 / 한글명·혼합 한약 제제', `${nfx(c.dropped_kr_only)} / ${nfx(c.dropped_herbal)}`],
+      ['자료 기준', XD.meta.built_at],
+    ];
+    ck('정보 탭: "확장 수록 (공개 자료 자동 수집 · 약사 검수 전)" 절이 있고 표의 모든 숫자가 데이터 파일(meta.counts)과 같음', ab.includes('확장 수록 (공개 자료 자동 수집 · 약사 검수 전)') && rows.every(([k, v]) => ab.includes(`${k} ${v}`)), rows.filter(([k, v]) => !ab.includes(`${k} ${v}`)));
+    ck('정보 탭: 연결 등급 설명(a·b·c·d·미연결)과 등급별 성분 수가 데이터 파일과 같음', Object.keys(lg).length === 5 && Object.keys(lg).every((k) => ab.includes(`${clean(lg[k])} · ${nfx(g[k])}개`)), Object.keys(lg).filter((k) => !ab.includes(`${clean(lg[k])} · ${nfx(g[k])}개`)));
+    ck('정보 탭: 출처 4곳(RxNorm · 심평원 · Wikidata · RxClass)의 이름과 이용 조건(공공누리 제1유형 등)이 보임', XD.meta.sources.every((s) => ab.includes(clean(s.name)) && ab.includes(clean(s.license))) && ab.includes('공공누리 제1유형'), XD.meta.sources.filter((s) => !ab.includes(clean(s.license))).map((s) => s.id));
+    ck('정보 탭: 한계 문장 — 핵심 32개 + 확장 N개, "등재 ≠ 허가", 심평원 파일 기준일, VMP·AMP 없음·단위용량 검사 안 함, 자동으로 합치지 않음, ATC 재배포 보류', ab.includes(`핵심 수록 성분 ${IDS.length}개 + 확장 수록 ${nfx(XD.nExt)}개`) && ab.includes('‘등재’는 식약처 ‘허가’와 같은 뜻이 아니며') && ab.includes('의약품표준코드 파일명 2026-08-31') && ab.includes('단위용량 검사도 하지 않습니다') && ab.includes('자동으로 합치지 않고') && ab.includes('data/medterm_ext_dropped.tsv') && ab.includes('재배포 범위가 정해지지 않았습니다'));
+    ck('정보 탭: 확장 수록의 측정 한계 — 벤치마크 숫자는 핵심 사전만으로 잰 값임을 밝힘', ab.includes('핵심 사전만으로'), ab.slice(ab.indexOf('검증기 점검 결과'), ab.indexOf('검증기 점검 결과') + 200));
+    noErr('정보 탭(확장, 1440)', page); await ctx.close();
+  }
+
+  // 18-7. 휴대폰 390: 확장 카드 · 시트 · 분류 칩 더 보기
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true, dpr: 2 });
+    const hint = await rect(page, '#ext-hint');
+    ck('휴대폰(확장): 확장 수록 안내 카드가 바깥틀 안에 들어옴(좌우 여백 15px 이상) · 가로 넘침 없음', hint && hint.x >= 15 && hint.r <= 375 && (await overflow(page)).doc === 0, hint);
+    await page.fill('#q', '암브록솔'); await page.waitForTimeout(250);
+    const b = await rect(page, '#ext-list ul > li:first-child button');
+    ck('휴대폰(확장): 확장 수록 카드도 높이 72px 이상 · 폭은 바깥틀 안쪽 가득 · 가로 넘침 없음', b && b.h >= 72 && b.x >= 15 && b.r <= 375 && b.w >= 340 && (await overflow(page)).doc === 0 && (await overflow(page)).center === 0, b);
+    await page.locator('#ext-list ul > li:first-child button').tap(); await page.waitForTimeout(450);
+    const sh = await rect(page, '#inspector');
+    const shCss = await page.evaluate(() => { const c = getComputedStyle(document.getElementById('inspector')); return { vis: c.visibility, role: document.getElementById('inspector').getAttribute('role') }; });
+    ck('휴대폰(확장): 카드를 누르면 상세가 아래에서 올라오는 시트로 열림(바닥 = 화면 아래, 폭 가득, 높이 88% 이하)', shCss.vis === 'visible' && shCss.role === 'dialog' && sh.b === 844 && sh.x === 0 && sh.w === 390 && sh.h <= Math.ceil(844 * 0.88) + 1, { sh, shCss });
+    const fit = () => page.evaluate(() => { const d = document.getElementById('detail'); return { sw: d.scrollWidth - d.clientWidth, doc: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
+    ck('휴대폰(확장): 시트 안 표·칩이 가로로 넘치지 않고 폭 안에서 줄바꿈', (await fit()).sw <= 0 && (await fit()).doc <= 0, await fit());
+    const summ = page.locator('#detail details summary');
+    ck('휴대폰(확장): "나머지 N개 보기" 요약이 손가락 기준(높이 36px 이상)이고 누르면 펼쳐지며 그래도 넘치지 않음', (await summ.count()) === 1 && (await summ.boundingBox()).height >= 36 && (await (async () => { await summ.tap(); await page.waitForTimeout(150); return (await page.locator('#detail details').evaluate((d) => d.open)) && (await fit()).sw <= 0; })()));
+    const cta = await rect(page, '#inspector > div:last-child button');
+    ck('휴대폰(확장): 시트 아래 고정 줄 "관계 그래프 보기" 버튼(48px 이상, 폭 가득)이 스크롤과 상관없이 보임', (await page.getByRole('button', { name: /관계 그래프 보기/ }).isVisible()) && cta.h >= 48 && cta.w >= 340 && cta.b <= 844, cta);
+    await snap(page, 'r18_ext_phone_sheet');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(450);
+    ck('휴대폰(확장): Esc 로 시트를 닫으면 포커스가 눌렀던 확장 카드로 돌아감', (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden' && (await page.evaluate(() => document.activeElement.hasAttribute('data-ext') && document.activeElement.getAttribute('aria-current') === 'true')), await page.evaluate(() => document.activeElement.outerHTML.slice(0, 120)));
+    // 분류 칩 → 확장 목록 24개 + 더 보기(48px 이상, 폭 가득)
+    await page.fill('#q', ''); await page.waitForTimeout(150);
+    await page.locator('.chip-row > button', { hasText: /^M / }).tap(); await page.waitForTimeout(200);
+    const EXG = await expGroups(page);
+    const mm = page.locator('#ext-list').getByRole('button', { name: /^더 보기/ });
+    const mb = await mm.boundingBox();
+    ck('휴대폰(확장): "M 근골격" 칩 → 확장 목록 24개 · 1열 · "더 보기" 48px 이상 폭 가득 · 가로 넘침 없음', (await page.locator('#ext-list ul > li').count()) === Math.min(24, EXG.ext.M) && (await cols(page)) === 1 && mb.height >= 48 && mb.width >= 340 && (await overflow(page)).doc === 0, { mb, ext: EXG.ext.M });
+    await mm.tap(); await page.waitForTimeout(150);
+    ck('휴대폰(확장): 더 보기를 누르면 24개 더', (await page.locator('#ext-list ul > li').count()) === 48);
+    await snap(page, 'r18_ext_phone_list');
+    noErr('확장(390)', page); await ctx.close();
+  }
+
+  // 18-8. 태블릿 900: 확장 상세는 오른쪽 서랍
+  {
+    const { ctx, page } = await open(browser, 900, 800);
+    await page.fill('#q', '암브록솔'); await page.waitForTimeout(250);
+    ck('태블릿(900): 정확히 일치해도 서랍은 저절로 열리지 않음(입력을 가리지 않음)', (await page.locator('#inspector').getAttribute('data-open')) === 'false');
+    await page.locator('#ext-list ul > li:first-child button').click(); await page.waitForTimeout(450);
+    const insp = await page.evaluate(() => { const e = document.getElementById('inspector'); const c = getComputedStyle(e); const d = document.getElementById('detail'); return { open: e.getAttribute('data-open'), vis: c.visibility, role: e.getAttribute('role'), sw: d.scrollWidth - d.clientWidth, doc: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
+    ck('태블릿(900): 확장 카드를 누르면 오른쪽 서랍으로 상세가 열리고 가로 넘침 없음', insp.open === 'true' && insp.vis === 'visible' && insp.role === 'dialog' && insp.sw <= 0 && insp.doc <= 0, insp);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(450);
+    ck('태블릿(900): Esc 로 서랍이 닫힘', (await page.locator('#inspector').getAttribute('data-open')) === 'false');
+    noErr('확장(900)', page); await ctx.close();
+  }
+
+  // 18-9. 색: 확장 카드는 핵심 카드와 같은 토큰(밝은·어두운), "확장·약사 검수 전" 배지 대비 4.5 이상
+  for (const scheme of ['light', 'dark']) {
+    const { ctx, page } = await open(browser, 1440, 1000, { scheme });
+    await page.fill('#q', 'PPI'); await page.waitForTimeout(250);
+    const st = await page.evaluate(() => {
+      const css = (e) => { const s = getComputedStyle(e); return [s.backgroundColor, s.color, s.borderTopColor, s.borderTopLeftRadius, s.boxShadow].join('|'); };
+      const core = document.querySelector('section[aria-labelledby="list-title"] ul > li:nth-child(2) button');
+      const ext = document.querySelector('#ext-list ul > li:nth-child(2) button');
+      const badge = [...ext.querySelectorAll('span')].find((e) => e.textContent.trim() === '확장·약사 검수 전');
+      const lum = (c) => { const v = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const cr = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
+      const bs = getComputedStyle(badge);
+      return { core: css(core), ext: css(ext), ratio: cr(bs.color, bs.backgroundColor), badge: [bs.color, bs.backgroundColor], on: [core.getAttribute('aria-current'), ext.getAttribute('aria-current')], bodyBg: getComputedStyle(document.body).backgroundColor };
+    });
+    ck(`색(${scheme}): 확장 카드의 배경·글자·테두리·모서리·그림자가 핵심 카드와 같은 토큰`, st.core === st.ext && st.on.every((x) => x === null), st);
+    ck(`색(${scheme}): "확장·약사 검수 전" 배지 글자·배경 대비 4.5 이상`, st.ratio >= 4.5, st);
+    noErr(`확장 색(${scheme})`, page); await ctx.close();
   }
 
   await browser.close();

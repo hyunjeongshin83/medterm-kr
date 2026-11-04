@@ -161,6 +161,7 @@ export default function App() {
           closeRef={closeRef}
           inert={navDrawer}
           onOpenGraph={openGraph}
+          onSelect={(id) => selectVtm(id, { open: false })}
           showGraphCta={tab !== 'graph'}
         />
       </div>
