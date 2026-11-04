@@ -37,9 +37,17 @@
 - React에는 있으나 Figma에 반영하지 못한 것으로 기록된 것: 분류 서랍 안의 "✕ 닫기" 버튼, 그래프 도구줄의 "전체 보기·가운데" 글자 버튼 라벨.
 - 맞추려면 Figma 프레임 몇 곳의 여백·라벨만 고치면 됩니다(한도가 풀린 뒤 진행 가능).
 
+## 2026-11-04 디자인 변경 — 메디노트(MediNote)와 같은 모양으로
+React 화면의 색·글꼴·크기·모서리를 메디노트 앱의 값으로 바꿨다(`web-react/tokens.json` 이 원본, 글꼴은 `web-react/fonts/`).
+- 글꼴: Pretendard 400·600·700(메디노트와 같은 파일), 로고 글씨 「MedTerm-KR」 한 곳만 손글씨체 Gaegu Bold.
+- 색: 브랜드 틸 `#0A7168`, 글씨 `#0F2327`, 보조 글씨 `#547075`(메디노트 `#577377` 을 연한 바탕에서도 4.5:1 이 되도록 아주 조금 어둡게), 바탕 `#F2F6F7`, 카드 흰색, 테두리 `#D8E5E7`, 오류 `#A3231B`, 주의 `#8A5A00`. 다크 값은 메디노트에 없어서 같은 틸 계열로 새로 정했다.
+- 모양: 카드 모서리 20px·옅은 틸 그림자, 버튼·입력 16px, 알약형 탭(켜짐 = 브랜드 글씨 + 옅은 틸 바탕), 글자 크기는 rem(본문 0.9375rem).
+- 아이콘·안드로이드 앱 바탕색도 틸로 바꿨다.
+- **Figma 파일 `PotdShI3iRc93DpN4DbsWw` 는 이 변경을 반영하지 않았다**(파란 계열 그대로). 반영하려면 Figma 변수와 텍스트 스타일을 tokens.json 의 새 값으로 바꿔야 한다. 기존 `web/` 프로토타입 화면(예전 파란 디자인)도 바꾸지 않았다.
+
 ## 한계 · 주의
 - React Flow 화면 오른쪽 아래의 "React Flow" 표기는 기본값으로 두었습니다.
-- 공유 페이지는 Google Fonts(Noto Sans KR)를 링크로 불러옵니다. 독립 실행 HTML은 시스템 글꼴을 씁니다.
+- (2026-11-04 변경) 네 가지 HTML 모두 Pretendard 글꼴을 파일 안에 담습니다(Google Fonts 접속 없음). 자세한 내용은 아래 「2026-11-04 디자인 변경」.
 - 공개 배포 전에는 SNOMED CT·ATC 값의 재배포 조건 확인이 필요합니다(`MedTerm-KR_수록범위확대_DB조사_20261103.md` §1·§4).
 
 ## 다시 만들고 점검하는 방법
@@ -48,7 +56,7 @@ cd web-react
 npm ci
 node build.mjs                 # dist/ 두 파일 생성 (../web/js 의 데이터·core.js 를 읽음)
 npm i --no-save playwright && npx playwright install chromium   # 점검용, 처음 한 번 (package.json은 바뀌지 않음)
-node tests/ui.cjs              # 123개 점검(독립 실행 빌드)
+node tests/ui.cjs              # 134개 점검(독립 실행 빌드; 2026-11-04 기준)
 node tests/artifact_wrap.cjs   # 공유 페이지 조각 모의 점검 + 화면 캡처
 node tools/gen_notices.mjs     # 오픈소스 고지문 다시 만들기
 ```

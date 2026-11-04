@@ -8,7 +8,8 @@
     "build": "node build.mjs",
     "notices": "node tools/gen_notices.mjs",
     "icons": "node tools/make_icons.cjs",
-    "test": "node tests/ui.cjs && node tests/artifact_wrap.cjs && node tests/app_html.cjs && node tests/pwa.cjs"
+    "test": "node tools/check_contrast.mjs --quiet && node tests/ui.cjs && node tests/artifact_wrap.cjs && node tests/app_html.cjs && node tests/pwa.cjs",
+    "contrast": "node tools/check_contrast.mjs"
   },
   "dependencies": {
     "@xyflow/react": "12.12.1",

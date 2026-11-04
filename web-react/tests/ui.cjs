@@ -4,6 +4,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
+const { rgb, FACES } = require('./_tokens.cjs');
 const FILE = process.argv[2] || 'MedTerm-KR_react.html';
 const URL = 'file://' + path.join(ROOT, 'dist', FILE);
 const SHOTS = path.join(ROOT, 'shots', 'ui'); fs.mkdirSync(SHOTS, { recursive: true });
@@ -386,11 +387,36 @@ const overflow = (page) => page.evaluate(() => {
   {
     const { ctx, page } = await open(browser, 1440, 1000, { scheme: 'dark', hash: OME });
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    ck('다크: 바탕색이 토큰(#0f141b)', bg === 'rgb(15, 20, 27)', bg);
+    ck('다크: 바탕색이 토큰(tokens.json 의 bg 다크 값)', bg === rgb('bg', 'dark'), { got: bg, want: rgb('bg', 'dark') });
+    const inkDark = await page.evaluate(() => getComputedStyle(document.body).color);
+    ck('다크: 본문 글씨색이 토큰(ink 다크 값)', inkDark === rgb('ink', 'dark'), { got: inkDark, want: rgb('ink', 'dark') });
     await snap(page, 'k_search');
     await tabTo(page, '관계 그래프'); await page.waitForSelector('.react-flow__node'); await snap(page, 'k_graph');
     await tabTo(page, '답변 검증'); await page.getByLabel('샘플 답변').selectOption('1'); await page.waitForTimeout(150); await snap(page, 'k_verify');
     noErr('다크', page); await ctx.close();
+  }
+
+  /* ───── 13. 글꼴·색(MediNote 디자인): 글꼴 4종이 실제로 불려 왔고, 글씨색·바탕색이 토큰과 같다 ───── */
+  {
+    const { ctx, page } = await open(browser, 1440, 900, { hash: OME });
+    await page.evaluate(() => document.fonts.ready);
+    const loaded = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '') + ' ' + f.weight));
+    for (const [fam, w] of FACES) ck(`글꼴: ${fam} ${w} 이(가) 화면 안에서 읽힘(외부 요청 없이)`, loaded.includes(fam + ' ' + w), loaded);
+    const st = await page.evaluate(() => {
+      const cs = (e) => getComputedStyle(e);
+      const sel = document.querySelector('#tab-search'); // 가운데 작업 탭(왼쪽 트리의 분류 방식 탭과 구분)
+      return {
+        body: cs(document.body).fontFamily, bodyBg: cs(document.body).backgroundColor, bodyInk: cs(document.body).color, h1: cs(document.querySelector('h1')).fontFamily,
+        selColor: cs(sel).color, selBg: cs(sel).backgroundColor, selWeight: cs(sel).fontWeight, bodySize: cs(document.body).fontSize,
+        card: (() => { const c = document.querySelector('#panel-search > div'); return { bg: cs(c).backgroundColor, r: cs(c).borderTopLeftRadius }; })(),
+      };
+    });
+    ck('글꼴: 본문은 Pretendard, 로고 글씨(h1)는 Gaegu → Pretendard 순', /^"?Pretendard"?,/.test(st.body) && /^"?Gaegu"?,\s*"?Pretendard"?/.test(st.h1), { body: st.body, h1: st.h1 });
+    ck('색: 라이트 바탕·본문 글씨색이 토큰(bg·ink)', st.bodyBg === rgb('bg') && st.bodyInk === rgb('ink'), { bg: st.bodyBg, ink: st.bodyInk });
+    ck('색: 켜진 탭은 브랜드 글씨(pri) + 옅은 틸 바탕(pri-soft) + 굵게 700', st.selColor === rgb('pri') && st.selBg === rgb('pri-soft') && st.selWeight === '700', { color: st.selColor, bg: st.selBg, w: st.selWeight });
+    ck('모양: 카드는 흰 바탕(surface) · 모서리 20px(메디노트 --r-lg)', st.card.bg === rgb('surface') && st.card.r === '20px', st.card);
+    ck('크기: 본문 글자 0.9375rem = 15px(메디노트 --fs-sub), 브라우저 글자 크기 설정을 따름', st.bodySize === '15px', st.bodySize);
+    noErr('글꼴·색', page); await ctx.close();
   }
 
   await browser.close();

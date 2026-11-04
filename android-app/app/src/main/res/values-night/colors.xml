@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- tokens.json 의 다크 값 -->
 <resources>
-    <color name="page_bg">#0F141B</color>
-    <color name="bar_bg">#171E28</color>
+    <color name="page_bg">#0B1B1E</color>
+    <color name="bar_bg">#10282C</color>
 </resources>

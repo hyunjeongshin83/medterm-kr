@@ -43,11 +43,15 @@ const head = `MedTerm-KR React 화면(web-react) — 제3자 소프트웨어 고
 이 폴더의 dist/*.html 은 아래 오픈소스를 한 파일로 묶어 담고 있습니다. 각 라이선스 원문은 아래에 그대로 붙였습니다.
 - 번들에 포함: ${rows.map((x) => `${x.name} ${x.version} (${x.license})`).join(', ')}
 - 빌드 도구(결과물에 코드가 들어가지 않음): esbuild(MIT), Tailwind CSS 3.4.17(MIT). 단, 결과 CSS에는 Tailwind의 기본 리셋(preflight, MIT)과 React Flow의 base.css(MIT)가 포함됩니다.
-- 글꼴: 공유 페이지 빌드(dist/artifact.html)는 Google Fonts의 Noto Sans KR(SIL Open Font License 1.1)을 링크로 불러오며 파일에 담지 않습니다. 독립 실행 빌드(dist/MedTerm-KR_react.html)는 글꼴을 담지 않고 시스템 글꼴을 씁니다.
+- 글꼴(SIL Open Font License 1.1): dist/ 의 네 가지 HTML 모두 글꼴 파일(woff2)을 base64 로 안에 담고 있습니다(외부 글꼴 서버에 접속하지 않음). Pretendard 400·600·700(© 2021 Kil Hyung-jin, Reserved Font Name Pretendard — 배포 파일 그대로)과 로고 글씨 한 곳에 쓰는 Gaegu Bold(© 2018 The Gaegu Project Authors — 영문·숫자·기호 94자로 줄인 사본). 두 글꼴의 라이선스 원문은 이 파일 맨 아래에 붙였고 fonts/ 폴더에도 있습니다. 출처·구성: fonts/README.md
 - 데이터: 사전 내용(NLM RxNorm/RxNav 기반)과 분류 체계(ATC·SNOMED CT)의 이용 조건은 각 제공기관의 조건을 따릅니다. 이 고지문은 소프트웨어 부분만 다룹니다.
 `;
 
 const body = rows.map((x) => `\n${'='.repeat(78)}\n${x.name} ${x.version}\n라이선스: ${x.license}${x.repo ? `\n저장소: ${x.repo}` : ''}\n${'='.repeat(78)}\n${x.text || '(패키지 안에 LICENSE 파일이 없습니다. 위 라이선스 표기를 따릅니다.)'}\n`).join('');
 
-writeFileSync(path.join(ROOT, 'THIRD_PARTY_NOTICES.txt'), head + body);
+// 글꼴 라이선스 원문(fonts/OFL-*.txt)
+const fontBody = [['Pretendard 1.3.9 (Pretendard-Regular·SemiBold·Bold.subset.woff2)', 'OFL-Pretendard.txt'], ['Gaegu Bold (Gaegu-Bold.accent.woff2)', 'OFL-Gaegu.txt']]
+  .map(([title, f]) => `\n${'='.repeat(78)}\n${title}\n라이선스: SIL Open Font License 1.1\n${'='.repeat(78)}\n${readFileSync(path.join(ROOT, 'fonts', f), 'utf8').trim()}\n`).join('');
+
+writeFileSync(path.join(ROOT, 'THIRD_PARTY_NOTICES.txt'), head + body + fontBody);
 console.log(`패키지 ${rows.length}개:`, rows.map((x) => `${x.name}@${x.version}[${x.license}]${x.text ? '' : '(LICENSE 없음)'}`).join(', '));

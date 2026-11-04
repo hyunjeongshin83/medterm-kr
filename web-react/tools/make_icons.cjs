@@ -17,7 +17,7 @@ const SIZES = { 'icon-192.png': 192, 'icon-512.png': 512, 'maskable-512.png': 51
   const browser = await chromium.launch();
   for (const [name, px] of Object.entries(SIZES)) {
     const page = await browser.newPage({ viewport: { width: px, height: px }, deviceScaleFactor: 1 });
-    await page.setContent(`<!doctype html><style>html,body{margin:0;background:#1f5fbf}svg{display:block;width:${px}px;height:${px}px}</style>${SVG}`);
+    await page.setContent(`<!doctype html><style>html,body{margin:0;background:#0a7168}svg{display:block;width:${px}px;height:${px}px}</style>${SVG}`);
     await page.screenshot({ path: path.join(OUT, name), clip: { x: 0, y: 0, width: px, height: px } });
     await page.close();
     console.log(name, px + 'x' + px, fs.statSync(path.join(OUT, name)).size + ' B');

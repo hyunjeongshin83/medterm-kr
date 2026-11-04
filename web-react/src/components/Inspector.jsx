@@ -95,7 +95,7 @@ export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef })
           type="button"
           aria-label="상세 닫기"
           onClick={onClose}
-          className="hidden rounded-md border border-line bg-surface px-2.5 py-1.5 text-body text-ink hover:border-pri lt-insp:inline-flex"
+          className="hidden rounded-md border border-line bg-surface px-2.5 py-1.5 text-body font-semibold text-ink hover:border-pri lt-insp:inline-flex"
         >
           ✕ 닫기
         </button>

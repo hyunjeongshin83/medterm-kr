@@ -35,7 +35,7 @@
     position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
     width: min(var(--drawer-r), 94vw);
-    box-shadow: -8px 0 24px rgba(16, 24, 40, 0.18);
+    box-shadow: -8px 0 24px rgba(15, 35, 39, 0.18);
     transform: translateX(102%); visibility: hidden;
     transition: transform 0.2s ease, visibility 0s linear 0.2s;
   }
@@ -47,7 +47,7 @@
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
     width: min(var(--drawer-l), 88vw);
-    box-shadow: 8px 0 24px rgba(16, 24, 40, 0.18);
+    box-shadow: 8px 0 24px rgba(15, 35, 39, 0.18);
     border-right: 0;
     transform: translateX(-102%); visibility: hidden;
     transition: transform 0.2s ease, visibility 0s linear 0.2s;
@@ -63,6 +63,6 @@
 /* 커서와 터치 동작은 그래프 칸(GraphCanvas)이 정한다. 끌어서 이동은 포인터 처리로 직접 하고, 세로 스크롤은 브라우저에 맡긴다. */
 .react-flow__pane, .react-flow__pane.draggable, .react-flow__pane.dragging { cursor: inherit; touch-action: pan-y pinch-zoom; }
 .react-flow__handle { opacity: 0; pointer-events: none; }
-.react-flow__attribution { background: var(--surface); color: var(--mut); font-size: 10px; border-radius: 6px 0 0 0; }
+.react-flow__attribution { background: var(--surface); color: var(--mut); font-size: 0.625rem; border-radius: 8px 0 0 0; }
 .react-flow__attribution a { color: var(--mut); }
 .react-flow__node, .react-flow__node.draggable { cursor: inherit; }

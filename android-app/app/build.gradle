@@ -10,8 +10,8 @@ android {
         applicationId 'kr.medit.medtermkr'   // 바꾸려면 namespace·폴더(java/kr/medit/medtermkr)도 함께 바꾼다.
         minSdk 26                            // 안드로이드 8.0 이상
         targetSdk 34
-        versionCode 1
-        versionName '0.1.0'
+        versionCode 2
+        versionName '0.1.1'
     }
 
     buildTypes {

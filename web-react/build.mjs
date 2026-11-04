@@ -1,6 +1,6 @@
 // 빌드: tokens.json → CSS 변수, Tailwind, esbuild(React+React Flow) → 단일 HTML 세 가지(독립 실행·공유 페이지·안드로이드 앱) + 설치형 웹앱 폴더(dist/pwa/)
-//   dist/MedTerm-KR_react.html   독립 실행용(문서 전체, 외부 요청 없음, 서버 프록시 입력 포함)
-//   dist/artifact.html           공유 페이지용 조각(doctype/html/head/body 없음, Google Fonts 한 줄, 프록시 입력 숨김)
+//   dist/MedTerm-KR_react.html   독립 실행용(문서 전체, 글꼴 포함, 외부 요청 없음, 서버 프록시 입력 포함)
+//   dist/artifact.html           공유 페이지용 조각(doctype/html/head/body 없음, 글꼴은 안에 담음, 외부 요청 없음, 프록시 입력 숨김)
 //   dist/MedTerm-KR_app.html     설치형 앱용(문서 전체, 외부 요청 없음, 프록시 입력 숨김) → android-app 의 assets/index.html
 //   dist/pwa/                    설치형 웹앱(PWA) 폴더: index.html + manifest + sw.js + icons/ → HTTPS 정적 호스팅에 폴더째 올린다
 // 사용: node build.mjs            (MEDTERM_JS=<core.js·medterm-data.js·bench.js가 있는 폴더>, 기본은 ../web/js)
@@ -44,7 +44,19 @@ execFileSync(process.execPath, [
   '-c', path.join(ROOT, 'tailwind.config.js'), '-i', path.join(ROOT, 'src', 'index.css'), '-o', path.join(DIST, 'tw.css'), '--minify',
 ], { cwd: ROOT, stdio: ['ignore', 'ignore', 'inherit'] });
 const xyflowCss = read(ROOT, 'node_modules', '@xyflow', 'react', 'dist', 'base.css');
-const css = [tokensCss, xyflowCss, read(DIST, 'tw.css')].join('\n');
+
+/* 2-1) 글꼴: 메디노트와 같은 Pretendard(본문 400·600·700) + 로고 글씨 Gaegu(영문 94자). woff2 를 base64 로 CSS 안에 담아 외부 서버에 접속하지 않는다. (fonts/README.md) */
+const FONTS = [
+  ['Pretendard', 400, 'Pretendard-Regular.subset.woff2'],
+  ['Pretendard', 600, 'Pretendard-SemiBold.subset.woff2'],
+  ['Pretendard', 700, 'Pretendard-Bold.subset.woff2'],
+  ['Gaegu', 700, 'Gaegu-Bold.accent.woff2'],
+];
+const fontCss = FONTS.map(([family, weight, file]) => {
+  const b64 = readFileSync(path.join(ROOT, 'fonts', file)).toString('base64');
+  return `@font-face{font-family:'${family}';font-weight:${weight};font-style:normal;font-display:swap;src:url(data:font/woff2;base64,${b64}) format("woff2")}`;
+}).join('\n');
+const css = [fontCss, tokensCss, xyflowCss, read(DIST, 'tw.css')].join('\n');
 
 /* 3) JS 번들 (대상별로 한 번씩) */
 async function bundle(enableProxy, surface) {
@@ -60,7 +72,7 @@ async function bundle(enableProxy, surface) {
 /* 4) HTML 조립 */
 const esc = (s) => s.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
 const classic = ['medterm-data.js', 'bench.js', 'core.js'].map((f) => `<script>\n${esc(read(JS_DIR, f))}\n</script>`).join('\n');
-const NOTICE = '<!-- MedTerm-KR 화면(React). 포함된 오픈소스: React(MIT), React Flow·@xyflow/react(MIT), Tailwind CSS(MIT). 고지문: THIRD_PARTY_NOTICES.txt -->';
+const NOTICE = '<!-- MedTerm-KR 화면(React). 포함된 오픈소스: React(MIT), React Flow·@xyflow/react(MIT), Tailwind CSS(MIT). 글꼴(SIL OFL 1.1): Pretendard © Kil Hyung-jin · Gaegu © The Gaegu Project Authors. 고지문: THIRD_PARTY_NOTICES.txt -->';
 
 const standalone = `<!doctype html>
 <html lang="ko">
@@ -85,9 +97,6 @@ writeFileSync(path.join(DIST, 'MedTerm-KR_react.html'), standalone);
 const artifact = `<title>MedTerm-KR</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 ${NOTICE}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>${css}</style>
 <div id="root"></div>
 ${classic}
@@ -95,7 +104,7 @@ ${classic}
 `;
 writeFileSync(path.join(DIST, 'artifact.html'), artifact);
 
-// 설치형 앱(안드로이드 WebView)용: 문서 전체, 외부 요청 없음(글꼴은 기기 글꼴), 서버 프록시 입력 숨김. android-app/app/src/main/assets/index.html 로 복사해 쓴다.
+// 설치형 앱(안드로이드 WebView)용: 문서 전체, 외부 요청 없음(글꼴은 안에 담음), 서버 프록시 입력 숨김. android-app/app/src/main/assets/index.html 로 복사해 쓴다.
 const appHtml = `<!doctype html>
 <html lang="ko">
 <head>

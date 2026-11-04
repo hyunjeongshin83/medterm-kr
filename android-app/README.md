@@ -4,7 +4,7 @@
 
 ## 특징
 - 화면 · 사전 데이터 · 검증 규칙이 모두 앱 안(`app/src/main/assets/index.html`)에 있습니다. **인터넷 권한을 넣지 않았으므로** 앱이 바깥으로 보내는 통신이 없고, 인터넷이 없어도 동작합니다.
-- 안드로이드 8.0(API 26) 이상, Java + 기본 WebView. 외부 라이브러리는 하나도 없습니다(APK 약 180 KB).
+- 안드로이드 8.0(API 26) 이상, Java + 기본 WebView. 외부 라이브러리는 하나도 없습니다(글꼴을 화면 안에 담아 APK 약 1.0 MB).
 - 기기가 다크 모드면 화면도 다크로 바뀝니다(색은 `web-react/tokens.json` 과 같은 값). 상태 표시줄·아래 막대 색도 맞춥니다.
 - 뒤로 가기는 화면 안의 이동(성분 선택 등)을 먼저 되돌리고, 더 갈 곳이 없으면 앱이 닫힙니다.
 - 웹 주소·메일·전화 링크는 기기의 다른 앱(브라우저 등)으로 넘기고, 그 밖의 주소는 막습니다.
@@ -33,10 +33,10 @@ GitHub 저장소에서 만들려면 `.github/workflows/android-apk.yml` 을 씁�
 ## 바꿀 수 있는 것
 - 앱 ID: `app/build.gradle` 의 `applicationId` · `namespace` 와 폴더 `app/src/main/java/kr/medit/medtermkr`(바꾸면 함께). 지금 값은 임시 이름입니다.
 - 버전: `versionCode`(숫자, 올릴 때마다 +1) · `versionName`.
-- 아이콘: `app/src/main/res/drawable/ic_launcher_foreground.xml`(파란 바탕 위의 알약) · 바탕색 `values/colors.xml`.
+- 아이콘: `app/src/main/res/drawable/ic_launcher_foreground.xml`(틸 바탕 위의 알약, 2026-11-04 에 메디노트 색으로 변경) · 바탕색 `values/colors.xml`.
 
 ## 확인한 것과 확인하지 못한 것 (2026-11-04)
 - 확인함: 이 작업 환경(리눅스, JDK 21, Gradle 8.14.3, 안드로이드 Gradle 플러그인 8.7.3)에서 `assembleRelease` 가 성공했습니다. APK 를 점검한 결과 — 패키지 `kr.medit.medtermkr` · 버전 0.1.0(1) · minSdk 26 · targetSdk 34 · **요청 권한 없음** · 시작 화면 `MainActivity` · APK 서명(v2) 확인 · `assets/index.html` 이 `dist/MedTerm-KR_app.html` 과 바이트까지 같음.
-- 확인함: 같은 화면 파일을 데스크톱 크롬에서 휴대폰 폭(390·360px)으로 열어 22개 점검 통과(`web-react/tests/app_html.cjs`).
+- 확인함: 같은 화면 파일을 데스크톱 크롬에서 휴대폰 폭(390·360px)으로 열어 23개 점검 통과(`web-react/tests/app_html.cjs`).
 - **확인하지 못함**: 실제 휴대폰·에뮬레이터에서 설치해 실행해 보는 것. 이 환경에서는 에뮬레이터를 돌릴 수 없었습니다. WebView 고유의 동작(뒤로 가기, 외부 링크 넘기기, 상태 표시줄 색, 기기 글꼴 크기 설정에 따른 모양)은 설치 후 직접 확인해 주세요. 이상이 있으면 알려 주세요.
 - `.github/workflows/android-apk.yml` 은 이 환경에서 실행해 보지 못했습니다(같은 명령 `./gradlew assembleRelease` 는 위와 같이 확인).

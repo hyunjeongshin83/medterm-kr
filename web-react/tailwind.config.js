@@ -8,8 +8,9 @@ const px = (n) => `${n}px`;
 const colors = Object.fromEntries(Object.keys(tokens.color).map((k) => [k, `var(--${k})`]));
 colors.scrim = 'var(--scrim)';
 
+// 글자 크기는 rem(브라우저 글자 크기 설정을 따름), 줄 높이는 단위 없는 배수, 자간은 메디노트 --ls-* 값.
 const fontSize = Object.fromEntries(
-  Object.entries(tokens.type).map(([k, t]) => [k, [px(t.size), { lineHeight: px(t.lh), fontWeight: String(t.weight) }]]),
+  Object.entries(tokens.type).map(([k, t]) => [k, [t.size, { lineHeight: String(t.lh), fontWeight: String(t.weight), letterSpacing: tokens.tracking[t.ls] }]]),
 );
 
 const L = tokens.layout;
@@ -25,15 +26,17 @@ export default {
     },
     colors: { transparent: 'transparent', current: 'currentColor', ...colors },
     fontSize,
-    fontFamily: { sans: tokens.font.sans.map(q), mono: tokens.font.mono.map(q) },
-    borderRadius: { none: '0', sm: px(tokens.radius.sm), md: px(tokens.radius.md), lg: px(tokens.radius.lg), pill: px(tokens.radius.pill), full: '9999px' },
+    fontFamily: { sans: tokens.font.sans.map(q), hand: tokens.font.hand.map(q), mono: tokens.font.mono.map(q) },
+    letterSpacing: { title: tokens.tracking.title, body: tokens.tracking.body, caps: tokens.tracking.caps },
+    // 메디노트 모서리: --r-xs 8 · --r-sm 12 · --r-md 16 · --r-lg 20 · --r-full 999  →  여기서는 sm · md · lg · xl · pill
+    borderRadius: { none: '0', sm: px(tokens.radius.sm), md: px(tokens.radius.md), lg: px(tokens.radius.lg), xl: px(tokens.radius.xl), pill: px(tokens.radius.pill), full: '9999px' },
     extend: {
       gridTemplateColumns: {
         shell: `${px(L.left)} minmax(0,1fr) ${px(L.right)}`,
         'shell-md': `${px(L.leftMd)} minmax(0,1fr)`,
         'shell-1': 'minmax(0,1fr)',
       },
-      boxShadow: { seg: tokens.shadow.seg, 'drawer-r': tokens.shadow['drawer-r'], 'drawer-l': tokens.shadow['drawer-l'] },
+      boxShadow: { seg: tokens.shadow.seg, card: tokens.shadow.card, 'card-hi': tokens.shadow['card-hi'], 'drawer-r': tokens.shadow['drawer-r'], 'drawer-l': tokens.shadow['drawer-l'] },
     },
   },
   plugins: [],

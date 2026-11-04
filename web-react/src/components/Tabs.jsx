@@ -29,7 +29,7 @@ export function Tabs({ tab, onChange }) {
       role="tablist"
       aria-label="작업 화면"
       onKeyDown={onKeyDown}
-      className="center-bleed sticky top-0 z-[5] mb-3.5 flex gap-1 overflow-x-auto border-b border-line bg-bg pt-2.5"
+      className="center-bleed sticky top-0 z-[5] mb-3.5 flex gap-1 overflow-x-auto border-b border-line bg-bg py-2"
     >
       {TABS.map(([k, label]) => {
         const on = k === tab;
@@ -44,7 +44,7 @@ export function Tabs({ tab, onChange }) {
             aria-controls={`panel-${k}`}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(k)}
-            className={cx('whitespace-nowrap border-b-[3px] px-3.5 py-2 text-body', on ? 'border-pri font-bold text-pri' : 'border-transparent text-mut hover:text-ink')}
+            className={cx('min-h-11 whitespace-nowrap rounded-lg px-3.5 py-2 text-body', on ? 'bg-pri-soft font-bold text-pri' : 'font-semibold text-info hover:bg-info-bg')}
           >
             {label}
           </button>

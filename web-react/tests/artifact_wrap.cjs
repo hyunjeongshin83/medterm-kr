@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
+const { rgb, FACES } = require('./_tokens.cjs');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'artifact'); fs.mkdirSync(OUT, { recursive: true });
 const frag = fs.readFileSync(path.join(ROOT, 'dist', 'artifact.html'), 'utf8');
 const wrapped = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -19,11 +20,12 @@ const ck = (n, ok, x) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 
 async function open(browser, w, h, o = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: o.dpr || 1, colorScheme: o.scheme || 'light', hasTouch: !!o.touch, isMobile: !!o.mobile });
   const ext = [];
-  await ctx.route(/^(?!file:)/, (r) => { const u = r.request().url(); if (!/fonts\.(googleapis|gstatic)\.com/.test(u)) ext.push(u); return r.abort(); });
+  // 글꼴을 파일 안에 담았으므로 외부 요청은 어떤 것도 허용하지 않는다(예전에는 Google Fonts 만 허용했다).
+  await ctx.route(/^(?!file:)/, (r) => { ext.push(r.request().url()); return r.abort(); });
   const page = await ctx.newPage(); page.setDefaultTimeout(8000);
   page.errs = []; page.ext = ext;
   page.on('pageerror', (e) => page.errs.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_FAILED|net::/.test(m.text())) page.errs.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error') page.errs.push(m.text()); });
   await page.goto('file://' + FILE + (o.hash ? '#' + o.hash : '')); await page.waitForSelector('#root > *'); await page.waitForTimeout(400);
   return { ctx, page };
 }
@@ -62,7 +64,10 @@ const fit = (page) => page.evaluate(() => {
   {
     const { ctx, page } = await open(browser, 1440, 900, { dpr: 2, scheme: 'dark', hash: 'v-7646' });
     await tabTo(page, '관계 그래프');
-    ck('다크: 바탕색 토큰', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(15, 20, 27)');
+    ck('다크: 바탕색 토큰', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === rgb('bg', 'dark'));
+    await page.evaluate(() => document.fonts.ready);
+    const loaded = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '') + ' ' + f.weight));
+    ck('글꼴: 공유 조각 안에 담긴 글꼴 4종이 외부 요청 없이 읽힘', FACES.every(([fam, w]) => loaded.includes(fam + ' ' + w)), loaded);
     await page.screenshot({ path: path.join(OUT, '4_desktop_graph_dark.png') });
     ck('다크: 오류·외부 요청 없음', page.errs.length === 0 && page.ext.length === 0, { errs: page.errs, ext: page.ext });
     await ctx.close();

@@ -60,7 +60,7 @@ export function SearchTab({ selectedId, onSelect }) {
                 type="button"
                 onClick={() => onSelect(v.id)}
                 aria-current={on ? 'true' : undefined}
-                className={cx('block w-full rounded-md border bg-surface px-3 py-2.5 text-left hover:border-pri', on ? 'border-pri shadow-[inset_3px_0_0_var(--pri)]' : 'border-line')}
+                className={cx('block w-full rounded-lg border bg-surface px-3.5 py-2.5 text-left shadow-card hover:border-pri', on ? 'border-pri shadow-[inset_3px_0_0_var(--pri)]' : 'border-line')}
               >
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <b className="text-hit-title">{v.label_ko}</b>

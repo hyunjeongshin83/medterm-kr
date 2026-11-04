@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
+const { rgb, FACES } = require('./_tokens.cjs');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'app'); fs.mkdirSync(OUT, { recursive: true });
 const FILE = path.join(ROOT, 'dist', 'MedTerm-KR_app.html');
 const URL = 'file://' + FILE;
@@ -78,7 +79,10 @@ const overflow = (page) => page.evaluate(() => {
   // 2) 다크 모드(기기 설정이 다크일 때)
   {
     const { ctx, page } = await open(browser, 390, 844, { dpr: 2, touch: true, mobile: true, scheme: 'dark', hash: 'v-7646' });
-    ck('다크: 바탕색 토큰', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(15, 20, 27)');
+    ck('다크: 바탕색 토큰', (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === rgb('bg', 'dark'));
+    await page.evaluate(() => document.fonts.ready);
+    const loaded = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '') + ' ' + f.weight));
+    ck('글꼴: 앱 화면 안에 담긴 글꼴 4종이 외부 요청 없이 읽힘', FACES.every(([fam, w]) => loaded.includes(fam + ' ' + w)), loaded);
     await page.screenshot({ path: path.join(OUT, 'phone_dark.png') });
     ck('다크: 콘솔·페이지 오류 없음, 외부 요청 시도 없음', page.errs.length === 0 && page.ext.length === 0, { errs: page.errs, ext: page.ext });
     await ctx.close();
