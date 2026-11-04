@@ -47,7 +47,7 @@ SEED = [
  ("zolpidem","졸피뎀",[],["스틸녹스"],[]),
  ("prednisolone","프레드니솔론",[],[],[]),
 ]
-FORM_KO = {"Oral Tablet":"경구 정제","Oral Capsule":"경구 캡슐","Delayed Release Oral Capsule":"장용(지연방출) 캡슐","Delayed Release Oral Tablet":"장용(지연방출) 정제","Extended Release Oral Tablet":"서방정","Extended Release Oral Capsule":"서방 캡슐","Oral Solution":"경구용 액","Oral Suspension":"경구용 현탁액","Injectable Solution":"주사액","Chewable Tablet":"츄어블정","Oral Powder":"경구용 산제","Topical Gel":"겔(외용)","Topical Cream":"크림(외용)","Topical Solution":"외용액","Rectal Suppository":"좌제","Topical Ointment":"연고(외용)","Disintegrating Oral Tablet":"구강붕해정"}
+from form_ko import FORM_KO, SOURCE_NOTE   # 제형 한글명 표(수기 직역 초안) — apply_form_ko.py 와 같이 씀
 STR_RE = re.compile(r'^(?P<tech>(?:[A-Z][a-z]+ )+)?(?:(?P<pre>\d+(?:\.\d+)?) (?P<preu>HR|ML) )?(?P<ing>[^\d]+?) (?P<str>\d+(?:\.\d+)?\s?(?:MG|MCG|G|UNT|MEQ|MMOL|ML)(?:/(?:\d+(?:\.\d+)?)?(?:ML|HR|ACTUAT|G|MG|L|24HR))?) (?P<form>.+)$')
 def parse_scd(name):
     m = STR_RE.match(name)
@@ -97,7 +97,7 @@ def main(out):
     ids = [c["id"] for c in concepts]; assert len(ids) == len(set(ids)), "duplicate ids"
     idset = set(ids); assert all(c["ingredient"] in idset for c in concepts if c["type"] == "VMP") and all(c["vmp"] in idset for c in concepts if c["type"] == "AMP")
     data = dict(meta=dict(name="MedTerm-KR", built_at=today, rxnav_version=get("/version.json").get("version"),
-        sources=["RxNorm/RxNav REST (NLM): RxCUI, ATC, SNOMED CT concept IDs, SCD/SBD", "ATC class names via RxNav RxClass (WHO CC)", "한글명·한국 상품명: 수기 입력(미검수)"],
+        sources=["RxNorm/RxNav REST (NLM): RxCUI, ATC, SNOMED CT concept IDs, SCD/SBD", "ATC class names via RxNav RxClass (WHO CC)", "한글명·한국 상품명: 수기 입력(미검수)", SOURCE_NOTE],
         notice="한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준입니다. 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다."), atc=atc_nodes, concepts=concepts)
     data["meta"]["counts"] = {t: sum(1 for c in concepts if c["type"] == t) for t in ("VTM", "VMP", "AMP")}
     json.dump(data, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

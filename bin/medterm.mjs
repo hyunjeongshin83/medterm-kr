@@ -20,7 +20,7 @@ const J = flag('json'); const out = o => process.stdout.write((J ? JSON.stringif
 const wilson = (k, n, z = 1.96) => { if (!n) return [NaN, NaN]; const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), a = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)); return [(c - a) / d, (c + a) / d]; };
 const pct = (k, n) => { if (!n) return 'n/a'; const [lo, hi] = wilson(k, n); return `${k}/${n} (${Math.round(100 * k / n)}%, 95% CI ${Math.round(100 * lo)}–${Math.round(100 * hi)}%)`; };
 const kappa = (a, b) => { const n = a.length; if (!n) return NaN; let agree = 0, a1 = 0, b1 = 0; for (let i = 0; i < n; i++) { if (a[i] === b[i]) agree++; if (a[i]) a1++; if (b[i]) b1++; } const po = agree / n, pe = (a1 / n) * (b1 / n) + (1 - a1 / n) * (1 - b1 / n); return pe === 1 ? NaN : (po - pe) / (1 - pe); };
-function resolve(q) { const byId = mt.byId.get(q); if (byId && byId.type === 'VTM') return byId.id; const h = mt.search(q); return h.length ? h[0].vtm.id : null; }
+function resolve(q) { const byId = mt.byId.get(q); if (byId && byId.type === 'VTM') return byId.id; const h = mt.search(q, { classes: false }); return h.length ? h[0].vtm.id : null; }
 function verifyText(text) { const r = mt.verify(text); return { summary: r.summary, findings: r.findings.filter(f => f.severity !== 'ok').map(({ severity, type, text, message, start, end }) => ({ severity, type, text, message, start, end })) }; }
 function exitCodeFor(s) { return s.error ? 1 : s.warn ? 2 : 0; }
 const readStdin = () => { try { return fs.readFileSync(0, 'utf8'); } catch { return ''; } };

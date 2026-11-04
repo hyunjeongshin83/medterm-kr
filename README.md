@@ -19,7 +19,8 @@
 - 결과물: `web-react/dist/MedTerm-KR_react.html`(독립 실행, 서버 불필요, 글꼴 포함이라 약 1.8 MB) · `web-react/dist/artifact.html`(공유 페이지용 조각) · `web-react/dist/pwa/`(설치형 웹앱, 아래 참고). 성분 주소: `#v-7646`(예전 `#MT:VTM:7646` 도 열림).
 - 만들기·점검: `cd web-react && npm ci && npm run build`, 점검 방법과 구조는 `web-react/README.md`. 오픈소스 고지문: `web-react/THIRD_PARTY_NOTICES.txt`.
 - 반응형 화면 구성(2026-11-04): 휴대폰은 하단 탭 + 카드 목록 + 아래에서 올라오는 상세 시트, 태블릿은 서랍, 노트북 이상은 3단(카드 1~3열). 자세히: `web-react/README.md` 의 "화면 구성(모바일 앱 템플릿식)과 반응형".
-- 실사용판 표기(2026-11-04): 화면·설치 정보 어디에도 "프로토타입" 표기를 쓰지 않고, 버전(`v1.0.0`)은 `web-react/package.json` 한 곳에서 정한다. "근거 기반 질의" 탭은 **리서치용**으로 표시되고 LLM 질의문은 리서치 형식(R1, `web-react/src/lib/researchPrompt.js`)이다. 자세히: `web-react/README.md` 의 "실사용판 표기와 리서치용 LLM 질의".
+- 실사용판 표기(2026-11-04): 화면·설치 정보 어디에도 "프로토타입" 표기를 쓰지 않고, 버전(`v1.0.1`)은 `web-react/package.json` 한 곳에서 정한다. "근거 기반 질의" 탭은 **리서치용**으로 표시되고 LLM 질의문은 리서치 형식(R1, `web-react/src/lib/researchPrompt.js`)이다. 자세히: `web-react/README.md` 의 "실사용판 표기와 리서치용 LLM 질의".
+- 검색 막힘 해소(v1.0.1, 2026-11-04): 검색 상자가 분류 이름(`PPI`·`진통제`·`항응고제` …)과 ID 표기(`MT:VTM:7646`·`[MT:VTM:7646]`·`RxCUI 7646`)를 알아보고, 전각 글자·조합형 한글도 같게 본다. 사전에 성분이 없는 분류(ACE 억제제·베타차단제)는 "분류는 알지만 이 사전에 성분이 없음 — 확인 필요"로 안내한다. 질의문(R1)은 질문 속 구조 태그를 무력화하고, 제형 한글명 23종(85개 VMP)을 채웠다(수기 직역 초안·미검수). 시험: `node tests/search_forms.js` · `node tests/data_check.js` · `cd web-react && npm test`.
 - 디자인(2026-11-04): 메디노트(MediNote)와 같은 글꼴(Pretendard)·색(브랜드 틸 `#0A7168`)·글자 크기·모서리로 바꿨다. 값의 원본은 `web-react/tokens.json`, 글꼴은 `web-react/fonts/`. Figma 파일 `PotdShI3iRc93DpN4DbsWw` 는 **아직 새 디자인으로 바꾸지 않았다**(이전 파란 계열). 현황과 Figma–React 차이: `docs/Figma_React_안내_20261103.md`.
 - 수록 범위 확대(식약처·심평원·RxNorm 등 데이터 출처, 라이선스, 단계별 계획) 조사: `docs/research/05_수록범위확대_DB조사_20261103.md`.
 
@@ -32,7 +33,7 @@
 ## 설치형 안드로이드 앱 (`android-app/`, 2026-11-04 추가)
 같은 React 화면(`web-react/dist/MedTerm-KR_app.html`)을 앱 안에 담아 휴대폰에 설치하는 앱이다(Java + 기본 WebView, 외부 라이브러리 없음, **인터넷 권한 없음**: 화면과 사전이 모두 앱 안에 있다). 안드로이드 8.0 이상.
 - 설치·다시 만들기·서명 주의: `android-app/README.md`. 저장소에서 APK 를 만들려면 Actions → android-app → Run workflow(`.github/workflows/android-apk.yml`, 수동 실행).
-- 현재 버전 **1.0.0(4)**. 개인 확인용 서명(디버그 키)이다. 정식 배포용 서명 키와 앱 ID 는 정해지지 않았다. 휴대폰에서 직접 설치·실행해 본 확인은 아직 없다(`android-app/README.md` 의 "확인하지 못함" 참고).
+- 현재 버전 **1.0.1(5)**. 개인 확인용 서명(디버그 키)이다. 정식 배포용 서명 키와 앱 ID 는 정해지지 않았다. 휴대폰에서 직접 설치·실행해 본 확인은 아직 없다(`android-app/README.md` 의 "확인하지 못함" 참고).
 
 ## CLI
 `node bin/medterm.mjs help` — 검색·프롬프트·검증·벤치마크·평가. 예: `node bin/medterm.mjs verify --text "메트포르민은 항고혈압제입니다."` (종료코드 1).

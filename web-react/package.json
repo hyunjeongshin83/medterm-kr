@@ -1,7 +1,7 @@
 {
   "name": "medterm-kr-react",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "MedTerm-KR 3단 화면 — React + Tailwind + React Flow (빌드 결과는 단일 HTML)",
   "scripts": {

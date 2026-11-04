@@ -19,4 +19,4 @@ export const QUESTION_EXAMPLE = '오메프라졸과 에스오메프라졸의 ATC
 // 일부러 틀린 내용을 넣은 예시 답변이다(검증기가 오류를 잡는지 해 보는 용도)(A02BC05는 에스오메프라졸 코드, 200mg 규격 없음, '에스오메프라졸린' 철자 오류).
 export const MOCK_ANSWER = '오메프라졸은 ATC 코드 A02BC05에 해당하는 양성자펌프억제제이며, 10mg·20mg·40mg·200mg 캡슐이 있습니다. 에스오메프라졸린은 그 이성질체입니다.';
 
-export const SEARCH_EXAMPLES = ['메트포르민', '노바스크', 'C10AA', 'warfarin'];
+export const SEARCH_EXAMPLES = ['메트포르민', '노바스크', 'C10AA', 'warfarin', 'PPI'];

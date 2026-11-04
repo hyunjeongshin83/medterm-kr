@@ -28,13 +28,20 @@ export const RESEARCH_SYSTEM = [
 ].join('\n');
 
 /**
+ * 질문 속에 질의문의 구조 태그(<조사정보>·<사전근거>·<조사질문>, 열고 닫는 것 모두, 공백이 섞인 것 포함)가 있으면
+ * 전각 꺾쇠(＜…＞)로 바꾼다. LLM 이 질문 내용을 질의문의 구조(근거 영역·조사 정보)로 읽지 못하게 하려는 것이다.
+ * 그 밖의 꺾쇠(예: "혈압 < 90")는 그대로 둔다.
+ */
+export const neutralizeTags = (s) => String(s).replace(/<\s*(\/?)\s*(조사정보|사전근거|조사질문)\s*>/g, '＜$1$2＞');
+
+/**
  * 리서치용 질의문을 만든다.
- * @param {string} question  사용자가 쓴 질문
+ * @param {string} question  사용자가 쓴 질문(구조 태그는 neutralizeTags 로 무력화해 넣는다)
  * @param {string[]} ids     mt.retrieve 가 찾은 성분(VTM) id 목록(비어 있어도 된다)
  * @returns {{system: string, user: string, context: object[]}}
  */
 export function buildResearchPrompt(question, ids) {
-  const q = String(question || '').trim();
+  const q = neutralizeTags(String(question || '').trim());
   const ctx = mt.contextFor(ids);
   const n = META.counts.VTM;
   const info = [

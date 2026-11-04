@@ -9,6 +9,7 @@
     rdfs:label "MedTerm-KR ontology"@en ;
     dcterms:source "ATC class names via RxNav RxClass (WHO CC)",
         "RxNorm/RxNav REST (NLM): RxCUI, ATC, SNOMED CT concept IDs, SCD/SBD",
+        "제형 한글명: 수기 직역 초안(미검수)",
         "한글명·한국 상품명: 수기 입력(미검수)" ;
     rdfs:comment "한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준입니다. 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다."@ko .
 

@@ -35,6 +35,13 @@
     return null;
   };
   const round6 = (x) => Math.round(x * 1e6) / 1e6;
+  // 검색어 정규화: 전각→반각·조합형→완성형 한글(NFKC), 연속 공백은 하나로, 앞뒤 공백 제거, 소문자.
+  // (답변 검증은 원문 위치를 그대로 써야 하므로 이 정규화를 쓰지 않는다 — 검색 상자 전용)
+  function normalizeQuery(q) {
+    if (q === null || q === undefined) return '';
+    let s = String(q); try { s = s.normalize('NFKC'); } catch (e) { /* normalize 가 없는 아주 옛 환경: 그대로 */ }
+    return s.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
 
 
   // ---------- 그래프용 글자 폭 추정(측정이 아니라 보수적 추정) ----------
@@ -99,13 +106,34 @@
       for (const list of this.ampsOfVmp.values()) for (const a of list) this.rxcuiOwner.set(a.rxcui, a.ingredient);
       this.classWords = new Set(); for (const cl of this.classes) for (const a of cl.aliases) { this.classWords.add(a.toLowerCase()); const b = a.replace(/\s*(계열|계|류)$/, ''); if (b !== a) this.classWords.add(b.toLowerCase()); }
       this.knownList = this.surfaces.filter(s => s.lang === 'ko' || s.text.length >= 7).map(s => s.lower);
+      // 분류 → 사전에 있는 성분(ATC 코드 앞부분이 맞는 것). 비어 있으면 "분류는 알지만 이 사전에 그 성분이 없음"이다.
+      this.classMembers = new Map();
+      for (const cl of this.classes) this.classMembers.set(cl, this.vtms.filter(v => (v.atc_codes || []).some(c => cl.atc.some(p => c.startsWith(p)))));
+      // 분류 검색용 표면형: 별칭과 분류 이름을 정규화하고 띄어쓰기를 없앤 형태(sp)로 둔다.
+      this.classSurfaces = [];
+      for (const cl of this.classes) {
+        const seenSp = new Set();
+        for (const a of [...cl.aliases, cl.label]) {
+          const sp = normalizeQuery(a).replace(/ /g, ''); if (!sp || seenSp.has(sp)) continue; seenSp.add(sp);
+          this.classSurfaces.push({ cl, alias: a, sp });
+        }
+      }
     }
 
     atcLabel(code) { return this.atcNames[code] || null; }
 
     // ---------- 검색 ----------
-    search(q) {
-      q = (q || '').trim().toLowerCase(); if (!q) return [];
+    // 입력 형식: 이름·상품명·ATC 코드·RxCUI·SNOMED CT ID 에 더해
+    //  · ID 표기  MT:VTM:161 · [MT:VTM:161] · MT:VMP:… · MT:AMP:… (질의문이 근거 표기로 쓰는 형식. 여러 개를 붙여 넣어도 됨)
+    //  · RxCUI 표기  "RxCUI 161" · "rxcui:161" · 주소 표기 "#v-161"
+    //  · 분류 별칭  "PPI" · "진통제" · "항응고제" … → 그 분류에 속한 사전 성분(점수 88/72/62, "분류: …")
+    //  · 전각 글자·조합형 한글은 NFKC 로 같게 본다.
+    // opts.classes === false 이면 분류 별칭을 보지 않는다(근거 항목 찾기·CLI 의 이름 해석처럼 성분 하나를 가리켜야 할 때).
+    search(q, opts = {}) {
+      const nq = normalizeQuery(q); if (!nq) return [];
+      if (/mt\s*:\s*(?:vtm|vmp|amp)\s*:/.test(nq)) return this._searchIds(nq);
+      const idm = /^(?:rxcui\s*[:=#]?\s*|#?v-)(\d+)$/.exec(nq);
+      q = idm ? idm[1] : nq;
       const hits = [];
       for (const v of this.vtms) {
         const names = [v.label_ko, v.label_en, ...(v.alt_ko || []), ...(v.alt_en || []), ...(v.brands_ko || [])].filter(Boolean).map(s => s.toLowerCase());
@@ -119,13 +147,55 @@
         if (!score) {  // 브랜드(AMP) / VMP 라벨
           const vmps = this.vmpsOf.get(v.id) || [];
           if (vmps.some(m => m.rxcui === q)) { score = 90; via = 'VMP RxCUI'; }
+          else if (/^\d+$/.test(q) && vmps.some(m => (this.ampsOfVmp.get(m.id) || []).some(a => a.rxcui === q))) { score = 90; via = 'AMP RxCUI'; }
           else {
             for (const m of vmps) for (const a of (this.ampsOfVmp.get(m.id) || [])) if (a.brand_en && a.brand_en.toLowerCase().includes(q)) { score = 50; via = `브랜드(${a.brand_en})`; break; }
           }
         }
         if (score) hits.push({ vtm: v, score, via });
       }
+      if (opts.classes !== false) {   // 분류 별칭: 이미 이름 등으로 찾은 성분은 더 높은 점수일 때만 바꾼다(순서는 그대로)
+        const at = new Map(hits.map((h, i) => [h.vtm.id, i]));
+        for (const c of this.searchClass(nq)) for (const v of c.members) {
+          const via = '분류: ' + c.cl.label;
+          if (at.has(v.id)) { const h = hits[at.get(v.id)]; if (c.score > h.score) { h.score = c.score; h.via = via; } }
+          else { at.set(v.id, hits.length); hits.push({ vtm: v, score: c.score, via }); }
+        }
+      }
       return hits.sort((a, b) => b.score - a.score);
+    }
+
+    // "MT:VTM:161" 같은 ID 표기를 소속 성분으로 바꾼다(VMP·AMP ID 도 그 성분). 사전에 없는 ID 면 빈 목록.
+    _searchIds(nq) {
+      const out = [], seen = new Set(), re = /mt\s*:\s*(vtm|vmp|amp)\s*:\s*(\d+)/g; let m;
+      while ((m = re.exec(nq))) {
+        const type = m[1].toUpperCase(), c = this.byId.get(`MT:${type}:${m[2]}`); if (!c) continue;
+        const v = type === 'VTM' ? c : this.byId.get(c.ingredient); if (!v || seen.has(v.id)) continue; seen.add(v.id);
+        out.push({ vtm: v, score: type === 'VTM' ? 95 : 90, via: type === 'VTM' ? 'ID 일치' : `${type} ID` });
+      }
+      return out.sort((a, b) => b.score - a.score);
+    }
+
+    // ---------- 분류 별칭 검색 ----------
+    // "PPI"·"진통제"·"항응고제"처럼 약 하나가 아니라 분류를 가리키는 말. 일치한 분류마다 {cl, alias, score, members} 를 점수 순으로 돌려준다.
+    // 점수: 별칭(또는 분류 이름)과 같음 88 · 앞부분이 같음 72(세 글자 이상) · 중간에 들어 있음 62(세 글자 이상). 띄어쓰기는 보지 않고 끝의 "계열·계·류"는 뗀다.
+    // members 는 이 사전에 있는 그 분류의 성분이다. 비어 있으면 "분류는 알지만 이 사전에 성분이 없음" — 약이 없다는 뜻이 아니라 확인이 필요하다는 뜻이다.
+    searchClass(q) {
+      const nq = normalizeQuery(q); if (!nq) return [];
+      const forms = new Set([nq.replace(/ /g, '')]);
+      const stripped = nq.replace(/\s*(계열|계|류)$/, '').replace(/ /g, ''); if (stripped) forms.add(stripped);
+      const best = new Map();
+      for (const f of forms) {
+        for (const s of this.classSurfaces) {
+          let score = 0;
+          if (s.sp === f && f.length >= 2) score = 88;
+          else if (f.length >= 3 && s.sp.startsWith(f)) score = 72;
+          else if (f.length >= 3 && s.sp.includes(f)) score = 62;
+          if (!score) continue;
+          const o = best.get(s.cl); if (!o || score > o.score) best.set(s.cl, { alias: s.alias, score });
+        }
+      }
+      return [...best].map(([cl, o]) => ({ cl, alias: o.alias, score: o.score, members: this.classMembers.get(cl) || [] })).sort((a, b) => b.score - a.score);
     }
 
     describe(vtmId) {
@@ -250,7 +320,7 @@
     retrieve(question, max = 5) {
       const ids = []; const push = (id) => { if (!ids.includes(id)) ids.push(id); };
       this.findMentions(question).forEach(m => push(m.vtm.id));
-      question.split(/[\s,，、]+/).filter(t => t.length >= 2).forEach(t => this.search(t).filter(x => x.score >= 80).slice(0, 2).forEach(x => push(x.vtm.id)));
+      question.split(/[\s,，、]+/).filter(t => t.length >= 2).forEach(t => this.search(t, { classes: false }).filter(x => x.score >= 80).slice(0, 2).forEach(x => push(x.vtm.id)));
       return ids.slice(0, max);
     }
 
@@ -434,5 +504,5 @@
       return segs;
     }
   }
-  return { MedTerm, lev, mgOf, textPx, fitText };
+  return { MedTerm, lev, mgOf, textPx, fitText, normalizeQuery };
 });

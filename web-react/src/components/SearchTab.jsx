@@ -58,6 +58,7 @@ export function SearchTab({ selectedId, onSelect }) {
   const [limit, setLimit] = useState(PAGE);
   const inputRef = useRef(null);
   const hits = useMemo(() => mt.search(q), [q]);
+  const classHits = useMemo(() => mt.searchClass(q), [q]); // "PPI"·"ACE 억제제" 같은 분류 이름: 분류 안내 카드용
   const az = useMemo(buildAz, []);
   const asked = q.trim().length > 0;
 
@@ -126,7 +127,8 @@ export function SearchTab({ selectedId, onSelect }) {
             </button>
           ))}
         </div>
-        <p className="mt-3 text-small text-mut">
+        <p className="mt-3 text-small text-mut">분류 이름(PPI·진통제)이나 ID(MT:VTM:7646, RxCUI 7646)로도 찾을 수 있습니다.</p>
+        <p className="mt-1.5 text-small text-mut">
           <span className="lt-tree:hidden">왼쪽 ATC 트리에서도 탐색할 수 있고, 성분을 선택하면 상세가 표시됩니다.</span>
           <span className="hidden lt-tree:inline">성분을 누르면 상세가 아래에서 올라옵니다. 분류 트리는 위쪽 ‘분류’ 버튼으로 엽니다.</span>
         </p>
@@ -152,7 +154,21 @@ export function SearchTab({ selectedId, onSelect }) {
         {asked ? `검색 결과 ${rows.length}개` : cat ? `${ATC1_KO[cat] || cat} 분류 ${rows.length}개` : ''}
       </div>
 
-      {asked && !hits.length && (
+      {/* 분류 이름으로 찾았을 때: 어떤 분류인지, 사전에 그 분류의 성분이 있는지(없으면 "확인 필요") */}
+      {asked && classHits.length > 0 && (
+        <div id="class-info" aria-label="분류 안내" className="mb-1">
+          {classHits.slice(0, 3).map((c) => (
+            <Card key={c.cl.label} className="!mb-2 text-small text-mut">
+              {c.alias !== c.cl.label && <><b className="text-ink">‘{c.alias}’</b>은(는) </>}분류 <b className="text-ink">{c.cl.label}</b>(ATC {c.cl.atc.join('·')})입니다.{' '}
+              {c.members.length > 0
+                ? <>이 사전에 있는 이 분류의 성분 {c.members.length}개를 아래에 보여 드립니다.</>
+                : <>이 분류는 알고 있지만, 현재 이 사전({META.counts.VTM}개 성분)에는 이 분류에 수록된 성분이 없습니다. <b className="text-ink">확인이 필요하다</b>는 뜻이지, 이 분류의 약이 없다는 뜻은 아닙니다.</>}
+            </Card>
+          ))}
+          {classHits.length > 3 && <p className="mb-2 text-small text-mut">그 밖에 {classHits.length - 3}개 분류와도 일치합니다.</p>}
+        </div>
+      )}
+      {asked && !hits.length && !classHits.length && (
         <Card className="text-small text-mut">
           사전에 없습니다 — <b className="text-ink">확인이 필요하다</b>는 뜻입니다. 이 사전은 현재 {META.counts.VTM}개 성분만 수록하므로, 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.
         </Card>
