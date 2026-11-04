@@ -5,6 +5,13 @@
 2. 자세한 설계·검증·한계: `docs/설계_검증_보고서.md` (한국어).
 3. 데이터는 프로토타입이며 한글명·상품명은 약사 검수 전 초안이다. 진단·처방 판단용이 아니다.
 
+## 바로 가기 (링크)
+- 웹 화면(공유 페이지, 2026-11-04 새 디자인): https://claude.ai/artifact/3sczdoo74SPLoMg8LmTQ5S — **비공개**라 소유자 계정으로 로그인해야 열린다(공개 주소 아님).
+- Figma 화면 설계(MedTerm-KR, 이전 파란 디자인): https://www.figma.com/design/PotdShI3iRc93DpN4DbsWw
+- Figma 참고 템플릿(Mobile app UI Template, 커뮤니티 파일, 2026-11-04 전달받음 — 아직 디자인에 반영하지 않음): https://www.figma.com/design/YWPjl2mqIzpjjl1OesjvRd/Mobile-app-UI-Template--Community-?node-id=1-9
+- 설치형 웹앱(PWA)·안드로이드 앱: 접속 주소 없음. 웹앱은 `web-react/dist/pwa/` 폴더째 https 서버에 올리면 동작하고, APK 만드는 법은 `android-app/README.md` 에 있다(저장소에는 APK 를 올리지 않음).
+- 누구나 여는 **공개 주소(GitHub Pages 등)는 아직 만들지 않았다**. 공개하려면 SNOMED CT · ATC 값의 재배포 조건부터 확인해야 한다(아래 "설치형 웹앱" 절과 `docs/research/05_수록범위확대_DB조사_20261103.md`).
+
 폴더: `web/`(앱) · `web-react/`(React 화면 소스·빌드, 아래 참고) · `android-app/`(설치형 안드로이드 앱, 아래 참고) · `.github/workflows/`(APK 만들기, 수동 실행) · `data/`(사전 JSON, 계열 용어 사전) · `build/`(생성·온톨로지 내보내기 스크립트) · `tests/`(벤치마크·UI 테스트, node_modules 제외) · `tools/`(MFDS 수집 스크립트는 사용자 PC에서 실행, `tools/coverage/`는 수록 범위 표본 점검)
 
 ## React 화면 (`web-react/`, 2026-11-03 추가)
