@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기기가 다크 모드일 때: 어두운 테마(막대 아이콘은 밝게). 화면 안의 다크 색은 페이지가 스스로 정한다. -->
+<resources>
+    <style name="AppTheme" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/page_bg</item>
+        <item name="android:statusBarColor">@color/bar_bg</item>
+        <item name="android:navigationBarColor">@color/page_bg</item>
+    </style>
+</resources>

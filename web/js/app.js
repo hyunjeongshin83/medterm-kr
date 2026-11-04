@@ -14,11 +14,11 @@ function renderHits(list){
   const box=$('#hits'); box.replaceChildren();
   if(!list.length){ box.append(el('div',{class:'card mut',text:'사전에 없습니다. (이 프로토타입은 약 '+mt.vtms.length+'개 성분만 수록 — 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.)'})); return; }
   list.slice(0,12).forEach(h=>{ const v=h.vtm;
-    box.append(el('div',{class:'hit',tabindex:'0',onclick:()=>showDetail(v.id),onkeydown:e=>{if(e.key==='Enter')showDetail(v.id)}},
+    box.append(el('div',{class:'hit',tabindex:'0',onclick:()=>selectVtm(v.id),onkeydown:e=>{if(e.key==='Enter')selectVtm(v.id)}},
       el('b',{text:v.label_ko}),' ',el('span',{class:'mut',text:v.label_en}),statusBadge(v),el('span',{class:'badge',text:h.via}),
       el('div',{class:'mut',text:'ATC '+(v.atc_codes.slice(0,3).join(', ')||'-')+(v.atc_codes.length>3?' 외 '+(v.atc_codes.length-3):'')+' · RxCUI '+v.rxcui})));
   });
-  if(list.length===1 || list[0].score>=95) showDetail(list[0].vtm.id);   // 단일 후보이거나 이름·RxCUI가 정확히 일치하면 상세를 바로 연다
+  if(list.length===1 || list[0].score>=95) selectVtm(list[0].vtm.id,{open:false});   // 단일 후보이거나 이름·RxCUI가 정확히 일치하면 상세를 바로 연다
 }
 function showDetail(id){
   const d=mt.describe(id), v=d.vtm, box=$('#detail'); box.replaceChildren();
@@ -40,11 +40,125 @@ function showDetail(id){
     list.forEach(m=>{ det.append(el('div',{class:'vmp',text:`${m.strength.raw}${m.release_tech?' · '+m.release_tech:''}${m.pack_or_duration?' · '+m.pack_or_duration:''}  [${m.id}]`}));
       m.amps.slice(0,6).forEach(a=>det.append(el('div',{class:'amp',text:`└ AMP ${a.brand_en} [${a.id}] (${a.market})`}))); });
     card.append(det); });
-  box.append(card); box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  box.append(card); box.scrollTop=0; $('#insp-title').textContent=v.label_ko+' · 상세'; renderGraph(id);
 }
 const doSearch=()=>renderHits(mt.search($('#q').value));
 $('#q').addEventListener('input',doSearch);
 $$('.ex').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();$('#q').value=a.textContent;doSearch();}));
+
+
+// ---- 관계 그래프 (선택한 성분 중심, 순수 SVG) ----
+const SVGNS = 'http://www.w3.org/2000/svg';
+const sv = (tag, attrs = {}, ...kids) => { const e = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); kids.flat().forEach(c => e.append(c && c.nodeType ? c : document.createTextNode(c == null ? '' : c))); return e; };
+const ZOOMS = [0.75, 1, 1.25, 1.5, 2]; let graphZoom = 'fit', graphLayout = null;
+function graphAction(a){
+  if(!a) return;
+  if(a.type === 'select'){ selectVtm(a.id, { open: false }); const c = $('#graph-wrap .gn-vtm'); if(c) c.focus({ preventScroll: true }); }
+  else if(a.type === 'filter'){ $('[data-seg=atc]').click(); const f = $('#tree-filter'); f.value = a.value; f.dispatchEvent(new Event('input', { bubbles: true })); if(mqPhone()) setNav(true, false); }
+}
+function applyGraphZoom(){
+  const svg = $('#graph-wrap svg.graph'); $('#graph-zoom-label').textContent = graphZoom === 'fit' ? '맞춤' : Math.round(graphZoom * 100) + '%';
+  if(!svg || !graphLayout) return;
+  if(graphZoom === 'fit'){ svg.style.width = '100%'; svg.style.minWidth = '520px'; } else { svg.style.width = Math.round(graphLayout.width * graphZoom) + 'px'; svg.style.minWidth = '0'; }
+}
+function centerGraph(){
+  const wrap = $('#graph-wrap'), svg = $('#graph-wrap svg.graph'); if(!svg || !graphLayout) return;
+  const c = graphLayout.nodes.find(n => n.id === graphLayout.center), k = svg.clientWidth / graphLayout.width;
+  wrap.scrollLeft = k ? Math.max(0, (c.x + c.w / 2) * k - wrap.clientWidth / 2) : 0;
+}
+function renderGraph(id){
+  const wrap = $('#graph-wrap'); wrap.replaceChildren(); const g = id ? mt.graph(id) : null;
+  if(!g){ graphLayout = null; $('#graph-title').textContent = '관계 그래프'; $('#graph-note').textContent = ''; wrap.append(el('div', { class: 'empty', text: '왼쪽 분류 트리나 검색에서 성분을 고르면 관계가 표시됩니다.' })); return; }
+  const L = mt.layoutGraph(g); graphLayout = L; const v = mt.byId.get(id), T = g.totals, S = g.shown;
+  $('#graph-title').textContent = v.label_ko + ' · 관계 그래프';
+  $('#graph-note').textContent = `ATC 코드 ${S.atc}/${T.atc} · 같은 세부군 성분 ${S.siblings}/${T.siblings} · 제형·용량(VMP) ${S.vmp}/${T.vmp} · 제품(AMP) ${S.amp}/${T.amp} (표시/전체)`;
+  const svg = sv('svg', { class: 'graph', viewBox: `0 0 ${L.width} ${L.height}`, role: 'group', 'aria-label': `${v.label_ko}의 관계 그래프: ${$('#graph-note').textContent}` });
+  L.edges.forEach(e => svg.append(sv('path', { class: 'ge ge-' + e.rel, d: e.d })));
+  L.headers.forEach(h => svg.append(sv('text', { class: 'gh', x: h.x, y: h.y }, h.text)));
+  L.nodes.forEach(n => {
+    const gn = sv('g', { class: `gn gn-${n.kind}${n.action ? ' clickable' : ''}`, transform: `translate(${n.x},${n.y})`, 'data-node': n.id });
+    gn.append(sv('title', {}, n.title), sv('rect', { width: n.w, height: n.h, rx: 6 }));
+    gn.append(sv('text', { class: 'l1', x: n.w / 2, y: n.t2 ? 14 : n.h / 2 + 4, 'text-anchor': 'middle' }, n.t1));
+    if(n.t2) gn.append(sv('text', { class: 'l2', x: n.w / 2, y: 27, 'text-anchor': 'middle' }, n.t2));
+    if(n.action){ const go = () => graphAction(n.action); gn.setAttribute('role', 'button'); gn.setAttribute('tabindex', '0'); gn.setAttribute('aria-label', n.title);
+      gn.addEventListener('click', go); gn.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } }); }
+    else { gn.setAttribute('role', 'img'); gn.setAttribute('aria-label', n.title); if(n.kind === 'vtm') gn.setAttribute('tabindex', '-1'); }
+    svg.append(gn);
+  });
+  wrap.append(svg); applyGraphZoom(); centerGraph();
+}
+$('#graph-zoom-in').addEventListener('click', () => { const i = graphZoom === 'fit' ? 1 : ZOOMS.indexOf(graphZoom) + 1; graphZoom = graphZoom === 'fit' ? 1 : ZOOMS[Math.min(ZOOMS.length - 1, i)]; applyGraphZoom(); centerGraph(); });
+$('#graph-zoom-out').addEventListener('click', () => { graphZoom = graphZoom === 'fit' ? 0.75 : ZOOMS[Math.max(0, ZOOMS.indexOf(graphZoom) - 1)]; applyGraphZoom(); centerGraph(); });
+$('#graph-zoom-fit').addEventListener('click', () => { graphZoom = 'fit'; applyGraphZoom(); centerGraph(); });
+document.querySelector('[data-tab=graph]').addEventListener('click', centerGraph);
+
+
+// ---- 3단 레이아웃: 분류 트리 · 서랍(좁은 화면) · 선택 ----
+const mqNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 1099px)').matches);
+const mqPhone = () => !!(window.matchMedia && window.matchMedia('(max-width: 699px)').matches);
+const body = document.body; let lastOpener = null;
+function syncBackdrop(){ $('#backdrop').hidden = !(body.classList.contains('insp-open') || body.classList.contains('nav-open')); }
+function openInspector(){ body.classList.add('insp-open'); syncBackdrop(); $('#insp-close').focus(); }
+function closeInspector(){ if(!body.classList.contains('insp-open')) return; body.classList.remove('insp-open'); syncBackdrop(); try{ if(lastOpener && lastOpener.focus) lastOpener.focus(); }catch(e){} }
+function setNav(open, focus=true){ body.classList.toggle('nav-open', open); $('#nav-toggle').setAttribute('aria-expanded', String(open)); syncBackdrop(); if(focus){ (open?$('#tree-filter'):$('#nav-toggle')).focus(); } }
+$('#insp-close').addEventListener('click', closeInspector);
+$('#nav-toggle').addEventListener('click', () => setNav(!body.classList.contains('nav-open')));
+$('#backdrop').addEventListener('click', () => { closeInspector(); if(body.classList.contains('nav-open')) setNav(false); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ if(body.classList.contains('insp-open')) closeInspector(); else if(body.classList.contains('nav-open')) setNav(false); } });
+window.addEventListener('resize', () => { if(!mqNarrow()) body.classList.remove('insp-open'); if(!mqPhone()){ body.classList.remove('nav-open'); $('#nav-toggle').setAttribute('aria-expanded','false'); } syncBackdrop(); });
+
+function selectVtm(id, opts={}){
+  const open = opts.open !== false;
+  showDetail(id);
+  $$('[data-id]').forEach(b => { if(b.dataset.id===id) b.setAttribute('aria-current','true'); else b.removeAttribute('aria-current'); });
+  try{ location.replace('#'+encodeURIComponent(id)); }catch(e){}   // file://에서는 history.replaceState가 보안 오류를 내므로 location.replace를 쓴다(기록을 쌓지 않음)
+  if(open){ lastOpener = mqPhone() ? $('#nav-toggle') : document.activeElement; if(mqPhone()) setNav(false,false); if(mqNarrow()) openInspector(); }
+}
+
+// ATC 분류 트리(성분은 가진 ATC 코드마다 해당 분류 아래에 나타난다) + 가나다순 목록
+const treeModel = [];
+function buildTree(){
+  const roots = new Map(), orphan = [];
+  const ensure = (map, code) => { if(!map.has(code)) map.set(code, { code, name: mt.atcLabel(code) || '', kids: new Map(), leaves: [], ids: new Set() }); return map.get(code); };
+  mt.vtms.forEach(v => { const codes = v.atc_codes || []; if(!codes.length) orphan.push({ v, code: '' });
+    codes.forEach(code => { const path = (v.atc_paths || {})[code] || []; let map = roots, node = null; const chain = [];
+      path.forEach(c => { node = ensure(map, c); chain.push(node); map = node.kids; });
+      chain.forEach(n => n.ids.add(v.id)); if(node) node.leaves.push({ v, code }); else orphan.push({ v, code }); }); });
+  return { roots, orphan };
+}
+const leafText = (v, code) => [v.label_ko, v.label_en, code, ...(v.brands_ko||[]), ...(v.alt_ko||[]), ...(v.alt_en||[])].join(' ').toLowerCase();
+function leafItem(v, code){
+  const b = el('button', { class:'leaf', type:'button', 'data-id':v.id, onclick:() => selectVtm(v.id) }, el('span',{class:'ko',text:v.label_ko}), el('small',{text:`${code || 'ATC 없음'} · ${v.label_en}`}));
+  return { el: el('li', {}, b), text: leafText(v, code) };
+}
+function renderNode(n){
+  const det = el('details', {}, el('summary', {}, el('span',{class:'code',text:n.code}), el('span',{class:'nm',title:n.name,text:n.name}), el('span',{class:'n',title:'이 분류의 성분 수',text:String(n.ids.size)})));
+  const ul = el('ul'); const kids = [...n.kids.values()].sort((x,y) => x.code.localeCompare(y.code)).map(renderNode); kids.forEach(k => ul.append(k.el));
+  const leaves = n.leaves.sort((x,y) => x.code.localeCompare(y.code)).map(l => leafItem(l.v, l.code)); leaves.forEach(l => ul.append(l.el)); det.append(ul);
+  return { el: el('li', {}, det), det, code: n.code, name: n.name, kids, leaves };
+}
+(function(){
+  const { roots, orphan } = buildTree(); const top = el('ul');
+  [...roots.values()].sort((x,y) => x.code.localeCompare(y.code)).map(renderNode).forEach(m => { treeModel.push(m); top.append(m.el); });
+  if(orphan.length){ const leaves = orphan.map(o => leafItem(o.v, o.code)); const det = el('details', {}, el('summary', {}, el('span',{class:'code',text:'ATC 없음'}), el('span',{class:'n',text:String(orphan.length)})), el('ul',{}, leaves.map(l => l.el)));
+    const m = { el: el('li',{},det), det, code:'atc 없음', name:'', kids:[], leaves }; treeModel.push(m); top.append(m.el); }
+  $('#tree').append(top);
+  const azul = el('ul'); [...mt.vtms].sort((x,y) => x.label_ko.localeCompare(y.label_ko,'ko')).forEach(v => { const it = leafItem(v, (v.atc_codes||[])[0] || ''); it.el.dataset.text = it.text; azul.append(it.el); });
+  $('#az').append(azul);
+})();
+function filterTree(q){
+  q = q.trim().toLowerCase();
+  const walk = n => { const self = !q || n.code.toLowerCase().includes(q) || n.name.toLowerCase().includes(q); let any = false;
+    n.leaves.forEach(l => { const m = !q || self || l.text.includes(q); l.el.hidden = !m; any = any || m; });
+    n.kids.forEach(k => { if(walk(k)) any = true; });
+    n.el.hidden = !any; n.det.open = !!q && any; return any; };
+  treeModel.forEach(walk);
+  $$('#az li').forEach(li => { li.hidden = !!q && !li.dataset.text.includes(q); });
+}
+$('#tree-filter').addEventListener('input', e => filterTree(e.target.value));
+$$('[data-seg]').forEach(b => b.addEventListener('click', () => { $$('[data-seg]').forEach(x => x.setAttribute('aria-selected', String(x===b))); const atc = b.dataset.seg === 'atc'; $('#tree').hidden = !atc; $('#az').hidden = atc; }));
+(function(){ try{ const h = decodeURIComponent(location.hash.slice(1)); const v = h && mt.byId.get(h); if(v && v.type === 'VTM') selectVtm(h, { open:false }); }catch(e){} })();
+
 
 // ---- 답변 검증 ----
 const SAMPLES=[
@@ -81,7 +195,7 @@ $('#rag-go').addEventListener('click',()=>{
   if(!sel.length){ out.append(el('p',{class:'mut',text:'질문에서 사전 항목을 찾지 못했습니다. 이 경우 LLM에는 "사전에 없어 확인 불가"로 답하도록 지시하는 프롬프트만 생성됩니다.'})); }
   lastPrompt=mt.buildGroundedPrompt(q,sel);
   out.append(el('h3',{text:'검색된 사전 항목 ('+sel.length+')'}));
-  sel.forEach(id=>{const v=mt.byId.get(id); out.append(el('div',{class:'hit',onclick:()=>{$$('nav button')[0].click();$('#q').value=v.label_ko;doSearch();}},el('b',{text:v.label_ko}),' ',el('span',{class:'mut',text:v.label_en+' · '+id})));});
+  sel.forEach(id=>{const v=mt.byId.get(id); out.append(el('div',{class:'hit',onclick:()=>selectVtm(id)},el('b',{text:v.label_ko}),' ',el('span',{class:'mut',text:v.label_en+' · '+id})));});
   out.append(el('h3',{text:'LLM에 전달할 프롬프트'}),el('pre',{text:'[system]\n'+lastPrompt.system+'\n\n[user]\n'+lastPrompt.user}));
   out.append(el('button',{class:'btn sec',onclick:()=>navigator.clipboard&&navigator.clipboard.writeText(lastPrompt.system+'\n\n'+lastPrompt.user)},'프롬프트 복사'));
   $('#rag-llm').hidden=false;

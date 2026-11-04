@@ -1,0 +1,39 @@
+{
+  "id": "medterm-kr",
+  "name": "MedTerm-KR · 약무용어 사전",
+  "short_name": "MedTerm-KR",
+  "description": "약무용어 사전(성분→제형·함량→제품)과 LLM 답변 검증. 연구·교육용 프로토타입이며 진단·처방 판단용이 아닙니다.",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f6f9",
+  "theme_color": "#ffffff",
+  "categories": [
+    "medical",
+    "education",
+    "reference"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

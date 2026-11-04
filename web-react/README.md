@@ -1,0 +1,72 @@
+# MedTerm-KR React 화면 (web-react)
+
+3단 화면(분류 트리 · 작업 탭 · 상세)을 **React 18 · Tailwind CSS 3 · React Flow(@xyflow/react 12)** 로 만든 소스입니다. 사전 데이터와 검증 로직(`../web/js/` 의 `medterm-data.js` · `bench.js` · `core.js`)은 그대로 쓰고 **화면만** 바꿨습니다. 연구·교육용 프로토타입이며 진단·처방·개인별 복용량 판단에 쓰지 않습니다.
+
+## 결과물 (빌드하면 `dist/`에 생김 — 미리 만든 것도 함께 들어 있음)
+| 파일 | 용도 |
+|---|---|
+| `MedTerm-KR_react.html` | 독립 실행. 더블클릭으로 열림(서버 불필요, 외부 요청 없음). 글꼴은 시스템 글꼴. |
+| `artifact.html` | 공유 페이지(웹 게시)용 조각: doctype·html·head·body 없음, Google Fonts(Noto Sans KR) 링크 한 줄, 서버 프록시 입력 숨김. |
+| `MedTerm-KR_app.html` | 설치형 안드로이드 앱(`../android-app`)용: 문서 전체, 외부 요청 없음(글꼴은 기기 글꼴), 서버 프록시 입력 숨김. 앱의 `assets/index.html` 로 복사해서 씁니다. |
+| `pwa/` | **설치형 웹앱(PWA)** 폴더: `index.html`(독립 실행 화면에 설치용 태그만 더한 것) · `manifest.webmanifest` · `sw.js`(오프라인용 서비스 워커) · `icons/` · `.nojekyll`. 폴더째 https 서버의 어느 경로에 올려도 됩니다(경로가 모두 상대 경로). 아래 "웹앱(PWA)" 참고. |
+
+`dist/tokens.css` · `dist/tw.css` 는 빌드 중간 산물이라 저장소에는 올리지 않습니다(`.gitignore`).
+
+## 다시 만들기 (Node 22에서 확인)
+```
+cd web-react
+npm ci
+npm run build          # node build.mjs → dist/ 세 HTML + dist/pwa/ (웹앱 폴더)
+```
+`build.mjs` 는 기본으로 한 단계 위의 `../web/js` 를 읽습니다. 다른 폴더를 쓰려면 `MEDTERM_JS=<폴더> npm run build`.
+
+## 웹앱(PWA)
+같은 화면을 휴대폰·PC의 홈 화면/앱 목록에 설치하고, 인터넷이 끊겨도 열리게 한 판입니다(`dist/pwa/`).
+- **열어 보기(내 PC)**: `python3 -m http.server 8080 --directory dist/pwa` 를 실행하고 크롬에서 `http://localhost:8080/` 를 엽니다. 주소창 오른쪽의 설치 아이콘(또는 메뉴 → 앱 설치)으로 설치합니다.
+- **https 또는 localhost 에서만** 서비스 워커가 동작합니다. 같은 와이파이의 PC 주소(`http://192.168…`)로 휴대폰에서 열면 화면은 보이지만 설치·오프라인은 되지 않습니다. 휴대폰에 설치하려면 https 주소가 필요합니다.
+- **오프라인**: 첫 방문 때 화면(사전 포함 `index.html` 한 파일)·설치 정보·아이콘 4개, 모두 6개 파일을 기기에 보관합니다. 이후에는 인터넷 없이 열리고, 열 때마다 뒤에서 새 판을 받아 두었다가 다음에 엽니다. 서비스 워커는 같은 주소의 GET 요청만 다루므로 서버 프록시(LLM 호출) 요청은 건드리지 않습니다.
+- **새 판 반영**: 서비스 워커 파일의 버전이 화면·설치 정보·아이콘 내용의 해시(10자리)로 자동 정해집니다. 내용이 바뀌면 새 보관함이 만들어지고 옛 보관함은 지워집니다.
+- **아이콘**: `pwa/icon.svg`(파란 바탕의 알약 — 안드로이드 앱 아이콘과 같은 모양) → `npm run icons`(크로미엄으로 PNG 4종 생성) → `pwa/icons/`. 모양을 바꿀 때만 다시 만들면 됩니다.
+- 이 폴더를 어디에 올릴지(공개 주소)는 아직 정해지지 않았습니다. 비공개 저장소의 GitHub Pages 는 사이트가 **공개**되므로 정하기 전에는 켜지 않습니다.
+
+## 점검
+```
+npm i --no-save playwright && npx playwright install chromium   # 처음 한 번 (package.json은 바뀌지 않음)
+npm test               # tests/ui.cjs + tests/artifact_wrap.cjs + tests/app_html.cjs + tests/pwa.cjs
+```
+- `tests/ui.cjs` — 실제 Chromium으로 123개 점검: 폭 1440/1280/1099/1024/768/700/699/390/360 가로 넘침 없음, 검색·상세·트리, 서랍 포커스·inert, 32개 성분의 그래프 노드·간선 수, 터치 가로 이동·세로 스크롤, 다크, 콘솔 오류 0·외부 요청 0.
+- `tests/artifact_wrap.cjs` — `dist/artifact.html` 을 공유 페이지 바깥틀처럼 감싸 9개 점검(제목, 한 화면 맞춤, 주소 `#v-7646`, 오류 없음; 데스크톱·휴대폰·다크)하고 화면을 `shots/` 에 저장.
+- `tests/app_html.cjs` — `dist/MedTerm-KR_app.html` 을 휴대폰 폭(390·360)으로 열어 22개 점검(외부 글꼴·링크 없음, 5개 탭 모두 가로 넘침 없음, 면책 문구 원문, 검색·주소, 질의 탭에 프록시 입력칸 없음·안내가 "이 앱에서는", 모의 답변 검증, 다크, 콘솔 오류 0·외부 요청 0). 안드로이드 WebView 자체는 이 시험 대상이 아닙니다.
+- `tests/pwa.cjs` — `dist/pwa/` 를 로컬 서버(`127.0.0.1`, 임의 포트)에서 열어 33개 점검: 파일·설치 정보(이름·id·상대 경로·아이콘 크기)·문서 태그·화면 코드가 독립 실행 판과 같음, 실제 크롬이 보고하는 설치 불가 사유 0건, 서비스 워커 등록·제어·보관함(파일 6개), 오프라인에서 새로고침과 `#v-7646` 주소 열기, 새 판이 올라오면 옛 보관함이 지워지고 교체됨, 휴대폰 390px 5개 탭 가로 넘침 없음, 데스크톱 1440px, 콘솔 오류 0·외부 요청 0. 캡처는 `shots/pwa/`. 실제 휴대폰에서 설치해 본 확인은 이 시험 대상이 아닙니다.
+- 위 통과 수는 2026-11-04 작성 시점의 결과입니다(`ui` 123 · `artifact_wrap` 9 · `app_html` 22 · `pwa` 33). 데이터나 화면을 바꾸면 다시 돌려 보세요.
+
+## 구조
+| 위치 | 내용 |
+|---|---|
+| `src/main.jsx` · `src/App.jsx` | 진입점, 3단 배치와 서랍(≥1100px 3단 / 700~1099px 상세가 오른쪽 서랍 / ≤699px 분류 트리도 왼쪽 서랍) |
+| `src/components/` | `Tree` `Tabs` `Topbar` `Inspector` · 탭(`SearchTab` `GraphTab` `VerifyTab` `RagTab` `AboutTab`) · 공용 조각 `ui.jsx` |
+| `src/lib/mt.js` | `web/js` 의 전역(`MEDTERM_DATA` · `MEDTERM_CLASSES` · `MEDTERM_BENCH` · `MedTermCore`)을 한 번만 꺼내 쓰는 자리, 주소(해시) 읽기·쓰기. 사전 내용·검증 규칙은 `core.js` 가 단독으로 책임짐 |
+| `src/lib/tree.js` `samples.js` `useMedia.js` | 분류 트리 구성·검색 문자열, 검증 탭의 예시 문장 5개, 서랍 전환용 미디어 쿼리 훅 |
+| `src/index.css` | Tailwind 진입 + 좌우 여백·서랍 안전 여백 규칙 |
+| `tokens.json` | **디자인 토큰 원본**(라이트·다크 색, 글자, 간격, 반지름, 그림자). `build.mjs` 가 CSS 변수로, `tailwind.config.js` 가 Tailwind 설정으로 바꿈 |
+| `build.mjs` | 토큰 → CSS 변수, Tailwind, esbuild(React+React Flow) → 단일 HTML 세 가지(독립 실행·공유 페이지·설치형 앱) + 웹앱 폴더 `dist/pwa/`. 빌드 때 `__ENABLE_PROXY__`(프록시 입력칸 표시)와 `__SURFACE__`(`web`·`share`·`app`, 안내 문구의 "이 앱/이 공유 화면")를 정한다 |
+| `pwa/` | 웹앱 재료: `icon.svg`(아이콘 원본) · `icons/`(PNG 4종, 저장소에 둠) · `sw.template.js`(서비스 워커 틀 — 버전 자리표시자를 빌드가 해시로 채움) |
+| `tools/make_icons.cjs` | `pwa/icon.svg` → `pwa/icons/*.png` (`npm run icons`, Playwright 필요) |
+| `tools/gen_notices.mjs` | `THIRD_PARTY_NOTICES.txt` 생성(`npm run notices`) |
+| `THIRD_PARTY_NOTICES.txt` | 실제 번들에 들어간 오픈소스 17개 패키지의 이름·버전·라이선스 원문 |
+
+## 주소(해시)
+성분 주소는 `#v-7646`(오메프라졸 = `MT:VTM:7646`) 형식입니다. 공유 페이지가 해시에 영문·숫자·하이픈만 허용해서 바꿨고, 예전 형식 `#MT:VTM:7646` 도 그대로 열립니다.
+
+## 디자인 토큰과 Figma
+- Figma 파일 키 `PotdShI3iRc93DpN4DbsWw`(이름 "MedTerm tokens", 페이지 "MedTerm-KR 3단 화면": 토큰 · 컴포넌트 · 화면 5개).
+- 값의 원본은 `tokens.json` 입니다. Figma 무료(Starter) 플랜은 변수 컬렉션당 모드가 1개라서 라이트는 "MedTerm tokens", 다크는 "MedTerm tokens (Dark 참조)"로 나눠 두었습니다.
+- 마지막 마무리에서 React의 가장자리 여백(16px 기준)을 고친 부분이 Figma 프레임에 아직 반영되지 않았을 수 있습니다. 자세히: `../docs/Figma_React_안내_20261103.md`.
+
+## 알려진 한계
+- 사전은 **성분 32개**뿐입니다. "사전에 없음"은 환각의 증거가 아니라 *확인 필요* 신호이고, "불일치 없음"은 정확하다는 뜻이 아닙니다. 한글명·상품명은 약사 검수 전 초안입니다.
+- React Flow 화면 오른쪽 아래의 "React Flow" 표기는 기본값으로 두었습니다.
+- `dist/artifact.html` 은 Google Fonts를 링크로 불러옵니다(인터넷 필요). 독립 실행 빌드와 웹앱(`dist/pwa/`)은 불러오지 않습니다(글꼴은 기기 글꼴).
+- 웹앱(PWA)은 크롬(데스크톱, 휴대폰 폭 모의)에서 점검했고, 실제 휴대폰에서 홈 화면에 설치해 본 확인은 아직 없습니다. iOS 사파리는 점검하지 않았습니다(`apple-touch-icon` 만 넣어 둠).
+- 공개 배포 전에는 SNOMED CT · ATC 값의 재배포 조건 확인이 필요합니다(`../docs/research/05_수록범위확대_DB조사_20261103.md`).
+- 이 저장소에는 별도의 라이선스를 지정하지 않았습니다. `THIRD_PARTY_NOTICES.txt` 는 소프트웨어 부분만 다룹니다.

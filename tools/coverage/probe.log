@@ -1,0 +1,56 @@
+heldout2  celecoxib            RxNorm:Y(IN,ATC 4)  PubChem:Y
+heldout2  etoricoxib           RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  meropenem            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  cefazolin            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  vancomycin           RxNorm:Y(IN,ATC 3)  PubChem:Y
+heldout2  streptomycin         RxNorm:Y(IN,ATC 2)  PubChem:Y
+heldout2  clindamycin          RxNorm:Y(IN,ATC 3)  PubChem:Y
+heldout2  linezolid            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  metronidazole        RxNorm:Y(IN,ATC 7)  PubChem:Y
+heldout2  oseltamivir          RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  acyclovir            RxNorm:Y(IN,ATC 3)  PubChem:Y
+heldout2  valacyclovir         RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  tenofovir            RxNorm:Y(IN,ATC 0)  PubChem:Y
+heldout2  lamivudine           RxNorm:Y(IN,ATC 2)  PubChem:Y
+heldout2  zidovudine           RxNorm:Y(IN,ATC 2)  PubChem:Y
+heldout2  rituximab            RxNorm:Y(IN,ATC 1)  PubChem:N(404)
+heldout2  trastuzumab          RxNorm:Y(IN,ATC 1)  PubChem:N(404)
+heldout2  bevacizumab          RxNorm:Y(IN,ATC 2)  PubChem:N(404)
+heldout2  imatinib             RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  gefitinib            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  erlotinib            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  sorafenib            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  sunitinib            RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  infliximab           RxNorm:Y(IN,ATC 1)  PubChem:N(404)
+heldout2  adalimumab           RxNorm:Y(IN,ATC 1)  PubChem:N(404)
+heldout2  dexamethasone        RxNorm:Y(IN,ATC 11)  PubChem:Y
+heldout2  betamethasone        RxNorm:Y(IN,ATC 11)  PubChem:Y
+heldout2  triamcinolone        RxNorm:Y(IN,ATC 8)  PubChem:Y
+heldout2  hydrocortisone       RxNorm:Y(IN,ATC 11)  PubChem:Y
+heldout2  budesonide           RxNorm:Y(IN,ATC 5)  PubChem:Y
+heldout2  fluticasone          RxNorm:Y(IN,ATC 4)  PubChem:Y
+heldout2  nebivolol            RxNorm:Y(IN,ATC 2)  PubChem:Y
+heldout2  tolterodine          RxNorm:Y(IN,ATC 1)  PubChem:Y
+heldout2  mirabegron           RxNorm:Y(IN,ATC 1)  PubChem:Y
+kr_sample rebamipide           RxNorm:N  PubChem:Y
+kr_sample eperisone            RxNorm:N  PubChem:Y
+kr_sample itopride             RxNorm:N  PubChem:Y
+kr_sample mosapride            RxNorm:Y(IN,ATC 1)  PubChem:Y
+kr_sample trimebutine          RxNorm:Y(IN,ATC 1)  PubChem:Y
+kr_sample tianeptine           RxNorm:Y(IN,ATC 1)  PubChem:Y
+kr_sample sarpogrelate         RxNorm:N  PubChem:Y
+kr_sample diosmin              RxNorm:Y(IN,ATC 1)  PubChem:Y
+kr_sample choline alfoscerate  RxNorm:Y(PIN,ATC 1)  PubChem:Y
+kr_sample thioctic acid        RxNorm:Y(PIN,ATC 1)  PubChem:Y
+kr_sample levosulpiride        RxNorm:N  PubChem:Y
+kr_sample aceclofenac          RxNorm:Y(IN,ATC 2)  PubChem:Y
+kr_sample loxoprofen           RxNorm:Y(IN,ATC 2)  PubChem:Y
+kr_sample zaltoprofen          RxNorm:N  PubChem:Y
+kr_sample pelubiprofen         RxNorm:N  PubChem:Y
+kr_sample otilonium bromide    RxNorm:Y(PIN,ATC 1)  PubChem:Y
+kr_sample tiropramide          RxNorm:Y(IN,ATC 1)  PubChem:Y
+control   cilostazol           RxNorm:Y(IN,ATC 1)  PubChem:Y
+control   fexofenadine         RxNorm:Y(IN,ATC 1)  PubChem:Y
+control   omeprazole           RxNorm:Y(IN,ATC 2)  PubChem:Y
+
+SUMMARY {"heldout2":{"rxnorm_ingredient":"34/34","rxnorm_with_ATC":"33/34","pubchem_compound":"29/34"},"kr_sample":{"rxnorm_ingredient":"10/17","rxnorm_with_ATC":"10/17","pubchem_compound":"17/17"},"control":{"rxnorm_ingredient":"3/3","rxnorm_with_ATC":"3/3","pubchem_compound":"3/3"}}

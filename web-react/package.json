@@ -1,0 +1,20 @@
+{
+  "name": "medterm-kr-react",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MedTerm-KR 3단 화면 — React + Tailwind + React Flow (빌드 결과는 단일 HTML)",
+  "scripts": {
+    "build": "node build.mjs",
+    "notices": "node tools/gen_notices.mjs",
+    "icons": "node tools/make_icons.cjs",
+    "test": "node tests/ui.cjs && node tests/artifact_wrap.cjs && node tests/app_html.cjs && node tests/pwa.cjs"
+  },
+  "dependencies": {
+    "@xyflow/react": "12.12.1",
+    "esbuild": "0.28.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "3.4.17"
+  }
+}

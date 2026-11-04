@@ -1,0 +1,1120 @@
+{
+ "checkedAt": "2026-11-03T10:24:04.260Z",
+ "summary": {
+  "heldout2": {
+   "rxnorm_ingredient": "34/34",
+   "rxnorm_with_ATC": "33/34",
+   "pubchem_compound": "29/34"
+  },
+  "kr_sample": {
+   "rxnorm_ingredient": "10/17",
+   "rxnorm_with_ATC": "10/17",
+   "pubchem_compound": "17/17"
+  },
+  "control": {
+   "rxnorm_ingredient": "3/3",
+   "rxnorm_with_ATC": "3/3",
+   "pubchem_compound": "3/3"
+  }
+ },
+ "rows": [
+  {
+   "set": "heldout2",
+   "ko": "세레콕시브",
+   "en": "celecoxib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "140587",
+    "tty": "IN",
+    "name": "celecoxib",
+    "found": true,
+    "atc": [
+     "L01XX",
+     "M01AH",
+     "C08CA",
+     "N02AJ"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 2662
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "에토리콕시브",
+   "en": "etoricoxib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "307296",
+    "tty": "IN",
+    "name": "etoricoxib",
+    "found": true,
+    "atc": [
+     "M01AH"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 123619
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "메로페넴",
+   "en": "meropenem",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "29561",
+    "tty": "IN",
+    "name": "meropenem",
+    "found": true,
+    "atc": [
+     "J01DH"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 441130
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "세파졸린",
+   "en": "cefazolin",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "2180",
+    "tty": "IN",
+    "name": "cefazolin",
+    "found": true,
+    "atc": [
+     "J01DB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 33255
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "반코마이신",
+   "en": "vancomycin",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "11124",
+    "tty": "IN",
+    "name": "vancomycin",
+    "found": true,
+    "atc": [
+     "A07AA",
+     "J01XA",
+     "S01AA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 14969
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "스트렙토마이신",
+   "en": "streptomycin",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "10109",
+    "tty": "IN",
+    "name": "streptomycin",
+    "found": true,
+    "atc": [
+     "A07AA",
+     "J01GA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 19649
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "클린다마이신",
+   "en": "clindamycin",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "2582",
+    "tty": "IN",
+    "name": "clindamycin",
+    "found": true,
+    "atc": [
+     "D10AF",
+     "G01AA",
+     "J01FF"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 446598
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "리네졸리드",
+   "en": "linezolid",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "190376",
+    "tty": "IN",
+    "name": "linezolid",
+    "found": true,
+    "atc": [
+     "J01XX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 441401
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "메트로니다졸",
+   "en": "metronidazole",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "6922",
+    "tty": "IN",
+    "name": "metronidazole",
+    "found": true,
+    "atc": [
+     "A02BD",
+     "P01AB",
+     "J01RA",
+     "A01AB",
+     "D06BX",
+     "G01AF",
+     "J01XD"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 4173
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "오셀타미비르",
+   "en": "oseltamivir",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "260101",
+    "tty": "IN",
+    "name": "oseltamivir",
+    "found": true,
+    "atc": [
+     "J05AH"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 65028
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "아시클로비르",
+   "en": "acyclovir",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "281",
+    "tty": "IN",
+    "name": "acyclovir",
+    "found": true,
+    "atc": [
+     "D06BB",
+     "J05AB",
+     "S01AD"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 135398513
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "발라시클로비르",
+   "en": "valacyclovir",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "73645",
+    "tty": "IN",
+    "name": "valacyclovir",
+    "found": true,
+    "atc": [
+     "J05AB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 135398742
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "테노포비르",
+   "en": "tenofovir",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "117466",
+    "tty": "IN",
+    "name": "tenofovir",
+    "found": true,
+    "atc": []
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 464205
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "라미부딘",
+   "en": "lamivudine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "68244",
+    "tty": "IN",
+    "name": "lamivudine",
+    "found": true,
+    "atc": [
+     "J05AR",
+     "J05AF"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 60825
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "지도부딘",
+   "en": "zidovudine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "11413",
+    "tty": "IN",
+    "name": "zidovudine",
+    "found": true,
+    "atc": [
+     "J05AF",
+     "J05AR"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 35370
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "리툭시맙",
+   "en": "rituximab",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "121191",
+    "tty": "IN",
+    "name": "rituximab",
+    "found": true,
+    "atc": [
+     "L01FA"
+    ]
+   },
+   "pubchem": {
+    "status": 404,
+    "found": false
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "트라스투주맙",
+   "en": "trastuzumab",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "224905",
+    "tty": "IN",
+    "name": "trastuzumab",
+    "found": true,
+    "atc": [
+     "L01FD"
+    ]
+   },
+   "pubchem": {
+    "status": 404,
+    "found": false
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "베바시주맙",
+   "en": "bevacizumab",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "253337",
+    "tty": "IN",
+    "name": "bevacizumab",
+    "found": true,
+    "atc": [
+     "L01FG",
+     "S01LA"
+    ]
+   },
+   "pubchem": {
+    "status": 404,
+    "found": false
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "이마티닙",
+   "en": "imatinib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "282388",
+    "tty": "IN",
+    "name": "imatinib",
+    "found": true,
+    "atc": [
+     "L01EA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5291
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "게피티닙",
+   "en": "gefitinib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "328134",
+    "tty": "IN",
+    "name": "gefitinib",
+    "found": true,
+    "atc": [
+     "L01EB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 123631
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "에를로티닙",
+   "en": "erlotinib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "337525",
+    "tty": "IN",
+    "name": "erlotinib",
+    "found": true,
+    "atc": [
+     "L01EB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 176870
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "소라페닙",
+   "en": "sorafenib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "495881",
+    "tty": "IN",
+    "name": "sorafenib",
+    "found": true,
+    "atc": [
+     "L01EX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 216239
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "수니티닙",
+   "en": "sunitinib",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "357977",
+    "tty": "IN",
+    "name": "sunitinib",
+    "found": true,
+    "atc": [
+     "L01EX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5329102
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "인플릭시맙",
+   "en": "infliximab",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "191831",
+    "tty": "IN",
+    "name": "infliximab",
+    "found": true,
+    "atc": [
+     "L04AB"
+    ]
+   },
+   "pubchem": {
+    "status": 404,
+    "found": false
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "아달리무맙",
+   "en": "adalimumab",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "327361",
+    "tty": "IN",
+    "name": "adalimumab",
+    "found": true,
+    "atc": [
+     "L04AB"
+    ]
+   },
+   "pubchem": {
+    "status": 404,
+    "found": false
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "덱사메타손",
+   "en": "dexamethasone",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "3264",
+    "tty": "IN",
+    "name": "dexamethasone",
+    "found": true,
+    "atc": [
+     "A01AC",
+     "C05AA",
+     "D07AB",
+     "D07XB",
+     "D10AA",
+     "H02AB",
+     "R01AD",
+     "S01BA",
+     "S01CB",
+     "S02BA",
+     "S03BA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5743
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "베타메타손",
+   "en": "betamethasone",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "1514",
+    "tty": "IN",
+    "name": "betamethasone",
+    "found": true,
+    "atc": [
+     "A07EA",
+     "C05AA",
+     "D07AC",
+     "D07XC",
+     "H02AB",
+     "R01AD",
+     "R03BA",
+     "S01BA",
+     "S01CB",
+     "S02BA",
+     "S03BA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 9782
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "트리암시놀론",
+   "en": "triamcinolone",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "10759",
+    "tty": "IN",
+    "name": "triamcinolone",
+    "found": true,
+    "atc": [
+     "A01AC",
+     "C05AA",
+     "D07AB",
+     "D07XB",
+     "H02AB",
+     "R01AD",
+     "R03BA",
+     "S01BA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 31307
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "하이드로코르티손",
+   "en": "hydrocortisone",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "5492",
+    "tty": "IN",
+    "name": "hydrocortisone",
+    "found": true,
+    "atc": [
+     "D07AB",
+     "D07AC",
+     "A01AC",
+     "A07EA",
+     "C05AA",
+     "D07AA",
+     "D07XA",
+     "H02AB",
+     "S01BA",
+     "S01CB",
+     "S02BA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5754
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "부데소니드",
+   "en": "budesonide",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "19831",
+    "tty": "IN",
+    "name": "budesonide",
+    "found": true,
+    "atc": [
+     "A07EA",
+     "D07AC",
+     "R01AD",
+     "R03BA",
+     "R03AK"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5281004
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "플루티카손",
+   "en": "fluticasone",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "41126",
+    "tty": "IN",
+    "name": "fluticasone",
+    "found": true,
+    "atc": [
+     "R03AK",
+     "D07AC",
+     "R01AD",
+     "R03BA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5311101
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "네비볼롤",
+   "en": "nebivolol",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "31555",
+    "tty": "IN",
+    "name": "nebivolol",
+    "found": true,
+    "atc": [
+     "C09DX",
+     "C07AB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 71301
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "톨터로딘",
+   "en": "tolterodine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "119565",
+    "tty": "IN",
+    "name": "tolterodine",
+    "found": true,
+    "atc": [
+     "G04BD"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 443879
+   }
+  },
+  {
+   "set": "heldout2",
+   "ko": "미라베그론",
+   "en": "mirabegron",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "1300786",
+    "tty": "IN",
+    "name": "mirabegron",
+    "found": true,
+    "atc": [
+     "G04BD"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 9865528
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "레바미피드",
+   "en": "rebamipide",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5042
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "에페리손",
+   "en": "eperisone",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 3236
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "이토프리드",
+   "en": "itopride",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 3792
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "모사프리드",
+   "en": "mosapride",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "135091",
+    "tty": "IN",
+    "name": "mosapride",
+    "found": true,
+    "atc": [
+     "A03FA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 119584
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "트리메부틴",
+   "en": "trimebutine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "10819",
+    "tty": "IN",
+    "name": "trimebutine",
+    "found": true,
+    "atc": [
+     "A03AA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5573
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "티아넵틴",
+   "en": "tianeptine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "38252",
+    "tty": "IN",
+    "name": "tianeptine",
+    "found": true,
+    "atc": [
+     "N06AX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 68870
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "사르포그렐레이트",
+   "en": "sarpogrelate",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5160
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "디오스민",
+   "en": "diosmin",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "3489",
+    "tty": "IN",
+    "name": "diosmin",
+    "found": true,
+    "atc": [
+     "C05CA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5281613
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "콜린알포세레이트",
+   "en": "choline alfoscerate",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "4918",
+    "tty": "PIN",
+    "name": "glycerylphosphorylcholine",
+    "found": true,
+    "atc": [
+     "N07AX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 657272
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "티옥트산",
+   "en": "thioctic acid",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "6417",
+    "tty": "PIN",
+    "name": "thioctic acid",
+    "found": true,
+    "atc": [
+     "A16AX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 864
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "레보설피리드",
+   "en": "levosulpiride",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 688272
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "아세클로페낙",
+   "en": "aceclofenac",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "16689",
+    "tty": "IN",
+    "name": "aceclofenac",
+    "found": true,
+    "atc": [
+     "M01AB",
+     "M02AA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 71771
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "록소프로펜",
+   "en": "loxoprofen",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "28908",
+    "tty": "IN",
+    "name": "loxoprofen",
+    "found": true,
+    "atc": [
+     "M01AE",
+     "M02AA"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 3965
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "잘토프로펜",
+   "en": "zaltoprofen",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5720
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "펠루비프로펜",
+   "en": "pelubiprofen",
+   "rxnorm": {
+    "found": false,
+    "status": 200
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 5282203
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "오틸로늄브롬화물",
+   "en": "otilonium bromide",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "54216",
+    "tty": "PIN",
+    "name": "otilonium bromide",
+    "found": true,
+    "atc": [
+     "A03AB"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 72092
+   }
+  },
+  {
+   "set": "kr_sample",
+   "ko": "티로프라미드",
+   "en": "tiropramide",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "38315",
+    "tty": "IN",
+    "name": "tiropramide",
+    "found": true,
+    "atc": [
+     "A03AC"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 42262
+   }
+  },
+  {
+   "set": "control",
+   "ko": "실로스타졸",
+   "en": "cilostazol",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "21107",
+    "tty": "IN",
+    "name": "cilostazol",
+    "found": true,
+    "atc": [
+     "B01AC"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 2754
+   }
+  },
+  {
+   "set": "control",
+   "ko": "펙소페나딘",
+   "en": "fexofenadine",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "87636",
+    "tty": "IN",
+    "name": "fexofenadine",
+    "found": true,
+    "atc": [
+     "R06AX"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 3348
+   }
+  },
+  {
+   "set": "control",
+   "ko": "오메프라졸",
+   "en": "omeprazole",
+   "rxnorm": {
+    "status": 200,
+    "rxcui": "7646",
+    "tty": "IN",
+    "name": "omeprazole",
+    "found": true,
+    "atc": [
+     "A02BD",
+     "A02BC"
+    ]
+   },
+   "pubchem": {
+    "status": 200,
+    "found": true,
+    "cid": 4594
+   }
+  }
+ ]
+}

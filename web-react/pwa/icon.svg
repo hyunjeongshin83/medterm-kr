@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <!-- 파란 바탕 위의 알약(캡슐). 안드로이드 앱 아이콘(android-app ... ic_launcher_foreground.xml)과 같은 모양이다. 가운데 66/108 안전 영역 안에 그렸다. -->
+  <rect width="108" height="108" fill="#1F5FBF"/>
+  <g transform="rotate(-45 54 54)">
+    <path fill="#FFFFFF" d="M41,41H67A13,13 0 0 1 67,67H41A13,13 0 0 1 41,41Z"/>
+    <path fill="#BBD3FF" d="M54,41H67A13,13 0 0 1 67,67H54Z"/>
+  </g>
+</svg>

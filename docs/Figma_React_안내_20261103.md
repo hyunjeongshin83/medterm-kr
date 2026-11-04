@@ -1,0 +1,54 @@
+# MedTerm-KR 3단 화면 — Figma · React 정리 (2026-11-03)
+
+## 한 줄 요약
+같은 3단 화면(분류 트리 · 작업 탭 · 상세)을 **Figma 파일**과 **React 앱**으로 만들고, React 앱을 기존 비공개 공유 페이지에 **Version 2**로 올렸습니다. 사전 데이터와 검증 로직(`core.js`)은 그대로이고 **화면만** React로 다시 만들었습니다. 저장소(GitHub)·Drive에는 올리지 않았습니다.
+
+## 어디에 있나
+| 산출물 | 위치 | 비고 |
+|---|---|---|
+| Figma 파일 | 파일 키 `PotdShI3iRc93DpN4DbsWw` (이름 "MedTerm tokens"), 페이지 "MedTerm-KR 3단 화면" | 섹션 3개: 토큰 · 컴포넌트 · 화면 |
+| 공유 페이지(비공개) | 기존 주소 그대로, Version 2 | 제목 `MedTerm-KR` 유지. 주소는 소유자 본인만 열 수 있음 |
+| React 소스·빌드 | 패키지 zip의 `web-react/` | `dist/MedTerm-KR_react.html`(독립 실행) · `dist/artifact.html`(공유 페이지 조각) |
+| 오픈소스 고지 | `web-react/THIRD_PARTY_NOTICES.txt` | 실제 번들 17개 패키지(MIT·ISC·BSD-3) |
+
+## Figma 파일 현황 (읽기 전용으로 확인)
+- **화면 5개**: Desktop 1440 · 관계 그래프 / Tablet 1024 · 상세 서랍 열림 / Mobile 390 · 관계 그래프 / Mobile 390 · 분류 탐색 서랍 / Desktop 1440 · 답변 검증.
+- **컴포넌트 세트**: Button · Badge · Tab · Chip · IconButton · Segmented · SearchInput · TreeRow/Category · TreeRow/Leaf · GraphNode · TopBar(세트) · Disclaimer · GraphCanvas/오메프라졸(실제 레이아웃 좌표 966×500).
+- **토큰**: 변수 컬렉션 "MedTerm tokens"(모드 Light, 46개) + "MedTerm tokens (Dark 참조)"(모드 Dark, 28개). 텍스트 스타일 15개, 효과 스타일 3개. 같은 값이 React의 `web-react/tokens.json`에 있고, `tokens.json`이 원본입니다(Tailwind 설정과 CSS 변수가 여기서 만들어짐).
+- **Figma 무료(Starter) 플랜 제한**: 변수 모드를 한 컬렉션에 1개만 둘 수 있어 라이트와 다크를 **두 컬렉션으로 나눠** 두었습니다(다크는 "참조"용 값). 같은 이유로 Figma 안에서 모드를 바꿔 다크 화면을 보는 방식은 쓰지 않았습니다.
+- **Figma MCP 호출 한도**: 이 세션 마지막에 무료 플랜의 호출 한도에 도달했습니다(플랜 업그레이드는 하지 않았습니다). 한도가 풀리면 Figma 쪽 추가 수정·확인을 이어갈 수 있습니다.
+
+## React 앱
+- 구성: React 18.3.1 · @xyflow/react(React Flow) 12.12.1 · Tailwind CSS 3.4.17 · esbuild. 결과물은 **단일 HTML**(서버 불필요, 외부 요청 없음).
+- 3단 반응형: ≥1100px 3단 / 700~1099px 상세가 오른쪽 서랍 / ≤699px 분류 트리도 왼쪽 서랍. 서랍이 열리면 뒤 화면은 `inert`(키보드·스크린리더 차단), Esc·배경 누름으로 닫힘, 닫힐 때 포커스는 연 곳으로.
+- 관계 그래프(React Flow): 끌어서(휴대폰은 좌우로 밀어서) 이동, −/＋ 버튼과 Ctrl+휠로 확대·축소, 키보드(방향키·+·−·0), 같은 세부군 성분·ATC 상자를 눌러 이동·트리 거르기. 휴대폰에서 **세로로 쓸면 페이지가 스크롤**되도록 터치 동작을 직접 처리했습니다(그래프가 스크롤을 가로채지 않음).
+- 주소 형식: 공유 페이지 규칙(영문·숫자·하이픈)에 맞춰 **`#v-7646`**(오메프라졸). 예전 형식 `#MT:VTM:7646` 링크도 그대로 열립니다.
+- 안전 여백: 노치·시스템 막대가 있는 휴대폰에서 좌우 최소 16px 여백(`max(16px, env(safe-area-inset-*))`), 서랍은 위아래 안전 여백을 반영.
+- 면책 문구 원문과 "사전에 없음 = 확인 필요" 원칙은 바꾸지 않았습니다.
+
+## 점검 결과 (직접 실행)
+- **자동 점검 123개 전부 통과** (실제 Chromium): 1440/1280/1099/1024/768/700/699/390/360px 가로 넘침 없음 · 한 화면에 맞음 · 검색/상세/트리 · 서랍 포커스·inert · 32개 성분 전부 그래프 노드·간선 수가 레이아웃과 일치 · 터치 가로 이동·세로 스크롤 · 다크 · **콘솔 오류 0 · 외부 요청 0**.
+- 공유 페이지 바깥틀 모의 점검 9개 통과(제목, 한 화면 맞춤, 주소 `#v-7646`, 오류 없음; 데스크톱·휴대폰·다크).
+- 색 대비: 토큰 15쌍(글자/배경) 계산 결과 라이트 최저 5.04:1(warn/warn-bg), 다크 최저 5.44:1(on-pri/pri-fill) — **모두 4.5:1 이상**. 다크 모드의 파랑은 글자용(`pri`)과 채움용(`pri-fill`)을 분리했습니다.
+
+## Figma와 React가 다른 점 (React가 최신)
+**주의: 이 항목은 작업 기록 기준이며, Figma 호출 한도에 걸려 마지막 재확인을 하지 못했습니다(재확인 필요).**
+- 이번 마무리에서 React의 가장자리 여백을 안전 여백 기준으로 맞춘 결과, Figma 프레임과 수 px 차이가 있을 것으로 봅니다: 분류 트리 머리 왼쪽 10→16px, 상세 오른쪽 12·14→16px, 휴대폰 본문 좌우 12→16px.
+- React에는 있으나 Figma에 반영하지 못한 것으로 기록된 것: 분류 서랍 안의 "✕ 닫기" 버튼, 그래프 도구줄의 "전체 보기·가운데" 글자 버튼 라벨.
+- 맞추려면 Figma 프레임 몇 곳의 여백·라벨만 고치면 됩니다(한도가 풀린 뒤 진행 가능).
+
+## 한계 · 주의
+- React Flow 화면 오른쪽 아래의 "React Flow" 표기는 기본값으로 두었습니다.
+- 공유 페이지는 Google Fonts(Noto Sans KR)를 링크로 불러옵니다. 독립 실행 HTML은 시스템 글꼴을 씁니다.
+- 공개 배포 전에는 SNOMED CT·ATC 값의 재배포 조건 확인이 필요합니다(`MedTerm-KR_수록범위확대_DB조사_20261103.md` §1·§4).
+
+## 다시 만들고 점검하는 방법
+```
+cd web-react
+npm ci
+node build.mjs                 # dist/ 두 파일 생성 (../web/js 의 데이터·core.js 를 읽음)
+npm i --no-save playwright && npx playwright install chromium   # 점검용, 처음 한 번 (package.json은 바뀌지 않음)
+node tests/ui.cjs              # 123개 점검(독립 실행 빌드)
+node tests/artifact_wrap.cjs   # 공유 페이지 조각 모의 점검 + 화면 캡처
+node tools/gen_notices.mjs     # 오픈소스 고지문 다시 만들기
+```

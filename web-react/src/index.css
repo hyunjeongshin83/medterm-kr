@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────── 바탕 ───────── */
+@layer base {
+  *, ::before, ::after { border-color: var(--line); }
+  /* 한 화면짜리 앱: 높이는 100vh가 아니라 html→body→#root의 100%로 잇는다(공유 페이지 바깥틀이 위아래 안전 여백을 html에 준다). */
+  html { box-sizing: border-box; }
+  html, body, #root { height: 100%; }
+  body { @apply m-0 bg-bg font-sans text-body text-ink; -webkit-text-size-adjust: 100%; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  h1, h2, h3, h4, p, ul, ol, dl, dd { margin: 0; }
+  ul, ol { list-style: none; padding: 0; }
+  table { border-collapse: collapse; }
+  summary { cursor: pointer; }
+  ::placeholder { color: var(--mut); opacity: 1; }
+}
+
+/* ───────── 3단 화면의 서랍(좁은 화면) ───────── */
+@layer components {
+  /* 화면 가장자리에 닿는 단은 노치·시스템 막대 쪽 안전 여백만큼 안쪽으로 물러선다(배경은 가장자리까지 그대로). */
+  .pane-left { @apply flex min-h-0 flex-col overflow-hidden border-r border-line bg-surface-2; padding-left: env(safe-area-inset-left, 0px); }
+  .pane-inspector { @apply flex min-h-0 flex-col overflow-hidden border-l border-line bg-surface; padding-right: env(safe-area-inset-right, 0px); }
+  /* 가운데 본문의 좌우 여백: 보통 20px, 오른쪽 서랍 구간(≤1099)에선 오른쪽이, 폰 구간(≤699)에선 양쪽이 화면 가장자리에 닿으므로 안전 여백을 반영한다. */
+  .center-pad { --cl: 20px; --cr: 20px; padding-left: var(--cl); padding-right: var(--cr); }
+  /* 본문 폭 끝까지 이어지는 띠(탭 줄): 본문 좌우 여백만큼 바깥으로 내밀고 같은 만큼 안쪽 여백을 준다. */
+  .center-bleed { margin-left: calc(var(--cl) * -1); margin-right: calc(var(--cr) * -1); padding-left: var(--cl); padding-right: var(--cr); }
+}
+@screen lt-insp {
+  .center-pad { --cr: max(20px, var(--gr)); }
+  .pane-inspector {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+    width: min(var(--drawer-r), 94vw);
+    box-shadow: -8px 0 24px rgba(16, 24, 40, 0.18);
+    transform: translateX(102%); visibility: hidden;
+    transition: transform 0.2s ease, visibility 0s linear 0.2s;
+  }
+  .pane-inspector[data-open="true"] { transform: none; visibility: visible; transition: transform 0.2s ease; }
+}
+@screen lt-tree {
+  .center-pad { --cl: var(--gl); --cr: var(--gr); }
+  .pane-left {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+    width: min(var(--drawer-l), 88vw);
+    box-shadow: 8px 0 24px rgba(16, 24, 40, 0.18);
+    border-right: 0;
+    transform: translateX(-102%); visibility: hidden;
+    transition: transform 0.2s ease, visibility 0s linear 0.2s;
+  }
+  .pane-left[data-open="true"] { transform: none; visibility: visible; transition: transform 0.2s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pane-left, .pane-inspector { transition: none !important; }
+}
+
+/* ───────── React Flow 덧씌우기 ───────── */
+.react-flow { background: transparent; }
+/* 커서와 터치 동작은 그래프 칸(GraphCanvas)이 정한다. 끌어서 이동은 포인터 처리로 직접 하고, 세로 스크롤은 브라우저에 맡긴다. */
+.react-flow__pane, .react-flow__pane.draggable, .react-flow__pane.dragging { cursor: inherit; touch-action: pan-y pinch-zoom; }
+.react-flow__handle { opacity: 0; pointer-events: none; }
+.react-flow__attribution { background: var(--surface); color: var(--mut); font-size: 10px; border-radius: 6px 0 0 0; }
+.react-flow__attribution a { color: var(--mut); }
+.react-flow__node, .react-flow__node.draggable { cursor: inherit; }

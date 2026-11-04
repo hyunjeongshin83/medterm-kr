@@ -1,11 +1,29 @@
 # MedTerm-KR (프로토타입)
 약무용어 사전(VTM→VMP→AMP) · 근거 주입 프롬프트 · LLM 답변 검증 웹앱.
 
-1. `web/index.html` 을 브라우저로 연다(서버 불필요).
+1. `web/index.html` 을 브라우저로 연다(서버 불필요). 3단 화면(분류 트리 · 작업 탭 · 상세)이며 좁은 화면에서는 서랍으로 바뀐다. 성분 주소 공유: `index.html#MT:VTM:7646`. "관계 그래프" 탭은 고른 성분 중심의 분류·제품 관계를 SVG로 보여준다(`node tests/test_graph.js`로 모델 점검).
 2. 자세한 설계·검증·한계: `docs/설계_검증_보고서.md` (한국어).
 3. 데이터는 프로토타입이며 한글명·상품명은 약사 검수 전 초안이다. 진단·처방 판단용이 아니다.
 
-폴더: `web/`(앱) · `data/`(사전 JSON, 계열 용어 사전) · `build/`(생성·온톨로지 내보내기 스크립트) · `tests/`(벤치마크·UI 테스트, node_modules 제외) · `tools/`(MFDS 수집 스크립트, 사용자 PC에서 실행)
+폴더: `web/`(앱) · `web-react/`(React 화면 소스·빌드, 아래 참고) · `android-app/`(설치형 안드로이드 앱, 아래 참고) · `.github/workflows/`(APK 만들기, 수동 실행) · `data/`(사전 JSON, 계열 용어 사전) · `build/`(생성·온톨로지 내보내기 스크립트) · `tests/`(벤치마크·UI 테스트, node_modules 제외) · `tools/`(MFDS 수집 스크립트는 사용자 PC에서 실행, `tools/coverage/`는 수록 범위 표본 점검)
+
+## React 화면 (`web-react/`, 2026-11-03 추가)
+같은 3단 화면을 React 18 + Tailwind + React Flow 로 다시 만든 소스다. 사전 데이터와 검증 로직(`web/js/`)은 그대로이고 화면만 바뀌었다. 기존 `web/` 은 비교·문서용으로 그대로 동작한다.
+- 결과물: `web-react/dist/MedTerm-KR_react.html`(독립 실행, 서버 불필요) · `web-react/dist/artifact.html`(공유 페이지용 조각) · `web-react/dist/pwa/`(설치형 웹앱, 아래 참고). 성분 주소: `#v-7646`(예전 `#MT:VTM:7646` 도 열림).
+- 만들기·점검: `cd web-react && npm ci && npm run build`, 점검 방법과 구조는 `web-react/README.md`. 오픈소스 고지문: `web-react/THIRD_PARTY_NOTICES.txt`.
+- 디자인: Figma 파일 키 `PotdShI3iRc93DpN4DbsWw`(토큰·컴포넌트·화면 5개). 값의 원본은 `web-react/tokens.json`. 현황과 Figma–React 차이: `docs/Figma_React_안내_20261103.md`.
+- 수록 범위 확대(식약처·심평원·RxNorm 등 데이터 출처, 라이선스, 단계별 계획) 조사: `docs/research/05_수록범위확대_DB조사_20261103.md`.
+
+## 설치형 웹앱 (PWA, `web-react/dist/pwa/`, 2026-11-04 추가)
+같은 React 화면을 휴대폰·PC에 설치해서 앱처럼 쓰고, 인터넷이 없어도 열리게 한 웹앱이다(설치 정보 + 오프라인용 서비스 워커 + 아이콘). 폴더째 https 서버의 아무 경로에 올려도 동작한다(경로가 모두 상대 경로).
+- 내 PC에서 열어 보기: `cd web-react && python3 -m http.server 8080 --directory dist/pwa` → 크롬에서 `http://localhost:8080/`. 서비스 워커는 **https 또는 localhost 에서만** 동작한다. 자세한 설명·점검: `web-react/README.md` 의 "웹앱(PWA)".
+- **공개 주소는 아직 정하지 않았다.** 비공개 저장소의 GitHub Pages 는 사이트가 공개되므로 켜지 않았다. 공개하려면 SNOMED CT · ATC 값의 재배포 조건부터 확인해야 한다(`docs/research/05_수록범위확대_DB조사_20261103.md`).
+- 크롬(데스크톱·휴대폰 폭 모의)에서 점검했고(`web-react/tests/pwa.cjs`, 33개), 실제 휴대폰에서 설치해 본 확인은 아직 없다.
+
+## 설치형 안드로이드 앱 (`android-app/`, 2026-11-04 추가)
+같은 React 화면(`web-react/dist/MedTerm-KR_app.html`)을 앱 안에 담아 휴대폰에 설치하는 앱이다(Java + 기본 WebView, 외부 라이브러리 없음, **인터넷 권한 없음**: 화면과 사전이 모두 앱 안에 있다). 안드로이드 8.0 이상.
+- 설치·다시 만들기·서명 주의: `android-app/README.md`. 저장소에서 APK 를 만들려면 Actions → android-app → Run workflow(`.github/workflows/android-apk.yml`, 수동 실행).
+- 개인 확인용 서명(디버그 키)이다. 정식 배포용 서명 키와 앱 ID 는 정해지지 않았다. 휴대폰에서 직접 설치·실행해 본 확인은 아직 없다(`android-app/README.md` 의 "확인하지 못함" 참고).
 
 ## CLI
 `node bin/medterm.mjs help` — 검색·프롬프트·검증·벤치마크·평가. 예: `node bin/medterm.mjs verify --text "메트포르민은 항고혈압제입니다."` (종료코드 1).

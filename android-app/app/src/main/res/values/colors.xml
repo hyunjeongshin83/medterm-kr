@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 색은 web-react/tokens.json(디자인 토큰)과 같은 값이다: bg·surface·pri 의 라이트 값 -->
+<resources>
+    <color name="page_bg">#F4F6F9</color>
+    <color name="bar_bg">#FFFFFF</color>
+    <color name="ic_launcher_background">#1F5FBF</color>
+</resources>

@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'kr.medit.medtermkr'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'kr.medit.medtermkr'   // 바꾸려면 namespace·폴더(java/kr/medit/medtermkr)도 함께 바꾼다.
+        minSdk 26                            // 안드로이드 8.0 이상
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            // 개인 확인용: 기기에 직접 설치할 수 있게 디버그 키로 서명한다.
+            // 스토어 배포나 업데이트 설치용 정식 서명 키는 따로 만들어 이 자리에 연결해야 한다(README 참고).
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 앱에는 외부 라이브러리가 하나도 들어가지 않는다(dependencies 없음).
+}

@@ -5,15 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MedTerm-KR · 약무용어 사전 · 답변 검증 (프로토타입)</title>
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mut:#667085;--line:#e3e7ee;--pri:#1f5fbf;--ok:#1a7f4b;--okbg:#e6f4ec;--warn:#9a6700;--warnbg:#fff4d6;--err:#b42318;--errbg:#fde8e6;--info:#475467;--infobg:#eef1f5}
-*{box-sizing:border-box}body{margin:0;font:15px/1.55 -apple-system,"Segoe UI","Malgun Gothic","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
-header{background:#fff;border-bottom:1px solid var(--line);padding:14px 20px}
-header h1{margin:0;font-size:18px}header p{margin:2px 0 0;color:var(--mut);font-size:13px}
-.disc{background:#fff8e1;border-bottom:1px solid #f3dfa2;color:#6b4e00;padding:8px 20px;font-size:13px}
-nav{display:flex;gap:4px;padding:10px 20px 0;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
-nav button{border:0;background:none;padding:10px 14px;font:inherit;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
-nav button[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
-main{max-width:1080px;margin:0 auto;padding:18px 20px 60px}
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1c2430;--mut:#667085;--line:#e3e7ee;--pri:#1f5fbf;--pri-soft:#e8f0fd;--ok:#1a7f4b;--okbg:#e6f4ec;--warn:#9a6700;--warnbg:#fff4d6;--err:#b42318;--errbg:#fde8e6;--info:#475467;--infobg:#eef1f5;--left:300px;--right:380px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;font:15px/1.55 -apple-system,"Segoe UI","Malgun Gothic","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--pri);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0}.skip:focus{left:8px;top:8px;z-index:100;background:#fff;padding:6px 10px;border:1px solid var(--line);border-radius:6px}
+.topbar{flex:none;display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--line);padding:10px 16px}
+.brand h1{margin:0;font-size:17px;line-height:1.2}.brand h1 small{color:var(--mut);font-weight:400;font-size:12px}.brand p{margin:2px 0 0;color:var(--mut);font-size:12.5px}
+a{color:var(--pri)}
+.icon-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer;color:var(--ink)}.icon-btn:hover{border-color:var(--pri)}
+#nav-toggle{display:none;align-items:center;gap:6px}
+.disc{flex:none;background:#fff8e1;border-bottom:1px solid #f3dfa2;color:#6b4e00;padding:6px 16px;font-size:12.5px}
+.shell{flex:1;min-height:0;display:grid;grid-template-columns:var(--left) minmax(0,1fr) var(--right)}
+.pane{min-height:0;overflow:auto}
+/* 왼쪽: 분류 탐색 */
+.left{background:#fafbfc;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.left .pane-head{flex:none;padding:10px 10px 8px;border-bottom:1px solid var(--line);background:#fafbfc}
+.seg{display:flex;gap:4px;background:var(--infobg);padding:3px;border-radius:8px;margin-bottom:8px}
+.seg button{flex:1;border:0;background:none;padding:5px 8px;border-radius:6px;font:inherit;font-size:13px;color:var(--mut);cursor:pointer}
+.seg button[aria-selected=true]{background:#fff;color:var(--pri);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.08)}
+.left input[type=search]{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px;background:#fff}
+.tree,.azlist{flex:1;min-height:0;overflow:auto;padding:6px 8px 24px}
+.tree ul,.azlist ul{list-style:none;margin:0;padding-left:14px}.tree>ul,.azlist>ul{padding-left:0}
+.tree summary{cursor:pointer;padding:4px 6px;border-radius:6px;display:flex;gap:6px;align-items:baseline;list-style:none}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary:hover{background:var(--infobg)}
+.tree summary::before{content:"▸";color:var(--mut);font-size:11px;transition:transform .15s;flex:none}
+.tree details[open]>summary::before{transform:rotate(90deg)}
+.tree summary .code{font-weight:600;font-size:13px;white-space:nowrap}
+.tree summary .nm{color:var(--mut);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.tree summary .n{margin-left:auto;font-size:11.5px;color:var(--mut);background:var(--infobg);border-radius:999px;padding:0 7px;flex:none}
+.leaf{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 8px;border-radius:6px;cursor:pointer;font:inherit;color:var(--ink)}
+.leaf:hover{background:var(--pri-soft)}
+.leaf[aria-current=true]{background:var(--pri-soft);box-shadow:inset 3px 0 0 var(--pri)}
+.leaf .ko{font-weight:600;font-size:14px}.leaf small{display:block;color:var(--mut);font-size:12px;line-height:1.3}
+/* 가운데: 작업 영역 */
+.center{padding:0 20px 48px}
+.center:focus{outline:none}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:4px;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0 0;margin-bottom:14px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:9px 14px;font:inherit;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
 section[hidden]{display:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 input[type=text],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
@@ -23,7 +56,7 @@ button.btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9
 .hit{padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;background:#fff}.hit:hover{border-color:var(--pri)}
 .hit b{font-size:16px}.mut{color:var(--mut);font-size:13px}.badge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--infobg);color:var(--info);margin-left:6px}
 .badge.draft{background:var(--warnbg);color:var(--warn)}.badge.ok{background:var(--okbg);color:var(--ok)}.badge.err{background:var(--errbg);color:var(--err)}
-.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.chip{background:var(--infobg);border-radius:6px;padding:2px 8px;font-size:13px}.chip.leaf{background:#dfeafb;color:#124a99;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.chip{background:var(--infobg);border-radius:6px;padding:2px 8px;font-size:13px}.chip.leaf{background:#dfeafb;color:#124a99;font-weight:600;display:inline-block;width:auto;padding:2px 8px}
 .sep{color:var(--mut)}
 details{margin:4px 0}summary{cursor:pointer;padding:3px 0}.vmp{padding:3px 0 3px 18px;font-size:14px}.amp{padding-left:38px;font-size:13px;color:var(--mut)}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{color:var(--mut);font-weight:600;font-size:13px}
@@ -35,45 +68,119 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px
 pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto;font-size:12.5px;white-space:pre-wrap;word-break:break-word;max-height:360px}
 .sev{font-weight:700;font-size:12px}.sev.error{color:var(--err)}.sev.warn{color:var(--warn)}.sev.info{color:var(--info)}.sev.ok{color:var(--ok)}
 ul.lim li{margin:4px 0}small{color:var(--mut)}
+.hint{margin:8px 0 0}
+/* 오른쪽: 인스펙터 */
+.inspector{background:#fff;border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.inspector .pane-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.inspector h2.t{margin:0;font-size:14px;color:var(--mut);font-weight:600}
+#insp-close{display:none}
+#detail{flex:1;min-height:0;overflow:auto;padding:12px}
+#detail .card{border:0;padding:4px;margin:0}
+.empty{color:var(--mut);padding:18px 8px}
+.backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:30}
+/* 반응형 */
+@media (max-width:1099px){
+  :root{--left:260px}
+  .shell{grid-template-columns:var(--left) minmax(0,1fr)}
+  .inspector{position:fixed;top:0;right:0;bottom:0;width:min(440px,94vw);z-index:40;box-shadow:-8px 0 24px rgba(16,24,40,.18);transform:translateX(102%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s}
+  body.insp-open .inspector{transform:none;visibility:visible;transition:transform .2s ease}
+  #insp-close{display:inline-flex}
+}
+@media (max-width:699px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  #nav-toggle{display:inline-flex}
+  .left{position:fixed;top:0;left:0;bottom:0;width:min(320px,88vw);z-index:40;box-shadow:8px 0 24px rgba(16,24,40,.18);transform:translateX(-102%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s}
+  body.nav-open .left{transform:none;visibility:visible;transition:transform .2s ease}
+  .center{padding:0 12px 48px}
+  .brand p{display:none}
+}
+@media (prefers-reduced-motion:reduce){.left,.inspector{transition:none!important}}
+.graph-head{margin-bottom:4px}.zoom{display:inline-flex;gap:4px;align-items:center;font-size:13px;color:var(--mut)}
+.zoom button{flex:none;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}.zoom button:hover{border-color:var(--pri);color:var(--pri)}.zoom button:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+#graph-zoom-label{min-width:44px;text-align:center}
+.graph-wrap{margin-top:10px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;max-height:min(72vh,720px)}.graph-wrap:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+svg.graph{display:block;height:auto;max-width:none}
+svg.graph .gh{font-size:10.5px;fill:var(--mut);text-anchor:middle}
+svg.graph .ge{fill:none;stroke:#9aa7b8;stroke-width:1.2}svg.graph .ge-hasATC,svg.graph .ge-broader,svg.graph .ge-sameGroup{stroke-dasharray:5 4}
+svg.graph .gn rect{fill:#fff;stroke:#9aa7b8;stroke-width:1}svg.graph .gn text{font-size:11.5px;fill:var(--ink);pointer-events:none}svg.graph .gn .l2{font-size:10px;fill:var(--mut)}
+svg.graph .gn-vtm rect{fill:var(--pri);stroke:var(--pri)}svg.graph .gn-vtm text{fill:#fff}svg.graph .gn-vtm .l2{fill:#dbe7fb}
+svg.graph .gn-sibling rect{fill:var(--pri-soft);stroke:var(--pri)}
+svg.graph .gn-group rect{fill:var(--infobg)}svg.graph .gn-atc rect{fill:#fff}
+svg.graph .gn-vmp rect{fill:var(--okbg);stroke:var(--ok)}svg.graph .gn-amp rect{fill:#fff;stroke:var(--line)}
+svg.graph .gn-more rect{fill:#fff;stroke-dasharray:4 3}svg.graph .gn-more text{fill:var(--mut)}
+svg.graph .clickable{cursor:pointer}svg.graph .clickable:hover rect{stroke-width:2}svg.graph .gn:focus{outline:none}svg.graph .gn:focus-visible rect{stroke:var(--pri);stroke-width:3}
 </style>
 </head>
 <body>
-<header><h1>MedTerm-KR <small>프로토타입</small></h1><p>약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증 · <a href="guide.html">화면 구성 안내</a></p></header>
+<a class="skip" href="#center">본문으로 건너뛰기</a>
+<header class="topbar">
+  <button id="nav-toggle" class="icon-btn" type="button" aria-controls="left" aria-expanded="false">☰ <span>분류 탐색</span></button>
+  <div class="brand"><h1>MedTerm-KR <small>프로토타입</small></h1><p>약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증 · <a href="guide.html">화면 구성 안내</a></p></div>
+</header>
 <div class="disc">정보 제공·연구용 프로토타입입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.</div>
-<nav role="tablist">
-  <button role="tab" aria-selected="true" data-tab="search">사전 검색</button>
-  <button role="tab" aria-selected="false" data-tab="verify">답변 검증</button>
-  <button role="tab" aria-selected="false" data-tab="rag">근거 기반 질의</button>
-  <button role="tab" aria-selected="false" data-tab="about">데이터·한계</button>
-</nav>
-<main>
-<section id="tab-search">
-  <div class="card"><div class="row"><input class="grow" id="q" type="text" placeholder="이름·상품명·ATC 코드·RxCUI (예: 오메프라졸, 타이레놀, A10BA, 6809)" autocomplete="off"></div>
-  <div class="mut" style="margin-top:6px">예: <a href="#" class="ex">메트포르민</a> · <a href="#" class="ex">노바스크</a> · <a href="#" class="ex">C10AA</a> · <a href="#" class="ex">warfarin</a></div></div>
-  <div id="hits"></div><div id="detail"></div>
-</section>
-<section id="tab-verify" hidden>
-  <div class="card">
-    <div class="row"><select id="sample" class="grow"><option value="">샘플 답변 불러오기…</option></select><button class="btn" id="run-verify">검증</button></div>
-    <textarea id="vtext" placeholder="LLM이 생성한 약 관련 답변을 붙여넣으세요."></textarea>
-  </div>
-  <div id="vresult"></div>
-</section>
-<section id="tab-rag" hidden>
-  <div class="card">
-    <div class="row"><input class="grow" id="rq" type="text" placeholder="질문 예: 오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘"><button class="btn" id="rag-go">사전에서 근거 찾기</button></div>
-    <div id="rag-out"></div>
-  </div>
-  <div class="card" id="rag-llm" hidden>
-    <h3 style="margin-top:0">LLM 호출 (선택)</h3>
-    <p class="mut">브라우저에 API 키를 두지 마세요. 서버(프록시/엣지 함수)의 URL만 입력하면 <code>{system, user}</code>를 POST하고 <code>{text}</code>를 받습니다. 비워 두면 아래 칸에 답변을 직접 붙여넣어 검증합니다.</p>
-    <div class="row"><input class="grow" id="proxy" type="text" placeholder="https://… (서버 프록시 URL, 선택)"><button class="btn sec" id="llm-call">LLM 호출</button><button class="btn sec" id="llm-mock">모의 답변 넣기(오프라인 데모)</button></div>
-    <textarea id="rag-answer" placeholder="LLM 답변(붙여넣기 또는 호출 결과)"></textarea>
-    <div class="row" style="margin-top:8px"><button class="btn" id="rag-verify">이 답변 검증</button></div>
-    <div id="rag-verify-out"></div>
-  </div>
-</section>
-<section id="tab-about" hidden><div id="about"></div></section>
-</main>
+<div class="shell" id="shell">
+  <aside id="left" class="pane left" aria-label="분류 탐색">
+    <div class="pane-head">
+      <div class="seg" role="tablist" aria-label="탐색 방식">
+        <button type="button" role="tab" aria-selected="true" data-seg="atc">ATC 분류</button>
+        <button type="button" role="tab" aria-selected="false" data-seg="az">가나다순</button>
+      </div>
+      <input id="tree-filter" type="search" placeholder="분류·성분·코드 걸러내기" aria-label="분류·성분·코드 걸러내기" autocomplete="off">
+    </div>
+    <div id="tree" class="tree" aria-label="ATC 분류 트리"></div>
+    <div id="az" class="azlist" aria-label="성분 가나다순 목록" hidden></div>
+  </aside>
+  <main id="center" class="pane center" tabindex="-1">
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="search">사전 검색</button>
+      <button role="tab" aria-selected="false" data-tab="graph">관계 그래프</button>
+      <button role="tab" aria-selected="false" data-tab="verify">답변 검증</button>
+      <button role="tab" aria-selected="false" data-tab="rag">근거 기반 질의</button>
+      <button role="tab" aria-selected="false" data-tab="about">데이터·한계</button>
+    </nav>
+    <section id="tab-search">
+      <div class="card"><div class="row"><input class="grow" id="q" type="text" placeholder="이름·상품명·ATC 코드·RxCUI (예: 오메프라졸, 타이레놀, A10BA, 6809)" autocomplete="off" aria-label="사전 검색"></div>
+      <div class="mut hint">예: <a href="#" class="ex">메트포르민</a> · <a href="#" class="ex">노바스크</a> · <a href="#" class="ex">C10AA</a> · <a href="#" class="ex">warfarin</a> — 왼쪽 ATC 트리에서도 탐색할 수 있고, 선택하면 오른쪽에 상세가 표시됩니다.</div></div>
+      <div id="hits"></div>
+    </section>
+    <section id="tab-graph" hidden>
+      <div class="card">
+        <div class="row graph-head"><b id="graph-title">관계 그래프</b><span class="grow"></span>
+          <span class="zoom" role="group" aria-label="그래프 크기"><button type="button" id="graph-zoom-out" aria-label="축소">−</button><span id="graph-zoom-label" aria-live="polite">맞춤</span><button type="button" id="graph-zoom-in" aria-label="확대">＋</button><button type="button" id="graph-zoom-fit">맞춤</button></span></div>
+        <div class="mut hint" id="graph-note"></div>
+        <div class="graph-wrap" id="graph-wrap" tabindex="0" role="region" aria-label="관계 그래프 (가로로 스크롤할 수 있습니다)"><div class="empty">왼쪽 분류 트리나 검색에서 성분을 고르면 관계가 표시됩니다.</div></div>
+        <div class="mut hint">실선은 성분 → 제형·용량(VMP) → 제품(AMP) 계층, 점선은 분류 관계(ATC 코드·상위 세부군·같은 세부군 성분)입니다. 파란 테두리의 성분과 ATC 노드는 눌러서 이동하거나 왼쪽 트리에서 찾을 수 있습니다(키보드: Tab, Enter).</div>
+        <div class="mut hint">"같은 세부군 성분"은 <b>이 사전에 수록된 성분 안에서만</b> 찾습니다(실제 같은 계열 약물 전체가 아닙니다). VMP·AMP는 미국 RxNorm 기준이고 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다. 표시 개수에는 상한이 있어 일부는 "외 N개"로 줄여 표시하며, 전체 목록은 오른쪽 상세에 있습니다.</div>
+      </div>
+    </section>
+    <section id="tab-verify" hidden>
+      <div class="card">
+        <div class="row"><select id="sample" class="grow" aria-label="샘플 답변"><option value="">샘플 답변 불러오기…</option></select><button class="btn" id="run-verify">검증</button></div>
+        <textarea id="vtext" placeholder="LLM이 생성한 약 관련 답변을 붙여넣으세요." aria-label="검증할 답변"></textarea>
+      </div>
+      <div id="vresult"></div>
+    </section>
+    <section id="tab-rag" hidden>
+      <div class="card">
+        <div class="row"><input class="grow" id="rq" type="text" placeholder="질문 예: 오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘" aria-label="질문"><button class="btn" id="rag-go">사전에서 근거 찾기</button></div>
+        <div id="rag-out"></div>
+      </div>
+      <div class="card" id="rag-llm" hidden>
+        <h3 style="margin-top:0">LLM 호출 (선택)</h3>
+        <p class="mut">브라우저에 API 키를 두지 마세요. 서버(프록시/엣지 함수)의 URL만 입력하면 <code>{system, user}</code>를 POST하고 <code>{text}</code>를 받습니다. 비워 두면 아래 칸에 답변을 직접 붙여넣어 검증합니다.</p>
+        <div class="row"><input class="grow" id="proxy" type="text" placeholder="https://… (서버 프록시 URL, 선택)" aria-label="프록시 URL"><button class="btn sec" id="llm-call">LLM 호출</button><button class="btn sec" id="llm-mock">모의 답변 넣기(오프라인 데모)</button></div>
+        <textarea id="rag-answer" placeholder="LLM 답변(붙여넣기 또는 호출 결과)" aria-label="LLM 답변"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn" id="rag-verify">이 답변 검증</button></div>
+        <div id="rag-verify-out"></div>
+      </div>
+    </section>
+    <section id="tab-about" hidden><div id="about"></div></section>
+  </main>
+  <aside id="inspector" class="pane inspector" aria-label="상세 정보">
+    <div class="pane-head"><h2 class="t" id="insp-title">상세 정보</h2><button id="insp-close" class="icon-btn" type="button" aria-label="상세 닫기">✕ 닫기</button></div>
+    <div id="detail"><p class="empty">왼쪽 트리나 검색 결과에서 성분을 선택하면 코드, ATC 경로, 제형·용량·제품 계층이 여기에 표시됩니다.</p></div>
+  </aside>
+</div>
+<div id="backdrop" class="backdrop" hidden></div>
 <script src="js/medterm-data.js"></script><script src="js/bench.js"></script><script src="js/core.js"></script><script src="js/app.js"></script>
 </body></html>

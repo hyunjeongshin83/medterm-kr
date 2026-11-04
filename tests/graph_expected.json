@@ -1,0 +1,350 @@
+{
+ "MT:VTM:161": {
+  "atc": 1,
+  "groups": [
+   "N02BE"
+  ],
+  "siblings": [],
+  "vmp": 55,
+  "amp": 43
+ },
+ "MT:VTM:5640": {
+  "atc": 5,
+  "groups": [
+   "C01EB",
+   "G02CC",
+   "M01AE",
+   "M02AA",
+   "R02AX"
+  ],
+  "siblings": [
+   "MT:VTM:3355",
+   "MT:VTM:7258"
+  ],
+  "vmp": 23,
+  "amp": 26
+ },
+ "MT:VTM:7258": {
+  "atc": 3,
+  "groups": [
+   "G02CC",
+   "M01AE",
+   "M02AA"
+  ],
+  "siblings": [
+   "MT:VTM:3355",
+   "MT:VTM:5640"
+  ],
+  "vmp": 16,
+  "amp": 11
+ },
+ "MT:VTM:1191": {
+  "atc": 3,
+  "groups": [
+   "A01AD",
+   "B01AC",
+   "N02BA"
+  ],
+  "siblings": [
+   "MT:VTM:32968"
+  ],
+  "vmp": 40,
+  "amp": 20
+ },
+ "MT:VTM:3355": {
+  "atc": 4,
+  "groups": [
+   "D11AX",
+   "M01AB",
+   "M02AA",
+   "S01BC"
+  ],
+  "siblings": [
+   "MT:VTM:5640",
+   "MT:VTM:7258"
+  ],
+  "vmp": 31,
+  "amp": 13
+ },
+ "MT:VTM:10689": {
+  "atc": 1,
+  "groups": [
+   "N02AX"
+  ],
+  "siblings": [],
+  "vmp": 22,
+  "amp": 6
+ },
+ "MT:VTM:7646": {
+  "atc": 1,
+  "groups": [
+   "A02BC"
+  ],
+  "siblings": [
+   "MT:VTM:283742",
+   "MT:VTM:40790"
+  ],
+  "vmp": 13,
+  "amp": 9
+ },
+ "MT:VTM:283742": {
+  "atc": 1,
+  "groups": [
+   "A02BC"
+  ],
+  "siblings": [
+   "MT:VTM:40790",
+   "MT:VTM:7646"
+  ],
+  "vmp": 17,
+  "amp": 9
+ },
+ "MT:VTM:40790": {
+  "atc": 1,
+  "groups": [
+   "A02BC"
+  ],
+  "siblings": [
+   "MT:VTM:283742",
+   "MT:VTM:7646"
+  ],
+  "vmp": 7,
+  "amp": 4
+ },
+ "MT:VTM:4278": {
+  "atc": 1,
+  "groups": [
+   "A02BA"
+  ],
+  "siblings": [],
+  "vmp": 13,
+  "amp": 6
+ },
+ "MT:VTM:6809": {
+  "atc": 1,
+  "groups": [
+   "A10BA"
+  ],
+  "siblings": [],
+  "vmp": 12,
+  "amp": 7
+ },
+ "MT:VTM:25789": {
+  "atc": 1,
+  "groups": [
+   "A10BB"
+  ],
+  "siblings": [],
+  "vmp": 6,
+  "amp": 0
+ },
+ "MT:VTM:17767": {
+  "atc": 1,
+  "groups": [
+   "C08CA"
+  ],
+  "siblings": [],
+  "vmp": 12,
+  "amp": 9
+ },
+ "MT:VTM:52175": {
+  "atc": 1,
+  "groups": [
+   "C09CA"
+  ],
+  "siblings": [
+   "MT:VTM:69749"
+  ],
+  "vmp": 4,
+  "amp": 4
+ },
+ "MT:VTM:69749": {
+  "atc": 1,
+  "groups": [
+   "C09CA"
+  ],
+  "siblings": [
+   "MT:VTM:52175"
+  ],
+  "vmp": 8,
+  "amp": 4
+ },
+ "MT:VTM:4603": {
+  "atc": 1,
+  "groups": [
+   "C03CA"
+  ],
+  "siblings": [],
+  "vmp": 20,
+  "amp": 12
+ },
+ "MT:VTM:83367": {
+  "atc": 1,
+  "groups": [
+   "C10AA"
+  ],
+  "siblings": [
+   "MT:VTM:301542",
+   "MT:VTM:36567"
+  ],
+  "vmp": 5,
+  "amp": 5
+ },
+ "MT:VTM:301542": {
+  "atc": 1,
+  "groups": [
+   "C10AA"
+  ],
+  "siblings": [
+   "MT:VTM:36567",
+   "MT:VTM:83367"
+  ],
+  "vmp": 8,
+  "amp": 8
+ },
+ "MT:VTM:36567": {
+  "atc": 1,
+  "groups": [
+   "C10AA"
+  ],
+  "siblings": [
+   "MT:VTM:301542",
+   "MT:VTM:83367"
+  ],
+  "vmp": 11,
+  "amp": 6
+ },
+ "MT:VTM:11289": {
+  "atc": 1,
+  "groups": [
+   "B01AA"
+  ],
+  "siblings": [],
+  "vmp": 10,
+  "amp": 16
+ },
+ "MT:VTM:32968": {
+  "atc": 1,
+  "groups": [
+   "B01AC"
+  ],
+  "siblings": [
+   "MT:VTM:1191"
+  ],
+  "vmp": 2,
+  "amp": 2
+ },
+ "MT:VTM:10582": {
+  "atc": 1,
+  "groups": [
+   "H03AA"
+  ],
+  "siblings": [],
+  "vmp": 59,
+  "amp": 101
+ },
+ "MT:VTM:723": {
+  "atc": 1,
+  "groups": [
+   "J01CA"
+  ],
+  "siblings": [],
+  "vmp": 19,
+  "amp": 11
+ },
+ "MT:VTM:18631": {
+  "atc": 2,
+  "groups": [
+   "J01FA",
+   "S01AA"
+  ],
+  "siblings": [],
+  "vmp": 10,
+  "amp": 7
+ },
+ "MT:VTM:2551": {
+  "atc": 4,
+  "groups": [
+   "J01MA",
+   "S01AE",
+   "S02AA",
+   "S03AA"
+  ],
+  "siblings": [],
+  "vmp": 14,
+  "amp": 10
+ },
+ "MT:VTM:20610": {
+  "atc": 2,
+  "groups": [
+   "R06AE",
+   "S01GX"
+  ],
+  "siblings": [],
+  "vmp": 10,
+  "amp": 16
+ },
+ "MT:VTM:28889": {
+  "atc": 1,
+  "groups": [
+   "R06AX"
+  ],
+  "siblings": [],
+  "vmp": 8,
+  "amp": 18
+ },
+ "MT:VTM:88249": {
+  "atc": 1,
+  "groups": [
+   "R03DC"
+  ],
+  "siblings": [],
+  "vmp": 6,
+  "amp": 4
+ },
+ "MT:VTM:36437": {
+  "atc": 1,
+  "groups": [
+   "N06AB"
+  ],
+  "siblings": [
+   "MT:VTM:321988"
+  ],
+  "vmp": 6,
+  "amp": 4
+ },
+ "MT:VTM:321988": {
+  "atc": 1,
+  "groups": [
+   "N06AB"
+  ],
+  "siblings": [
+   "MT:VTM:36437"
+  ],
+  "vmp": 5,
+  "amp": 3
+ },
+ "MT:VTM:39993": {
+  "atc": 1,
+  "groups": [
+   "N05CF"
+  ],
+  "siblings": [],
+  "vmp": 11,
+  "amp": 6
+ },
+ "MT:VTM:8638": {
+  "atc": 11,
+  "groups": [
+   "A01AC",
+   "A07EA",
+   "C05AA",
+   "D07AA",
+   "D07XA",
+   "H02AB"
+  ],
+  "siblings": [],
+  "vmp": 33,
+  "amp": 10
+ }
+}

@@ -36,6 +36,26 @@
   };
   const round6 = (x) => Math.round(x * 1e6) / 1e6;
 
+
+  // ---------- 그래프용 글자 폭 추정(측정이 아니라 보수적 추정) ----------
+  const NARROW = new Set("iljtfI.,:;'|!()[] ");
+  function textPx(s, px) {
+    let w = 0;
+    for (const ch of String(s == null ? '' : s)) {
+      const c = ch.codePointAt(0);
+      if ((c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x1100 && c <= 0x11FF) || (c >= 0x3130 && c <= 0x318F) || (c >= 0x4E00 && c <= 0x9FFF) || (c >= 0xFF00 && c <= 0xFFEF)) w += px;
+      else if (NARROW.has(ch)) w += px * 0.34;
+      else if (c < 128) w += px * 0.62;
+      else w += px * 0.8;
+    }
+    return w;
+  }
+  function fitText(s, maxPx, px) {
+    s = String(s == null ? '' : s); if (textPx(s, px) <= maxPx) return s;
+    let out = ''; for (const ch of s) { if (textPx(out + ch + '…', px) > maxPx) break; out += ch; }
+    return out + '…';
+  }
+
   class MedTerm {
     constructor(data, classLexicon) {
       this.meta = data.meta; this.atcNames = data.atc || {};
@@ -116,6 +136,91 @@
       for (const m of vmps) (byForm[m.form_en] = byForm[m.form_en] || []).push(m);
       for (const f of Object.keys(byForm)) byForm[f].sort((a, b) => (a.strength.value - b.strength.value));
       return { vtm: v, atc, vmps, byForm };
+    }
+
+
+    // ---------- 관계 그래프(선택한 성분 중심의 ego-network) ----------
+    // 열: sibling(같은 ATC 세부군의 다른 성분) · group(ATC 4단계) · atc(ATC 5단계 코드) · vtm · vmp · amp
+    // 표시 상한을 넘으면 'more' 노드("외 N개")로 알린다. 숫자는 totals(전체)와 shown(표시)을 모두 돌려준다.
+    graph(vtmId, opts = {}) {
+      const v = this.byId.get(vtmId); if (!v || v.type !== 'VTM') return null;
+      const o = Object.assign({ maxAtc: 6, maxSiblings: 6, maxVmp: 10, ampPerVmp: 2, maxAmp: 14 }, opts);
+      const nodes = [], edges = [], seen = new Set();
+      const add = n => { if (seen.has(n.id)) return n; seen.add(n.id); nodes.push(n); return n; };
+      const edge = (from, to, rel) => { if (!edges.some(e => e.from === from && e.to === to && e.rel === rel)) edges.push({ from, to, rel }); };
+      const totals = { atc: 0, siblings: 0, vmp: 0, amp: 0 }, shown = { atc: 0, siblings: 0, vmp: 0, amp: 0 };
+      add({ id: v.id, kind: 'vtm', col: 'vtm', line1: v.label_ko || v.label_en, line2: `${v.label_en} · RxCUI ${v.rxcui}`, title: `${v.label_ko} (${v.label_en}) · ${v.id} · RxCUI ${v.rxcui}`, action: null });
+      // ATC 코드·세부군
+      const codes = v.atc_codes || []; totals.atc = codes.length;
+      const shownCodes = codes.slice(0, o.maxAtc); shown.atc = shownCodes.length;
+      const groupCodes = [];
+      for (const code of shownCodes) {
+        const path = (v.atc_paths || {})[code] || []; const g = path.length ? path[path.length - 1] : code.slice(0, 5);
+        add({ id: 'atc:' + code, kind: 'atc', col: 'atc', line1: code, line2: this.atcLabel(code) || '', title: `ATC ${code}${this.atcLabel(code) ? ' · ' + this.atcLabel(code) : ''}`, action: { type: 'filter', value: code } });
+        add({ id: 'grp:' + g, kind: 'group', col: 'group', line1: g, line2: this.atcLabel(g) || '', title: `ATC ${g}${this.atcLabel(g) ? ' · ' + this.atcLabel(g) : ''} (세부군)`, action: { type: 'filter', value: g } });
+        edge(v.id, 'atc:' + code, 'hasATC'); edge('atc:' + code, 'grp:' + g, 'broader');
+        if (!groupCodes.includes(g)) groupCodes.push(g);
+      }
+      if (totals.atc > shown.atc) add({ id: 'more:atc', kind: 'more', col: 'atc', line1: `외 ${totals.atc - shown.atc}개`, line2: 'ATC 코드', title: `표시 상한(${o.maxAtc}개) 때문에 ATC 코드 ${totals.atc - shown.atc}개를 생략했습니다. 전체는 오른쪽 상세에 있습니다.`, action: null });
+      // 같은 세부군의 다른 성분
+      const sibs = this.vtms.filter(u => u.id !== v.id && (u.atc_codes || []).some(c => groupCodes.some(g => c.startsWith(g)))).sort((a, b) => String(a.label_ko).localeCompare(String(b.label_ko), 'ko'));
+      totals.siblings = sibs.length; const shownSibs = sibs.slice(0, o.maxSiblings); shown.siblings = shownSibs.length;
+      for (const u of shownSibs) {
+        add({ id: u.id, kind: 'sibling', col: 'sibling', line1: u.label_ko || u.label_en, line2: u.label_en, title: `${u.label_ko} (${u.label_en}) · ${u.id} — 눌러서 이 성분으로 이동`, action: { type: 'select', id: u.id } });
+        for (const g of groupCodes) if ((u.atc_codes || []).some(c => c.startsWith(g))) edge(u.id, 'grp:' + g, 'sameGroup');
+      }
+      if (totals.siblings > shown.siblings) add({ id: 'more:sibling', kind: 'more', col: 'sibling', line1: `외 ${totals.siblings - shown.siblings}개`, line2: '같은 세부군 성분', title: `표시 상한(${o.maxSiblings}개) 때문에 ${totals.siblings - shown.siblings}개를 생략했습니다.`, action: null });
+      // VMP(제형별로 돌려가며 고른다) → AMP
+      const vmps = this.vmpsOf.get(v.id) || []; totals.vmp = vmps.length;
+      totals.amp = vmps.reduce((s, m) => s + (this.ampsOfVmp.get(m.id) || []).length, 0);
+      const byForm = new Map(); for (const m of vmps) { if (!byForm.has(m.form_en)) byForm.set(m.form_en, []); byForm.get(m.form_en).push(m); }
+      const queues = [...byForm.entries()].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]))).map(([, l]) => l.slice().sort((x, y) => (x.strength.value - y.strength.value) || String(x.id).localeCompare(String(y.id))));
+      const picked = []; while (picked.length < Math.min(o.maxVmp, vmps.length)) { let any = false; for (const q of queues) { if (q.length && picked.length < o.maxVmp) { picked.push(q.shift()); any = true; } } if (!any) break; }
+      picked.sort((a, b) => String(a.form_en).localeCompare(String(b.form_en)) || (a.strength.value - b.strength.value) || String(a.id).localeCompare(String(b.id)));
+      shown.vmp = picked.length;
+      for (const m of picked) {
+        const nAmp = (this.ampsOfVmp.get(m.id) || []).length;
+        add({ id: m.id, kind: 'vmp', col: 'vmp', line1: `${m.strength.raw}${m.release_tech ? ' · ' + m.release_tech : ''}`, line2: m.form_en || '', title: `${m.label_en} · ${m.id}${m.form_ko ? ' · ' + m.form_ko : ''} · 제품(AMP) ${nAmp}개`, action: null });
+        edge(v.id, m.id, 'hasVMP');
+      }
+      if (totals.vmp > shown.vmp) add({ id: 'more:vmp', kind: 'more', col: 'vmp', line1: `외 ${totals.vmp - shown.vmp}개`, line2: '제형·용량(VMP)', title: `표시 상한(${o.maxVmp}개) 때문에 VMP ${totals.vmp - shown.vmp}개를 생략했습니다. 제형별 전체 목록은 오른쪽 상세에 있습니다.`, action: null });
+      for (const m of picked) {
+        if (shown.amp >= o.maxAmp) break;
+        const list = (this.ampsOfVmp.get(m.id) || []).slice().sort((a, b) => String(a.brand_en).localeCompare(String(b.brand_en)) || String(a.id).localeCompare(String(b.id)));
+        for (const a of list.slice(0, o.ampPerVmp)) {
+          if (shown.amp >= o.maxAmp) break;
+          add({ id: a.id, kind: 'amp', col: 'amp', line1: a.brand_en || a.label_en, line2: `RxCUI ${a.rxcui}`, title: `${a.label_en} · ${a.id} · ${a.market}`, action: null });
+          edge(m.id, a.id, 'hasAMP'); shown.amp++;
+        }
+      }
+      if (totals.amp > shown.amp) add({ id: 'more:amp', kind: 'more', col: 'amp', line1: `외 ${totals.amp - shown.amp}개`, line2: '제품(AMP)', title: `표시 상한 때문에 제품(AMP) ${totals.amp - shown.amp}개를 생략했습니다(VMP당 최대 ${o.ampPerVmp}개, 전체 ${o.maxAmp}개).`, action: null });
+      return { center: v.id, nodes, edges, totals, shown, limits: o };
+    }
+
+    // 좌표 계산(DOM 없이): 열별로 세로 가운데 정렬. 비어 있는 열은 건너뛴다.
+    layoutGraph(g, m = {}) {
+      const M = Object.assign({ nodeW: 132, nodeH: 34, colGap: 30, rowGap: 8, pad: 12, headH: 22, font1: 11.5, font2: 10, padX: 7 }, m);
+      const ORDER = ['sibling', 'group', 'atc', 'vtm', 'vmp', 'amp'];
+      const HEAD = { sibling: '같은 세부군 성분', group: 'ATC 세부군', atc: 'ATC 코드', vtm: '성분(VTM)', vmp: '제형·용량(VMP)', amp: '제품(AMP)' };
+      const cols = ORDER.filter(c => g.nodes.some(n => n.col === c));
+      const rowH = M.nodeH + M.rowGap, maxRows = Math.max(1, ...cols.map(c => g.nodes.filter(n => n.col === c).length));
+      const bodyH = maxRows * rowH - M.rowGap;
+      const W = M.pad * 2 + cols.length * M.nodeW + (cols.length - 1) * M.colGap, H = M.pad * 2 + M.headH + bodyH;
+      const placed = new Map(), headers = [];
+      cols.forEach((c, ci) => {
+        const x = M.pad + ci * (M.nodeW + M.colGap); const list = g.nodes.filter(n => n.col === c); const blockH = list.length * rowH - M.rowGap;
+        const y0 = M.pad + M.headH + (bodyH - blockH) / 2; headers.push({ col: c, text: HEAD[c], x: x + M.nodeW / 2, y: M.pad + M.headH - 8 });
+        list.forEach((n, i) => {
+          const t1 = fitText(n.line1, M.nodeW - 2 * M.padX, M.font1), t2 = n.line2 ? fitText(n.line2, M.nodeW - 2 * M.padX, M.font2) : '';
+          placed.set(n.id, Object.assign({}, n, { x, y: y0 + i * rowH, w: M.nodeW, h: M.nodeH, t1, t2, truncated: t1 !== n.line1 || t2 !== (n.line2 || ''), w1: textPx(t1, M.font1), w2: textPx(t2, M.font2) }));
+        });
+      });
+      const laid = g.edges.map(e => {
+        const a = placed.get(e.from), b = placed.get(e.to); if (!a || !b) return null;
+        const [l, r] = a.x <= b.x ? [a, b] : [b, a]; const x1 = l.x + l.w, y1 = l.y + l.h / 2, x2 = r.x, y2 = r.y + r.h / 2, dx = Math.max(12, (x2 - x1) / 2);
+        return { from: e.from, to: e.to, rel: e.rel, x1, y1, x2, y2, d: `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}` };
+      }).filter(Boolean);
+      return { width: W, height: H, nodes: [...placed.values()], edges: laid, headers, metrics: M, center: g.center };
     }
 
     // ---------- 언급 추출 ----------
@@ -329,5 +434,5 @@
       return segs;
     }
   }
-  return { MedTerm, lev, mgOf };
+  return { MedTerm, lev, mgOf, textPx, fitText };
 });

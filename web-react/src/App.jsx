@@ -1,0 +1,159 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { idFromHash, isNarrow, isPhone, writeHash } from './lib/mt.js';
+import { useMedia } from './lib/useMedia.js';
+import { Disclaimer, Topbar } from './components/Topbar.jsx';
+import { TreePane } from './components/Tree.jsx';
+import { Panel, Tabs } from './components/Tabs.jsx';
+import { SearchTab } from './components/SearchTab.jsx';
+import { GraphTab } from './components/GraphTab.jsx';
+import { VerifyTab } from './components/VerifyTab.jsx';
+import { RagTab } from './components/RagTab.jsx';
+import { AboutTab } from './components/AboutTab.jsx';
+import { Inspector } from './components/Inspector.jsx';
+import { inertProps } from './components/ui.jsx';
+
+export default function App() {
+  const narrow = useMedia('(max-width: 1099px)'); // 상세가 서랍으로
+  const phone = useMedia('(max-width: 699px)'); //   분류 트리도 서랍으로
+
+  const [selectedId, setSelectedId] = useState(idFromHash);
+  const [tab, setTab] = useState('search');
+  const [seg, setSeg] = useState('atc');
+  const [filter, setFilter] = useState('');
+  const [inspOpen, setInspOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+
+  const lastOpener = useRef(null);
+  const graphFocus = useRef(false);
+  const selectedRef = useRef(selectedId);
+  selectedRef.current = selectedId;
+  const navToggleRef = useRef(null);
+  const leftRef = useRef(null);
+  const closeRef = useRef(null);
+  const centerRef = useRef(null);
+
+  /** 성분 선택. open=false이면 서랍을 열지 않는다(검색 입력·그래프 이동 중에 화면을 가리지 않기 위함). */
+  const selectVtm = useCallback((id, { open = true } = {}) => {
+    setSelectedId(id);
+    writeHash(id);
+    if (!open) return;
+    const ph = isPhone();
+    lastOpener.current = ph ? navToggleRef.current : document.activeElement;
+    if (ph) setNavOpen(false);
+    if (isNarrow()) setInspOpen(true);
+  }, []);
+
+  const onGraphAction = useCallback((a) => {
+    if (!a) return;
+    if (a.type === 'select') {
+      graphFocus.current = true; // 새 그래프가 그려지면 선택한 성분 상자로 포커스를 옮긴다
+      selectVtm(a.id, { open: false });
+    } else if (a.type === 'filter') {
+      setSeg('atc');
+      setFilter(a.value);
+      if (isPhone()) setNavOpen(true);
+    }
+  }, [selectVtm]);
+
+  // 주소(#…)를 직접 바꾸면 따라간다.
+  useEffect(() => {
+    const onHash = () => {
+      const id = idFromHash();
+      if (id && id !== selectedRef.current) setSelectedId(id);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  // 화면 폭이 넓어지면 서랍 상태를 되돌린다.
+  useEffect(() => { if (!narrow) setInspOpen(false); }, [narrow]);
+  useEffect(() => { if (!phone) setNavOpen(false); }, [phone]);
+
+  // 포커스: 서랍이 열리면 안으로, 닫히면 연 곳으로. (분류 트리 효과를 먼저 선언해, 둘이 함께 바뀔 때는 상세 서랍이 포커스를 가져간다.)
+  const prevNav = useRef(false);
+  useEffect(() => {
+    if (navOpen) leftRef.current?.focus();
+    else if (prevNav.current) navToggleRef.current?.focus();
+    prevNav.current = navOpen;
+  }, [navOpen]);
+  const prevInsp = useRef(false);
+  useEffect(() => {
+    if (inspOpen) closeRef.current?.focus();
+    else if (prevInsp.current) {
+      const el = lastOpener.current;
+      if (el && el.isConnected && el.focus) el.focus();
+      else centerRef.current?.focus();
+    }
+    prevInsp.current = inspOpen;
+  }, [inspOpen]);
+
+  // Esc: 가장 위의 서랍부터 닫는다.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (inspOpen) setInspOpen(false);
+      else if (navOpen) setNavOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [inspOpen, navOpen]);
+
+  const changeTab = (t) => {
+    setTab(t);
+    if (centerRef.current) centerRef.current.scrollTop = 0;
+  };
+
+  const inspDrawer = narrow && inspOpen;
+  const navDrawer = phone && navOpen;
+  const bgInert = inspDrawer || navDrawer;
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* 건너뛰기 링크: 주소(#…)를 바꾸면 선택한 성분 주소가 사라지므로 포커스만 옮긴다. */}
+      <a
+        href="#center"
+        onClick={(e) => { e.preventDefault(); centerRef.current?.focus(); }}
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-sm focus:border focus:border-line focus:bg-surface focus:px-2.5 focus:py-1.5"
+      >
+        본문으로 건너뛰기
+      </a>
+      <Topbar ref={navToggleRef} navOpen={navOpen} onToggleNav={() => setNavOpen((o) => !o)} inert={bgInert} />
+      <Disclaimer inert={bgInert} />
+      <div id="shell" className="grid min-h-0 flex-1 grid-cols-shell lt-insp:grid-cols-shell-md lt-tree:grid-cols-shell-1">
+        <TreePane
+          paneRef={leftRef}
+          selectedId={selectedId}
+          onSelect={selectVtm}
+          seg={seg}
+          setSeg={setSeg}
+          filter={filter}
+          setFilter={setFilter}
+          drawerOpen={navDrawer}
+          onCloseDrawer={() => setNavOpen(false)}
+          inert={inspDrawer}
+        />
+        <main id="center" ref={centerRef} tabIndex={-1} className="center-pad min-h-0 overflow-auto pb-12 focus:outline-none" {...inertProps(bgInert)}>
+          <Tabs tab={tab} onChange={changeTab} />
+          <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} /></Panel>
+          <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
+          <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
+          <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
+          <Panel id="about" active={tab === 'about'}><AboutTab /></Panel>
+        </main>
+        <Inspector
+          id={selectedId}
+          drawerOpen={inspDrawer}
+          onClose={() => setInspOpen(false)}
+          closeRef={closeRef}
+          inert={navDrawer}
+        />
+      </div>
+      <div
+        className="fixed inset-0 z-30 bg-scrim"
+        hidden={!(inspDrawer || navDrawer)}
+        onClick={() => { setInspOpen(false); setNavOpen(false); }}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
