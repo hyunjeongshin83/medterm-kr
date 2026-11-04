@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
 const { rgb, FACES } = require('./_tokens.cjs');
+const { VERSION, OLD_LABEL } = require('./_copy.cjs');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'artifact'); fs.mkdirSync(OUT, { recursive: true });
 const frag = fs.readFileSync(path.join(ROOT, 'dist', 'artifact.html'), 'utf8');
 const wrapped = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -41,6 +42,7 @@ const fit = (page) => page.evaluate(() => {
   {
     const { ctx, page } = await open(browser, 1440, 900, { dpr: 2 });
     ck('제목', (await page.title()) === 'MedTerm-KR', await page.title());
+    ck(`공유 조각: 옛 표기("${OLD_LABEL}") 없음 · 상단 제목 옆 버전 v${VERSION}`, !frag.includes(OLD_LABEL) && (await page.locator('header h1').innerText()).replace(/\s+/g, ' ').trim() === `MedTerm-KR v${VERSION}`);
     const f = await fit(page); ck('데스크톱: 한 화면에 맞음', f.docX <= 0 && f.docY <= 0 && Math.abs(f.appH - f.vh) <= 1, f);
     await page.fill('#q', '오메프라졸'); await page.waitForTimeout(400);
     ck('데스크톱: 주소 #v-7646', (await page.evaluate(() => location.hash)) === '#v-7646');

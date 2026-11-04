@@ -17,6 +17,9 @@ const DIST = path.join(ROOT, 'dist');
 mkdirSync(DIST, { recursive: true });
 
 const read = (...p) => readFileSync(path.join(...p), 'utf8');
+// 화면에 보이는 버전(상단 제목 옆 v1.0.0)은 package.json 의 version 한 곳에서만 정한다.
+const VERSION = JSON.parse(read(ROOT, 'package.json')).version;
+if (!/^\d+\.\d+\.\d+$/.test(VERSION)) throw new Error(`package.json 의 version 이 x.y.z 형식이 아닙니다: ${VERSION}`);
 for (const f of ['medterm-data.js', 'bench.js', 'core.js']) {
   if (!existsSync(path.join(JS_DIR, f))) throw new Error(`${f}를 찾지 못했습니다: ${JS_DIR} (MEDTERM_JS 환경변수로 폴더를 지정하세요)`);
 }
@@ -64,7 +67,7 @@ async function bundle(enableProxy, surface) {
     entryPoints: [path.join(ROOT, 'src', 'main.jsx')],
     bundle: true, minify: true, format: 'iife', platform: 'browser', target: ['chrome100', 'safari15', 'firefox100'],
     jsx: 'automatic', write: false, legalComments: 'eof', logLevel: 'warning',
-    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface) },
+    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface), __APP_VERSION__: JSON.stringify(VERSION) },
   });
   return r.outputFiles[0].text;
 }
@@ -79,7 +82,7 @@ const standalone = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MedTerm-KR · 약무용어 사전 · 답변 검증 (프로토타입)</title>
+<title>MedTerm-KR · 약무용어 사전 · 답변 검증</title>
 ${NOTICE}
 <style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 ${css}</style>
@@ -138,7 +141,7 @@ const manifest = {
   id: 'medterm-kr', // 같은 주소(origin)에 다른 웹앱이 함께 있어도 서로 다른 앱으로 구분되게 한다.
   name: 'MedTerm-KR · 약무용어 사전',
   short_name: 'MedTerm-KR',
-  description: '약무용어 사전(성분→제형·함량→제품)과 LLM 답변 검증. 연구·교육용 프로토타입이며 진단·처방 판단용이 아닙니다.',
+  description: '약무용어 사전(성분→제형·함량→제품)과 LLM 답변 검증. 정보 제공용이며 진단·처방 판단용이 아닙니다. LLM 질의 기능은 리서치용입니다.',
   lang: 'ko',
   dir: 'ltr',
   start_url: './',

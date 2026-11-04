@@ -12,7 +12,7 @@ $$('nav button').forEach(b=>b.addEventListener('click',()=>{ $$('nav button').fo
 const statusBadge = v => el('span',{class:'badge '+(v.review_status==='draft'?'draft':''),text:v.review_status==='draft'?'초안·약사 검수 전':'자동 수집'});
 function renderHits(list){
   const box=$('#hits'); box.replaceChildren();
-  if(!list.length){ box.append(el('div',{class:'card mut',text:'사전에 없습니다. (이 프로토타입은 약 '+mt.vtms.length+'개 성분만 수록 — 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.)'})); return; }
+  if(!list.length){ box.append(el('div',{class:'card mut',text:'사전에 없습니다. (이 사전은 현재 '+mt.vtms.length+'개 성분만 수록 — 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.)'})); return; }
   list.slice(0,12).forEach(h=>{ const v=h.vtm;
     box.append(el('div',{class:'hit',tabindex:'0',onclick:()=>selectVtm(v.id),onkeydown:e=>{if(e.key==='Enter')selectVtm(v.id)}},
       el('b',{text:v.label_ko}),' ',el('span',{class:'mut',text:v.label_en}),statusBadge(v),el('span',{class:'badge',text:h.via}),

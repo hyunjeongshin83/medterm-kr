@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { mt } from '../lib/mt.js';
+import { RESEARCH_FORMAT, buildResearchPrompt } from '../lib/researchPrompt.js';
 import { MOCK_ANSWER, QUESTION_EXAMPLE } from '../lib/samples.js';
 import { VerifyResult } from './VerifyTab.jsx';
-import { Btn, Card, INPUT_CLS, cx } from './ui.jsx';
+import { Badge, Btn, Card, INPUT_CLS, cx } from './ui.jsx';
 
 /* 빌드 때 정해지는 값: 공유용(Artifact) 화면과 설치형 앱은 외부 호출이 막혀 있어 서버 프록시 입력을 숨긴다. */
 /* global __ENABLE_PROXY__, __SURFACE__ */
@@ -22,7 +23,7 @@ export function RagTab({ onSelect }) {
     const q = question.trim();
     if (!q) return;
     const ids = mt.retrieve(q, 5);
-    setFound({ q, ids, prompt: mt.buildGroundedPrompt(q, ids) });
+    setFound({ q, ids, prompt: buildResearchPrompt(q, ids) });
     setMsg('');
   };
   const promptText = found ? `[system]\n${found.prompt.system}\n\n[user]\n${found.prompt.user}` : '';
@@ -30,7 +31,7 @@ export function RagTab({ onSelect }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(found.prompt.system + '\n\n' + found.prompt.user);
-      setMsg('프롬프트를 복사했습니다.');
+      setMsg('질의문을 복사했습니다.');
     } catch (e) {
       if (preRef.current) window.getSelection()?.selectAllChildren(preRef.current);
       setMsg('복사 권한이 없어 글자만 선택해 두었습니다. Ctrl+C(⌘C)로 복사하세요.');
@@ -57,7 +58,19 @@ export function RagTab({ onSelect }) {
 
   return (
     <>
+      {/* 리서치용 안내: 이 탭의 LLM 질의·답변은 용어·분류·규격 조사에만 쓴다. (role="note" 는 화면 맨 위 안내 하나만 쓴다) */}
+      <section aria-labelledby="rag-research-title" id="rag-research" className="mb-3.5 flex items-start gap-3 rounded-xl border border-notice-line bg-notice-bg px-4 py-3 text-notice-ink lt-tree:px-3.5">
+        <span className="mt-0.5 inline-block flex-none whitespace-nowrap rounded-pill bg-notice-ink px-2.5 py-0.5 text-caption font-bold text-notice-bg">리서치용</span>
+        <div className="min-w-0">
+          <h2 id="rag-research-title" className="text-small-bold">LLM 질의는 자료 조사에만 쓰세요</h2>
+          <p className="mt-0.5 text-small">
+            이 탭이 만드는 질의문과 LLM 답변은 용어·분류·규격을 조사하는 용도입니다. LLM 답변은 틀릴 수 있고, 진단·처방·복용량·복약 안내 같은 임상 판단에는 쓸 수 없습니다. 사전에 없는 내용은 ‘확인 필요’입니다.
+          </p>
+        </div>
+      </section>
+
       <Card>
+        <p className="mb-2.5 text-small text-mut">질문을 쓰면 사전에서 관련 성분을 찾아 근거를 붙인 리서치 질의문을 만듭니다.</p>
         <div className="flex flex-wrap items-center gap-2.5">
           <input
             id="rq"
@@ -80,7 +93,7 @@ export function RagTab({ onSelect }) {
         {found && (
           <div className="mt-3" aria-live="polite">
             {!found.ids.length && (
-              <p className="text-small text-mut">질문에서 사전 항목을 찾지 못했습니다. 이 경우 LLM에는 “사전에 없어 확인 불가”로 답하도록 지시하는 프롬프트만 생성됩니다.</p>
+              <p className="text-small text-mut">질문에서 사전 항목을 찾지 못했습니다. 이 경우 질의문의 근거 칸은 비어 있고, LLM은 사전 밖 내용을 출처와 함께 쓰거나 ‘확인 필요’로 남기도록 지시받습니다.</p>
             )}
             <h3 className="mb-1.5 mt-3 text-body-bold">검색된 사전 항목 ({found.ids.length})</h3>
             <ul>
@@ -95,10 +108,11 @@ export function RagTab({ onSelect }) {
                 );
               })}
             </ul>
-            <h3 className="mb-1.5 mt-3 text-body-bold">LLM에 전달할 프롬프트</h3>
-            <pre ref={preRef} className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-code-bg p-3 font-mono text-code text-code-ink">{promptText}</pre>
+            <h3 className="mb-1 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-bold">리서치 질의문 <Badge tone="draft">리서치용</Badge></h3>
+            <p className="mb-1.5 text-small text-mut">사전에서 찾은 근거를 붙인 조사 의뢰문입니다. 복사해서 LLM에 붙여 넣고, 받은 답변은 아래 ‘LLM 답변 검증’에서 사전과 대조하세요. 형식: {RESEARCH_FORMAT}</p>
+            <pre ref={preRef} role="region" tabIndex={0} aria-label="리서치 질의문" className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-code-bg p-3 font-mono text-code text-code-ink">{promptText}</pre>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
-              <Btn variant="secondary" onClick={copy} className="lt-tree:w-full">프롬프트 복사</Btn>
+              <Btn variant="secondary" onClick={copy} className="lt-tree:w-full">질의문 복사</Btn>
               <span role="status" className="text-small text-mut">{msg}</span>
             </div>
           </div>
@@ -108,6 +122,7 @@ export function RagTab({ onSelect }) {
       {found && (
         <Card>
           <h3 className="mb-1.5 text-body-bold">LLM 답변 검증</h3>
+          <p className="mb-2.5 text-small text-mut">받은 답변을 붙여 넣으면 사전과 대조합니다. ‘불일치 없음’은 사전 범위에서 모순이 없다는 뜻일 뿐 정확하다는 뜻이 아니며, 임상 판단의 근거가 되지 않습니다.</p>
           {PROXY_ON ? (
             <>
               <p className="mb-2.5 text-small text-mut">
@@ -134,11 +149,11 @@ export function RagTab({ onSelect }) {
             </p>
           )}
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
-            <Btn variant="secondary" onClick={() => { setAnswer(MOCK_ANSWER); setShown(null); }} className="lt-tree:w-full">시연용 답변 넣기(오프라인 데모)</Btn>
+            <Btn variant="secondary" onClick={() => { setAnswer(MOCK_ANSWER); setShown(null); }} className="lt-tree:w-full">예시 답변 넣기(오류 포함)</Btn>
           </div>
           {isMock && (
             <p id="mock-note" className="mt-2 rounded-md bg-warn-bg px-3 py-2 text-small text-warn">
-              시연용 모의 답변입니다 — 오류를 일부러 넣었으며 실제 LLM 답변이 아닙니다.
+              예시 답변입니다 — 오류를 일부러 넣었으며 실제 LLM 답변이 아닙니다.
             </p>
           )}
           <textarea

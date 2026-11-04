@@ -9,7 +9,7 @@ D = json.load(open(os.path.join(root, "data", "medterm.json"), encoding="utf-8")
 MT = Namespace("https://medterm-kr.example/onto#")      # 자리표시용 IRI — 배포 시 실제 도메인으로 교체
 g = Graph(); g.bind("mt", MT); g.bind("skos", SKOS); g.bind("dcterms", DCTERMS); g.bind("owl", OWL)
 onto = URIRef("https://medterm-kr.example/onto")
-g.add((onto, RDF.type, OWL.Ontology)); g.add((onto, RDFS.label, Literal("MedTerm-KR prototype ontology", lang="en")))
+g.add((onto, RDF.type, OWL.Ontology)); g.add((onto, RDFS.label, Literal("MedTerm-KR ontology", lang="en")))
 g.add((onto, RDFS.comment, Literal(D["meta"]["notice"], lang="ko")))
 for s in D["meta"]["sources"]: g.add((onto, DCTERMS.source, Literal(s)))
 # --- T-Box ---

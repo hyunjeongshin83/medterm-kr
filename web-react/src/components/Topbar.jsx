@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { inertProps } from './ui.jsx';
 import { IconMenu } from './icons.jsx';
+import { APP_VERSION } from '../lib/version.js';
 
 /** 로고 타일: 틸 바탕 위의 알약(앱 아이콘과 같은 그림). 장식이라 화면 읽기 프로그램에는 숨긴다. */
 function Logo() {
@@ -21,7 +22,7 @@ export const Topbar = forwardRef(function Topbar({ navOpen, onToggleNav, inert }
       <Logo />
       <div className="min-w-0 flex-1">
         <h1 className="font-hand text-title-brand text-ink">
-          MedTerm-KR <small className="font-sans text-caption font-normal text-mut">프로토타입</small>
+          MedTerm-KR <small className="font-sans text-caption font-normal text-mut">v{APP_VERSION}</small>
         </h1>
         <p className="mt-0.5 text-caption text-mut lt-tree:hidden">약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증</p>
       </div>
@@ -45,7 +46,7 @@ export const Topbar = forwardRef(function Topbar({ navOpen, onToggleNav, inert }
 export function Disclaimer({ inert }) {
   return (
     <div role="note" className="flex-none border-b border-notice-line bg-notice-bg py-1.5 pl-[var(--gl)] pr-[var(--gr)] text-caption text-notice-ink" {...inertProps(inert)}>
-      정보 제공·연구용 프로토타입입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.
+      약무용어 정보 제공용입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.
     </div>
   );
 }

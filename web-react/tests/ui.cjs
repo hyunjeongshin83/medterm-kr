@@ -11,7 +11,7 @@ const SHOTS = path.join(ROOT, 'shots', 'ui'); fs.mkdirSync(SHOTS, { recursive: t
 
 let bad = 0, total = 0;
 const ck = (name, ok, extra) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); };
-const DISC = '정보 제공·연구용 프로토타입입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.';
+const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
 
 async function open(browser, w, h, o = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: o.dpr || 1, colorScheme: o.scheme || 'light', hasTouch: !!o.touch, isMobile: !!o.mobile });
@@ -231,23 +231,24 @@ const overflow = (page) => page.evaluate(() => {
     ck('질의: 프롬프트에 [system]/[user]와 사전 id', pre.startsWith('[system]') && pre.includes('[user]') && pre.includes('MT:VTM:7646'), pre.slice(0, 80));
     ck('질의: 검색된 사전 항목에 오메프라졸·에스오메프라졸', (await page.locator('#panel-rag ul button').allInnerTexts()).join(' ').includes('에스오메프라졸'));
     ck('질의(독립 실행): 프록시 URL 입력칸이 있음', (await page.locator('#proxy').count()) === 1);
-    await page.getByRole('button', { name: '시연용 답변 넣기(오프라인 데모)' }).click();
-    ck('시연용 안내가 보임', await page.locator('#mock-note').isVisible());
+    await page.getByRole('button', { name: '예시 답변 넣기(오류 포함)' }).click();
+    ck('예시 답변 안내가 보임', await page.locator('#mock-note').isVisible());
     await page.getByRole('button', { name: '이 답변 검증' }).click(); await page.waitForTimeout(100);
-    ck('모의 답변 검증: 불일치 판정', (await page.locator('#rag-verify-out [role="status"]').innerText()).includes('불일치가 발견되었습니다'));
+    ck('예시 답변 검증: 불일치 판정', (await page.locator('#rag-verify-out [role="status"]').innerText()).includes('불일치가 발견되었습니다'));
     await page.fill('#rag-answer', '직접 쓴 답변');
-    ck('직접 입력하면 시연용 안내가 사라짐', (await page.locator('#mock-note').count()) === 0);
+    ck('직접 입력하면 예시 답변 안내가 사라짐', (await page.locator('#mock-note').count()) === 0);
     await page.fill('#proxy', 'https://example.invalid/x'); await page.getByRole('button', { name: 'LLM 호출' }).click(); await page.waitForTimeout(400);
     ck('프록시 호출 실패는 화면에 안내(알림창 아님)', (await page.locator('#panel-rag [role="status"]').allInnerTexts()).join(' ').includes('호출 실패'));
     // 이 시험이 일부러 일으킨 실패 요청(example.invalid)만 제외하고, 그 밖의 외부 요청·오류는 계속 실패로 센다.
     ck('프록시 실패 시험이 남긴 외부 요청은 example.invalid 하나뿐', page.failedUrls.length >= 1 && page.failedUrls.every((u) => u.startsWith('https://example.invalid/')), page.failedUrls);
     page.failedUrls.length = 0; page.errs = page.errs.filter((e) => !/net::ERR_FAILED|example\.invalid/.test(e));
-    await page.getByRole('button', { name: '프롬프트 복사' }).click(); await page.waitForTimeout(150);
-    ck('프롬프트 복사 결과 안내(복사 또는 수동 안내)', (await page.locator('#panel-rag [role="status"]').allInnerTexts()).join(' ').match(/복사/) !== null);
+    await page.getByRole('button', { name: '질의문 복사' }).click(); await page.waitForTimeout(150);
+    ck('질의문 복사 결과 안내(복사 또는 수동 안내)', (await page.locator('#panel-rag [role="status"]').allInnerTexts()).join(' ').match(/복사/) !== null);
     await snap(page, 'r1_rag');
     await tabTo(page, '데이터·한계');
     const about = await page.locator('#panel-about').innerText();
     ck('데이터·한계: 측정값(11/34·32%·CI 19–49%)·파일럿(2/8, p = 0.467)·한계 문구', ['11/34', '32%', '19–49%', '2/8', 'p = 0.467', '불일치 없음', '수록 성분 32개', '재배포'].every((s) => about.includes(s)), about.length);
+    ck('데이터·한계: 한계 목록에 "질의문과 LLM 답변은 리서치용" 문구', about.includes('질의문과 LLM 답변은 리서치용입니다'));
     ck('데이터·한계: "정확도 100%" 같은 단정 표현 없음', !/100\s*%\s*(정확|에 가깝)/.test(about));
     await snap(page, 'a1_about');
     noErr('질의·데이터', page); await ctx.close();
@@ -287,7 +288,7 @@ const overflow = (page) => page.evaluate(() => {
         await tabTo(page, tab);
         if (tab === '사전 검색') { await page.fill('#q', '메트포르민'); await page.waitForTimeout(100); }
         if (tab === '답변 검증') { await page.getByLabel('샘플 답변').selectOption('1'); await page.waitForTimeout(100); }
-        if (tab === '근거 기반 질의') { await page.fill('#rq', '오메프라졸과 에스오메프라졸의 ATC 코드'); await page.getByRole('button', { name: '사전에서 근거 찾기' }).click(); await page.getByRole('button', { name: '시연용 답변 넣기(오프라인 데모)' }).click(); await page.getByRole('button', { name: '이 답변 검증' }).click(); await page.waitForTimeout(100); }
+        if (tab === '근거 기반 질의') { await page.fill('#rq', '오메프라졸과 에스오메프라졸의 ATC 코드'); await page.getByRole('button', { name: '사전에서 근거 찾기' }).click(); await page.getByRole('button', { name: '예시 답변 넣기(오류 포함)' }).click(); await page.getByRole('button', { name: '이 답변 검증' }).click(); await page.waitForTimeout(100); }
         if (tab === '관계 그래프') await page.waitForSelector('.react-flow__node');
         const o = await overflow(page); res[tab] = o;
         if (w === 390 || w === 1024) await snap(page, `w${w}_${tab.replace(/[^가-힣a-z]/g, '')}`);
@@ -591,6 +592,75 @@ const overflow = (page) => page.evaluate(() => {
     ck('다크: 하단 탭 막대(surface) · 선택된 탭 글씨(pri) · 안 선택(info) · 히어로(pri-soft) · 카드(surface)가 토큰 색', c.bar === rgb('surface', 'dark') && c.on === rgb('pri', 'dark') && c.off === rgb('info', 'dark') && c.hero === rgb('pri-soft', 'dark') && c.card === rgb('surface', 'dark'), { c, want: { bar: rgb('surface', 'dark'), on: rgb('pri', 'dark'), off: rgb('info', 'dark'), hero: rgb('pri-soft', 'dark') } });
     await snap(page, 'r_phone_dark');
     noErr('반응형 다크', page); await ctx.close();
+  }
+
+  /* ───── 15. 실사용판 표기(옛 "프로토타입" 글자 없음 · 버전 한 곳) · 리서치용 질의 ───── */
+  const Q = '오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘';
+  const ragFind = async (page, q) => { await page.fill('#rq', q); await page.getByRole('button', { name: '사전에서 근거 찾기' }).click(); await page.waitForTimeout(200); };
+  // 15-1. 데스크톱 1440
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    const h1 = (await page.locator('header h1').innerText()).replace(/\s+/g, ' ').trim();
+    ck(`실사용판: 상단 제목 옆에 버전 v${VERSION} (package.json 의 version)`, h1 === `MedTerm-KR v${VERSION}`, h1);
+    ck(`실사용판: 문서 제목에 옛 표기("${OLD_LABEL}") 없음`, !(await page.title()).includes(OLD_LABEL), await page.title());
+    const built = await page.evaluate(() => MEDTERM_DATA.meta.built_at);
+    ck('검색 첫 화면: 수록 개수 옆에 자료 기준일', (await page.locator('#hero-title').locator('xpath=..').innerText()).includes(`자료 기준 ${built}`), built);
+    await page.fill('#q', '없는약이름xyz');
+    ck(`사전에 없을 때 안내: "이 사전은 현재 ${IDS.length}개 성분만 수록" + 확인 필요`, (await page.locator('#panel-search').innerText()).includes(`이 사전은 현재 ${IDS.length}개 성분만 수록하므로`));
+    await page.fill('#q', '');
+    await page.fill('#tree-filter', '없는이름zzz'); await page.waitForTimeout(150);
+    ck('트리 거르기 결과 없음 안내: "이 사전에 아직 수록되지 않았다는 뜻"', (await page.locator('#tree').innerText()).includes('이 사전에 아직 수록되지 않았다는 뜻일 수 있습니다'));
+    await page.fill('#tree-filter', '');
+    // 5개 탭을 모두 열어 화면 글자 어디에도 옛 표기가 없다
+    const leaks = [];
+    for (const t of TAB_NAMES) { await tabTo(page, t); if ((await page.evaluate(() => document.body.innerText)).includes(OLD_LABEL)) leaks.push(t); }
+    ck(`실사용판: 5개 탭 어디에도 "${OLD_LABEL}" 글자가 없음`, leaks.length === 0, leaks);
+    await tabTo(page, '데이터·한계');
+    const meta = await page.evaluate(() => MEDTERM_DATA.meta);
+    ck('데이터·한계: 사전 설명문(notice)이 화면에 나오고 옛 표기가 없음', (await page.locator('#panel-about').innerText()).includes(meta.notice) && !meta.notice.includes(OLD_LABEL) && !/prototype/i.test(meta.name), meta);
+
+    // 근거 기반 질의: 처음부터 보이는 리서치용 안내
+    await tabTo(page, '근거 기반 질의');
+    const banner = page.locator('#rag-research');
+    const bt = await banner.innerText();
+    ck('질의: 질문을 쓰기 전부터 "리서치용" 안내가 보이고 임상 판단 금지·확인 필요를 말함', (await banner.isVisible()) && bt.includes('리서치용') && bt.includes('임상 판단') && bt.includes('확인 필요'), bt);
+    ck('질의: 화면 맨 위 안내(role=note)는 하나뿐 — 리서치용 안내는 note 가 아님', (await page.getByRole('note').count()) === 1 && (await page.getByRole('note').innerText()).trim() === DISC);
+    await ragFind(page, Q);
+    const pre = await page.locator('#panel-rag pre').innerText();
+    const [sysPart, userPart] = pre.split('\n\n[user]\n');
+    ck('질의문: [system] / [user] 두 부분으로 나뉨', pre.startsWith('[system]\n') && !!userPart, pre.slice(0, 40));
+    const need = ['리서치 보조자', '리서치용입니다', '[근거 규칙]', '[답변 형식]', '"사전 밖"', '출처(기관·문서명·연도)', '"확인 필요"', '미국 RxNorm', '약사 검수 전 초안', '임상 판단 범위 — 이 조사에서 다루지 않음', '요약', '사전 근거로 확인된 사실', '사전 밖 일반 지식', '확인 필요·한계', '추가로 확인할 자료'];
+    ck('질의문(system): 리서치 규칙(근거 표기·사전 밖은 출처·확인 필요·미국 기준·임상 판단 제외)과 답변 5단 형식', need.every((s) => sysPart.includes(s)), need.filter((s) => !sysPart.includes(s)));
+    const u = userPart || '';
+    const reHead = new RegExp(`^<조사정보>\\n형식: MedTerm-KR 리서치 질의 R1\\n용도: 용어·분류·규격 리서치\\(임상 판단 아님\\)\\n사전: MedTerm-KR · 자료 기준 \\d{4}-\\d{2}-\\d{2} · RxNav [^\\n]+ · 수록 성분 ${IDS.length}개\\n`);
+    ck('질의문(user): 조사정보(형식 이름·용도·자료 기준일·수록 성분 수) · 사전근거 · 조사질문 순서', reHead.test(u) && u.indexOf('<사전근거>') > u.indexOf('</조사정보>') && u.indexOf('<조사질문>') > u.indexOf('</사전근거>') && u.trimEnd().endsWith(`${Q}\n</조사질문>`), u.slice(0, 200));
+    let ctxIds = null;
+    try { ctxIds = JSON.parse(u.split('<사전근거>\n')[1].split('\n</사전근거>')[0]).map((c) => c.id).sort(); } catch (e) { ctxIds = String(e); }
+    ck('질의문(user): 사전근거가 JSON 으로 읽히고 오메프라졸·에스오메프라졸 항목이 들어 있음', JSON.stringify(ctxIds) === JSON.stringify(['MT:VTM:283742', 'MT:VTM:7646']), ctxIds);
+    ck(`질의문: 옛 표기("${OLD_LABEL}")와 이전 형식("규칙 1)")이 없음`, !pre.includes(OLD_LABEL) && !pre.includes('규칙 1)'));
+    ck('질의 화면: 질의문 위에 "리서치용" 배지 · 형식 이름 · 복사 안내', (await page.locator('#panel-rag h3', { hasText: '리서치 질의문' }).innerText()).includes('리서치용') && (await page.locator('#panel-rag').innerText()).includes('형식: MedTerm-KR 리서치 질의 R1') && (await page.getByRole('button', { name: '질의문 복사', exact: true }).count()) === 1);
+    ck('질의문 영역: 키보드로 스크롤할 수 있게 초점을 받고 이름이 있음', (await page.locator('#panel-rag pre').getAttribute('tabindex')) === '0' && (await page.locator('#panel-rag pre').getAttribute('aria-label')) === '리서치 질의문');
+    // 사전 항목이 없는 질문
+    await ragFind(page, 'qzxvw 알려줘');
+    const none = await page.locator('#panel-rag').innerText();
+    const pre2 = await page.locator('#panel-rag pre').innerText();
+    ck('질의: 사전 항목을 못 찾으면 안내하고, 질의문에는 "일치하는 사전 항목이 없습니다"와 "없음" 지시가 들어감', none.includes('질문에서 사전 항목을 찾지 못했습니다') && pre2.includes('이 질문과 일치하는 사전 항목이 없습니다') && pre2.includes('답변 형식 2번은 "없음"') && pre2.includes('qzxvw 알려줘\n</조사질문>'), pre2.slice(-300));
+    await snap(page, 'r15_rag_research');
+    noErr('리서치 질의(1440)', page); await ctx.close();
+  }
+  // 15-2. 휴대폰 390: 안내·질의문·버튼이 화면 안에 맞는다
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true, dpr: 2 });
+    await tabTo(page, '근거 기반 질의');
+    const b = await rect(page, '#rag-research');
+    ck('휴대폰: 리서치용 안내가 바깥틀 안에 들어옴(좌우 여백 15px 이상)', b && b.x >= 15 && b.r <= 375, b);
+    await ragFind(page, Q);
+    const pr = await rect(page, '#panel-rag pre');
+    const cp = await btnFill(page, '질의문 복사');
+    ck('휴대폰: 질의문은 폭 안에서 줄바꿈, 복사 버튼은 카드 폭 가득 · 44px 이상', pr.r <= 375 && cp && cp.w === cp.inner && cp.h >= 44, { pr, cp });
+    ck('휴대폰: 질의 탭 가로 넘침 없음', (await overflow(page)).doc === 0 && (await overflow(page)).center === 0, await overflow(page));
+    await snap(page, 'r15_rag_phone');
+    noErr('리서치 질의(390)', page); await ctx.close();
   }
 
   await browser.close();

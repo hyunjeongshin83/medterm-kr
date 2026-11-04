@@ -34,6 +34,7 @@ function Section({ title, children }) {
 const LIMITS = [
   `“사전에 없음”은 환각의 증거가 아니라 확인 필요 신호입니다(수록 성분 ${META.counts.VTM}개).`,
   '“불일치 없음”은 사전의 범위에서 모순이 없다는 뜻이며 정확하다는 뜻이 아닙니다.',
+  '“근거 기반 질의”의 질의문과 LLM 답변은 리서치용입니다. 사전 근거를 붙여도 LLM은 틀릴 수 있으며, 임상 판단과 복약 안내에는 쓰지 않습니다.',
   '단위용량 검사는 “미국 RxNorm에 있는 단위 규격인가”만 봅니다. 적정 용량과 안전성 판단이 아닙니다.',
   '한글 성분명·계열명·상품명은 수기 초안이며 약사 검수와 MFDS 대조가 필요합니다.',
   '상호작용, 금기, 병용, 용법 같은 임상 내용은 다루지 않습니다(MFDS DUR 등 별도 근거 필요).',
@@ -52,7 +53,7 @@ export function AboutTab() {
     <>
       <header className="mb-3.5">
         <h2 className="text-heading-l">수록 데이터와 측정된 한계</h2>
-        <p className="mt-1 text-base text-mut">이 프로토타입이 무엇을 담고 있고 어디까지 확인했는지 정리했습니다. 숫자는 모두 이 사전과 실험 파일에서 가져왔습니다.</p>
+        <p className="mt-1 text-base text-mut">이 사전이 무엇을 담고 있고 어디까지 확인했는지 정리했습니다. 숫자는 모두 이 사전과 실험 파일에서 가져왔습니다.</p>
       </header>
 
       <Section title="수록 데이터">

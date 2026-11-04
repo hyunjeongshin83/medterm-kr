@@ -96,9 +96,9 @@ def main(out):
                         vmp=f"MT:VMP:{srx}", ingredient=vtm, market="US (RxNorm SBD)", review_status="auto", provenance=dict(rxnorm_retrieved=today)))
     ids = [c["id"] for c in concepts]; assert len(ids) == len(set(ids)), "duplicate ids"
     idset = set(ids); assert all(c["ingredient"] in idset for c in concepts if c["type"] == "VMP") and all(c["vmp"] in idset for c in concepts if c["type"] == "AMP")
-    data = dict(meta=dict(name="MedTerm-KR prototype", built_at=today, rxnav_version=get("/version.json").get("version"),
+    data = dict(meta=dict(name="MedTerm-KR", built_at=today, rxnav_version=get("/version.json").get("version"),
         sources=["RxNorm/RxNav REST (NLM): RxCUI, ATC, SNOMED CT concept IDs, SCD/SBD", "ATC class names via RxNav RxClass (WHO CC)", "한글명·한국 상품명: 수기 입력(미검수)"],
-        notice="프로토타입 데이터. 한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준. 한국 허가 제품(MFDS)은 미연동."), atc=atc_nodes, concepts=concepts)
+        notice="한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준입니다. 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다."), atc=atc_nodes, concepts=concepts)
     data["meta"]["counts"] = {t: sum(1 for c in concepts if c["type"] == t) for t in ("VTM", "VMP", "AMP")}
     json.dump(data, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(data["meta"]["counts"], "ATC nodes", len(atc_nodes), "unparsed", len(unparsed))

@@ -1,6 +1,6 @@
 {
  "meta": {
-  "name": "MedTerm-KR prototype",
+  "name": "MedTerm-KR",
   "built_at": "2026-10-28",
   "rxnav_version": "05-Oct-2026",
   "sources": [
@@ -8,7 +8,7 @@
    "ATC class names via RxNav RxClass (WHO CC)",
    "한글명·한국 상품명: 수기 입력(미검수)"
   ],
-  "notice": "프로토타입 데이터. 한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준. 한국 허가 제품(MFDS)은 미연동.",
+  "notice": "한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준입니다. 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다.",
   "counts": {
    "VTM": 32,
    "VMP": 516,

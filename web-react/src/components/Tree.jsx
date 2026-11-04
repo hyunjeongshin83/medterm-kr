@@ -142,7 +142,7 @@ export function TreePane({ selectedId, onSelect, seg, setSeg, filter, setFilter,
           {match.nodes.size ? (
             <ul>{top.map((n) => <Branch key={n.key} n={n} ctx={ctx} />)}</ul>
           ) : (
-            <p className="px-2 py-3 text-small text-mut">걸러낸 결과가 없습니다. 사전에 없다는 뜻이 아니라 이 프로토타입에 수록되지 않았다는 뜻일 수 있습니다.</p>
+            <p className="px-2 py-3 text-small text-mut">걸러낸 결과가 없습니다. 약이 없다는 뜻이 아니라 이 사전에 아직 수록되지 않았다는 뜻일 수 있습니다.</p>
           )}
         </div>
         <div id="az" role="tabpanel" aria-labelledby="seg-az" hidden={seg !== 'az'}>

@@ -86,7 +86,7 @@ export function SearchTab({ selectedId, onSelect }) {
         <PillArt className="pointer-events-none absolute right-2 top-2 h-[5.25rem] w-auto lt-tree:right-1.5 lt-tree:top-3 lt-tree:h-[4.5rem]" />
         <div className="relative pr-24 lt-tree:pr-20">
           <h2 id="hero-title" className="text-heading-l text-ink">어떤 성분을 찾으세요?</h2>
-          <p className="mt-1 text-small text-mut">성분 {c.VTM}개 · 제형·용량(VMP) {c.VMP}개 · 제품(AMP) {c.AMP}개가 수록되어 있습니다.</p>
+          <p className="mt-1 text-small text-mut">성분 {c.VTM}개 · 제형·용량(VMP) {c.VMP}개 · 제품(AMP) {c.AMP}개가 수록되어 있습니다. <span className="whitespace-nowrap">(자료 기준 {META.built_at})</span></p>
         </div>
         <div className="relative mt-4">
           <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mut"><IconSearch /></span>
@@ -154,7 +154,7 @@ export function SearchTab({ selectedId, onSelect }) {
 
       {asked && !hits.length && (
         <Card className="text-small text-mut">
-          사전에 없습니다 — <b className="text-ink">확인이 필요하다</b>는 뜻입니다. 이 프로토타입은 약 {META.counts.VTM}개 성분만 수록하므로, 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.
+          사전에 없습니다 — <b className="text-ink">확인이 필요하다</b>는 뜻입니다. 이 사전은 현재 {META.counts.VTM}개 성분만 수록하므로, 없다고 해서 존재하지 않는 약이라는 뜻은 아닙니다.
         </Card>
       )}
       {asked && hits.length > 0 && !rows.length && (

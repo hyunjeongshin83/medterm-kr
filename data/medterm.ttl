@@ -6,11 +6,11 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <https://medterm-kr.example/onto> a owl:Ontology ;
-    rdfs:label "MedTerm-KR prototype ontology"@en ;
+    rdfs:label "MedTerm-KR ontology"@en ;
     dcterms:source "ATC class names via RxNav RxClass (WHO CC)",
         "RxNorm/RxNav REST (NLM): RxCUI, ATC, SNOMED CT concept IDs, SCD/SBD",
         "한글명·한국 상품명: 수기 입력(미검수)" ;
-    rdfs:comment "프로토타입 데이터. 한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준. 한국 허가 제품(MFDS)은 미연동."@ko .
+    rdfs:comment "한글명·한국 상품명은 약사 검수 전 초안이며 VMP/AMP는 미국 RxNorm 기준입니다. 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다."@ko .
 
 mt:MT_AMP_1011485 a mt:AMP ;
     skos:prefLabel "cetirizine hydrochloride 10 MG Disintegrating Oral Tablet [Zyrtec]"@en ;

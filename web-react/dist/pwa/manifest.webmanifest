@@ -2,7 +2,7 @@
   "id": "medterm-kr",
   "name": "MedTerm-KR · 약무용어 사전",
   "short_name": "MedTerm-KR",
-  "description": "약무용어 사전(성분→제형·함량→제품)과 LLM 답변 검증. 연구·교육용 프로토타입이며 진단·처방 판단용이 아닙니다.",
+  "description": "약무용어 사전(성분→제형·함량→제품)과 LLM 답변 검증. 정보 제공용이며 진단·처방 판단용이 아닙니다. LLM 질의 기능은 리서치용입니다.",
   "lang": "ko",
   "dir": "ltr",
   "start_url": "./",

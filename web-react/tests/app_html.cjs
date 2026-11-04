@@ -9,7 +9,7 @@ const { rgb, FACES } = require('./_tokens.cjs');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'app'); fs.mkdirSync(OUT, { recursive: true });
 const FILE = path.join(ROOT, 'dist', 'MedTerm-KR_app.html');
 const URL = 'file://' + FILE;
-const DISC = '정보 제공·연구용 프로토타입입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.';
+const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
 const TABS = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
 
 let bad = 0, total = 0;
@@ -38,6 +38,14 @@ const overflow = (page) => page.evaluate(() => {
     const html = fs.readFileSync(FILE, 'utf8');
     ck('문서: 외부 글꼴·스타일·스크립트 링크 없음', !/<link\b/i.test(html) && !/<script[^>]+\bsrc=/i.test(html) && !/@import/i.test(html) && !/fonts\.(googleapis|gstatic)\.com/.test(html));
     ck('문서: 제목 MedTerm-KR, 한국어 문서', /<title>MedTerm-KR<\/title>/.test(html) && /<html lang="ko">/.test(html));
+    ck(`문서: 옛 표기("${OLD_LABEL}")가 어디에도 없음(화면 코드·사전 설명문 포함)`, !html.includes(OLD_LABEL));
+    // 안드로이드 앱 묶음: versionName 이 화면 버전과 같고, 앱에 담긴 화면이 이번 빌드와 바이트까지 같다(빌드 뒤 assets/index.html 교체를 잊지 않도록)
+    const AND = path.resolve(ROOT, '..', 'android-app');
+    if (fs.existsSync(AND)) {
+      const vn = (fs.readFileSync(path.join(AND, 'app', 'build.gradle'), 'utf8').match(/versionName\s+'([^']+)'/) || [])[1];
+      ck(`안드로이드: versionName(${vn})이 화면 버전(${VERSION})과 같음`, vn === VERSION);
+      ck('안드로이드: assets/index.html 이 이번 빌드(MedTerm-KR_app.html)와 바이트까지 같음', Buffer.compare(fs.readFileSync(path.join(AND, 'app', 'src', 'main', 'assets', 'index.html')), fs.readFileSync(FILE)) === 0);
+    }
   }
 
   const browser = await chromium.launch();
@@ -47,6 +55,7 @@ const overflow = (page) => page.evaluate(() => {
     const { ctx, page } = await open(browser, w, h, { dpr: 2, touch: true, mobile: true });
     ck(`${w}px: 제목`, (await page.title()) === 'MedTerm-KR', await page.title());
     ck(`${w}px: 면책 문구 원문 그대로`, (await page.getByRole('note').innerText()).trim() === DISC);
+    ck(`${w}px: 상단 제목 옆 버전 v${VERSION}`, (await page.locator('header h1').innerText()).replace(/\s+/g, ' ').trim() === `MedTerm-KR v${VERSION}`);
     ck(`${w}px: 탭 5개`, (await page.getByRole('tab').count()) === 5 || (await page.getByRole('tab').filter({ hasText: new RegExp(TABS.join('|')) }).count()) === 5);
 
     await page.fill('#q', '오메프라졸'); await page.waitForTimeout(400);
@@ -65,9 +74,10 @@ const overflow = (page) => page.evaluate(() => {
     await page.getByRole('button', { name: '사전에서 근거 찾기', exact: true }).click(); await page.waitForTimeout(300);
     const ragText = await page.locator('#panel-rag').innerText();
     ck(`${w}px: 질의 탭에 프록시 URL 입력칸 없음, 안내가 "이 앱에서는"`, (await page.locator('#proxy').count()) === 0 && ragText.includes('이 앱에서는 외부 서버 호출이 막혀 있어') && !ragText.includes('이 공유 화면'));
-    await page.getByRole('button', { name: '시연용 답변 넣기(오프라인 데모)', exact: true }).click();
+    ck(`${w}px: 질의 탭에 "리서치용" 안내 · 리서치 질의문 · 질의문 복사 버튼`, ragText.includes('리서치용') && ragText.includes('형식: MedTerm-KR 리서치 질의 R1') && (await page.getByRole('button', { name: '질의문 복사', exact: true }).count()) === 1);
+    await page.getByRole('button', { name: '예시 답변 넣기(오류 포함)', exact: true }).click();
     await page.getByRole('button', { name: '이 답변 검증', exact: true }).click(); await page.waitForTimeout(300);
-    ck(`${w}px: 시연용 모의 답변 검증이 "불일치" 판정`, (await page.locator('#rag-verify-out').innerText()).includes('사전 기준 불일치가 발견되었습니다'));
+    ck(`${w}px: 예시 답변 검증이 "불일치" 판정`, (await page.locator('#rag-verify-out').innerText()).includes('사전 기준 불일치가 발견되었습니다'));
     if (w === 390) await page.screenshot({ path: path.join(OUT, 'phone_rag_done.png') });
 
     await tabTo(page, '데이터·한계');
