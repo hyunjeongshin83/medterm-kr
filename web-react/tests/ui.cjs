@@ -408,15 +408,189 @@ const overflow = (page) => page.evaluate(() => {
       return {
         body: cs(document.body).fontFamily, bodyBg: cs(document.body).backgroundColor, bodyInk: cs(document.body).color, h1: cs(document.querySelector('h1')).fontFamily,
         selColor: cs(sel).color, selBg: cs(sel).backgroundColor, selWeight: cs(sel).fontWeight, bodySize: cs(document.body).fontSize,
-        card: (() => { const c = document.querySelector('#panel-search > div'); return { bg: cs(c).backgroundColor, r: cs(c).borderTopLeftRadius }; })(),
+        card: (() => { const c = document.querySelector('#panel-verify [data-card]'); return { bg: cs(c).backgroundColor, r: cs(c).borderTopLeftRadius }; })(),
+        hero: (() => { const c = document.getElementById('hero-title').closest('section'); return { bg: cs(c).backgroundColor, r: cs(c).borderTopLeftRadius }; })(),
       };
     });
     ck('글꼴: 본문은 Pretendard, 로고 글씨(h1)는 Gaegu → Pretendard 순', /^"?Pretendard"?,/.test(st.body) && /^"?Gaegu"?,\s*"?Pretendard"?/.test(st.h1), { body: st.body, h1: st.h1 });
     ck('색: 라이트 바탕·본문 글씨색이 토큰(bg·ink)', st.bodyBg === rgb('bg') && st.bodyInk === rgb('ink'), { bg: st.bodyBg, ink: st.bodyInk });
     ck('색: 켜진 탭은 브랜드 글씨(pri) + 옅은 틸 바탕(pri-soft) + 굵게 700', st.selColor === rgb('pri') && st.selBg === rgb('pri-soft') && st.selWeight === '700', { color: st.selColor, bg: st.selBg, w: st.selWeight });
     ck('모양: 카드는 흰 바탕(surface) · 모서리 20px(메디노트 --r-lg)', st.card.bg === rgb('surface') && st.card.r === '20px', st.card);
+    ck('모양: 검색 히어로는 옅은 틸 바탕(pri-soft) · 모서리 20px', st.hero.bg === rgb('pri-soft') && st.hero.r === '20px', st.hero);
     ck('크기: 본문 글자 0.9375rem = 15px(메디노트 --fs-sub), 브라우저 글자 크기 설정을 따름', st.bodySize === '15px', st.bodySize);
     noErr('글꼴·색', page); await ctx.close();
+  }
+
+
+  /* ───── 14. 반응형 화면 구성(템플릿식: 히어로 검색 · 분류 칩 · 카드 · 큰 버튼 · 하단 탭 · 아래서 올라오는 상세) ───── */
+  const rect = (page, sel) => page.evaluate((q) => { const e = document.querySelector(q); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), r: Math.round(r.right), b: Math.round(r.bottom) }; }, sel);
+  const cols = (page) => page.evaluate(() => new Set([...document.querySelectorAll('#panel-search ul.feed-grid > li')].map((e) => Math.round(e.getBoundingClientRect().left))).size);
+  const nCards = (page) => page.locator('#panel-search ul.feed-grid > li').count();
+  // 보이는 탭 화면에서 글자가 name 인 버튼이 자기 카드의 안쪽 폭을 가득 채우는지(휴대폰) + 높이
+  const btnFill = (page, name) => page.evaluate((n) => {
+    const b = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) button')].find((e) => e.innerText.trim() === n);
+    if (!b) return null;
+    const c = b.closest('[data-card]'); const cs = getComputedStyle(c);
+    const inner = c.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const r = b.getBoundingClientRect();
+    return { w: Math.round(r.width), inner: Math.round(inner), h: Math.round(r.height) };
+  }, name);
+  const TAB_NAMES = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+  const expGroups = (page) => page.evaluate(() => {
+    const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES);
+    const g = {};
+    for (const v of m.vtms) for (const L of new Set((v.atc_codes || []).map((c) => c[0]))) g[L] = (g[L] || 0) + 1;
+    return g;
+  });
+
+  // 14-1. 휴대폰 390×844 (터치)
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true, dpr: 2 });
+    const bar = await rect(page, '[role="tablist"][aria-label="작업 화면"]');
+    ck('휴대폰: 작업 탭이 화면 맨 아래 막대(하단 탭)로 붙고, 바깥틀 폭 전체·높이 56px 이상', (await page.locator('[role="tablist"][aria-label="작업 화면"]').getAttribute('data-variant')) === 'bottom' && bar && bar.b === 844 && bar.x === 0 && bar.w === 390 && bar.h >= 56, bar);
+    ck('휴대폰: 상단(본문 안) 탭 줄은 없음', (await page.locator('#center [role="tablist"]').count()) === 0);
+    const tabBoxes = await page.evaluate(() => [...document.querySelectorAll('[data-variant="bottom"] [role="tab"]')].map((e) => { const r = e.getBoundingClientRect(); return { n: e.getAttribute('aria-label'), w: Math.round(r.width), h: Math.round(r.height), t: e.innerText.trim() }; }));
+    ck('휴대폰: 하단 탭 5개 모두 44×44 이상, 접근 가능한 이름은 긴 이름 그대로(짧은 글자는 눈에 보이는 글자)', tabBoxes.length === 5 && tabBoxes.every((t) => t.w >= 44 && t.h >= 44) && JSON.stringify(tabBoxes.map((t) => t.n)) === JSON.stringify(TAB_NAMES), tabBoxes);
+    let named = 0; for (const n of TAB_NAMES) named += await page.getByRole('tab', { name: n, exact: true }).count();
+    ck('휴대폰: 이름으로 탭을 찾으면 정확히 하나씩(중복 탭 없음)', named === 5, named);
+    ck('휴대폰: 검색 입력 높이 48px 이상 · 입력 칸이 히어로 안에 있음', (await rect(page, '#q')).h >= 48 && (await page.evaluate(() => !!document.getElementById('q').closest('section[aria-labelledby="hero-title"]'))));
+    // 분류 칩
+    const exp = await expGroups(page);
+    const chips = await page.evaluate(() => [...document.querySelectorAll('.chip-row > button')].map((e) => { const r = e.getBoundingClientRect(); return { t: e.innerText.replace(/\s+/g, ' ').trim(), h: Math.round(r.height), on: e.getAttribute('aria-pressed') }; }));
+    ck('분류 칩: 전체 + 사전에 있는 대분류마다 하나, 칩 안의 숫자가 사전의 성분 수와 같음', chips.length === 1 + Object.keys(exp).length && chips[0].t === `전체 ${IDS.length}` && chips.slice(1).every((c) => { const L = c.t[0]; return Number(c.t.split(' ').pop()) === exp[L]; }), { chips: chips.map((c) => c.t), exp });
+    ck('분류 칩: 모두 44px 이상, 처음에는 "전체"만 눌림', chips.every((c) => c.h >= 44) && chips[0].on === 'true' && chips.slice(1).every((c) => c.on === 'false'), chips.map((c) => c.h));
+    const rowScroll = await page.evaluate(() => { const e = document.querySelector('.chip-row'); return { sw: e.scrollWidth, cw: e.clientWidth, ox: getComputedStyle(e).overflowX, wrap: getComputedStyle(e).flexWrap }; });
+    ck('분류 칩: 휴대폰에서는 한 줄로 옆으로 밀어 봄(줄 안에서만 스크롤, 문서는 넘치지 않음)', rowScroll.ox === 'auto' && rowScroll.wrap === 'nowrap' && rowScroll.sw > rowScroll.cw && (await overflow(page)).doc === 0, rowScroll);
+    // 카드 목록
+    ck('목록: 검색어가 없으면 수록 성분을 12개씩(더 보기) 보여 줌, 1열', (await nCards(page)) === 12 && (await cols(page)) === 1);
+    const card1 = await rect(page, '#panel-search ul.feed-grid > li:first-child button');
+    ck('카드: 높이 72px 이상(손가락 기준), 폭은 바깥틀 안쪽 가득', card1.h >= 72 && card1.x >= 15 && card1.r <= 375 && card1.w >= 340, card1);
+    ck('카드: 사진 자리(썸네일) 그림이 있고 화면 읽기 프로그램에는 숨김', (await page.locator('#panel-search ul.feed-grid > li:first-child [aria-hidden="true"] svg').count()) === 1);
+    const names = await page.locator('#panel-search ul.feed-grid > li b').allInnerTexts();
+    ck('목록: 처음 12개가 가나다순', JSON.stringify(names) === JSON.stringify([...names].sort((a, b) => a.localeCompare(b, 'ko'))), names);
+    const more = page.getByRole('button', { name: /^더 보기/ });
+    const moreBox = await more.boundingBox();
+    ck('더 보기 버튼: "(20)" 개수 표시, 48px 이상, 휴대폰에서는 폭 가득', (await more.innerText()).includes('(20)') && moreBox.height >= 48 && moreBox.width >= 340, moreBox);
+    await more.tap(); await page.waitForTimeout(150);
+    ck('더 보기를 누르면 12개 더(24개), 버튼은 "(8)"', (await nCards(page)) === 24 && (await more.innerText()).includes('(8)'));
+    await more.tap(); await page.waitForTimeout(150);
+    ck('한 번 더 누르면 32개 전부, 더 보기 버튼이 사라짐', (await nCards(page)) === 32 && (await page.getByRole('button', { name: /^더 보기/ }).count()) === 0);
+    // 분류 칩으로 거르기
+    const cChip = page.locator('.chip-row > button', { hasText: /^C / });
+    await cChip.tap(); await page.waitForTimeout(150);
+    ck('"C 심혈관" 칩: 눌림 표시, 목록이 그 분류 성분만(개수가 사전과 같음), 제목에도 개수', (await cChip.getAttribute('aria-pressed')) === 'true' && (await nCards(page)) === exp.C && (await page.locator('#list-title').innerText()).includes(String(exp.C)), { cards: await nCards(page), exp: exp.C });
+    await cChip.tap(); await page.waitForTimeout(150);
+    ck('같은 칩을 다시 누르면 풀려서 전체로 돌아감(12개 · 전체 눌림)', (await cChip.getAttribute('aria-pressed')) === 'false' && (await nCards(page)) === 12 && (await page.locator('.chip-row > button').first().getAttribute('aria-pressed')) === 'true');
+    // 검색 + 지우기
+    await page.fill('#q', '오메프라졸'); await page.waitForTimeout(250);
+    ck('검색: 결과 카드에 일치한 이유(배지)가 붙고 정확히 일치한 성분이 선택됨(시트는 열리지 않음)', (await page.locator('#panel-search ul.feed-grid > li').first().innerText()).includes('오메프라졸') && (await page.evaluate(() => location.hash)) === '#v-7646' && (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden');
+    const clearBtn = page.getByRole('button', { name: '검색어 지우기' });
+    const clearBox = await clearBtn.boundingBox();
+    ck('입력 칸의 지우기 버튼: 44px 이상', clearBox.width >= 44 && clearBox.height >= 44, clearBox);
+    await clearBtn.tap(); await page.waitForTimeout(200);
+    ck('지우기: 입력이 비고 포커스가 입력 칸으로, 목록은 수록 성분으로 돌아감', (await page.inputValue('#q')) === '' && (await page.evaluate(() => document.activeElement.id)) === 'q' && (await page.locator('#list-title').innerText()).includes('수록 성분') && (await page.getByRole('button', { name: '검색어 지우기' }).count()) === 0);
+    // 분류 + 검색어: 결과 없음 안내
+    await page.fill('#q', '오메프라졸'); await page.waitForTimeout(150);
+    await page.locator('.chip-row > button', { hasText: /^C / }).tap(); await page.waitForTimeout(150);
+    ck('검색 결과가 다른 분류에만 있으면 "이 분류에는 검색 결과가 없습니다" 안내', (await page.locator('#panel-search').innerText()).includes('이 분류에는 검색 결과가 없습니다') && (await nCards(page)) === 0);
+    await page.locator('.chip-row > button').first().tap(); await page.fill('#q', ''); await page.waitForTimeout(150);
+    // 카드 → 아래에서 올라오는 시트
+    await page.locator('#panel-search ul.feed-grid > li:first-child button').tap(); await page.waitForTimeout(450);
+    const sh = await rect(page, '#inspector');
+    const shCss = await page.evaluate(() => { const c = getComputedStyle(document.getElementById('inspector')); return { pos: c.position, tl: c.borderTopLeftRadius, tr: c.borderTopRightRadius, bl: c.borderBottomLeftRadius, vis: c.visibility, role: document.getElementById('inspector').getAttribute('role') }; });
+    ck('휴대폰: 카드를 누르면 상세가 화면 아래에 붙어 올라오는 시트(바닥 = 화면 아래, 폭 가득, 위 모서리 20px)', shCss.pos === 'fixed' && shCss.vis === 'visible' && shCss.role === 'dialog' && sh.b === 844 && sh.x === 0 && sh.w === 390 && shCss.tl === '20px' && shCss.tr === '20px' && shCss.bl === '0px', { sh, shCss });
+    ck('휴대폰: 시트는 화면 높이의 88%를 넘지 않고(위쪽 면책 띠가 일부 보임), 안쪽 내용만 스크롤', sh.h <= Math.ceil(844 * 0.88) + 1 && sh.y >= 844 * 0.12 - 1 && (await page.evaluate(() => { const d = document.getElementById('detail'); return getComputedStyle(d).overflowY === 'auto'; })), sh);
+    ck('시트에 손잡이(장식, 화면 읽기에서는 숨김)와 닫기 버튼(44px 이상)이 있음', (await page.locator('#inspector > div[aria-hidden="true"]').first().isVisible()) && (await rect(page, '#inspector button[aria-label="상세 닫기"]')).h >= 44);
+    const cta = await rect(page, '#inspector > div:last-child button');
+    ck('시트 아래 고정 줄: 주된 버튼 "관계 그래프 보기"(48px 이상, 폭 가득)가 스크롤과 상관없이 보임', (await page.getByRole('button', { name: /관계 그래프 보기/ }).isVisible()) && cta.h >= 48 && cta.w >= 340 && cta.b <= 844, cta);
+    ck('상세 머리에 사진 자리(큰 썸네일)와 이름이 있고, ATC 경로는 들여쓴 목록', (await page.locator('#detail h3').first().innerText()).length > 0 && (await page.locator('#detail [aria-hidden="true"] svg').count()) >= 1 && (await page.locator('#detail ol li').count()) >= 2);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(450);
+    ck('휴대폰: 시트를 Esc로 닫으면 포커스가 눌렀던 카드로 돌아감', (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden' && (await page.evaluate(() => document.activeElement.getAttribute('aria-current'))) === 'true', await page.evaluate(() => document.activeElement.outerHTML.slice(0, 90)));
+    await page.locator('#panel-search ul.feed-grid > li:first-child button').tap(); await page.waitForTimeout(450);
+    const title0 = await page.locator('#detail h3').first().innerText();
+    await page.getByRole('button', { name: /관계 그래프 보기/ }).tap(); await page.waitForTimeout(700);
+    ck('"관계 그래프 보기": 시트가 닫히고 관계 그래프 탭이 열려 같은 성분의 그래프가 보임, 포커스는 그래프 탭', (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden' && (await page.locator('#tab-graph').getAttribute('aria-selected')) === 'true' && (await page.locator('#graph-title').innerText()).includes(title0.split('\n')[0].trim()) && (await page.evaluate(() => document.activeElement.id)) === 'tab-graph', { title0, g: await page.locator('#graph-title').innerText(), active: await page.evaluate(() => document.activeElement.id) });
+    ck('이미 관계 그래프 탭이면 시트 아래의 "관계 그래프 보기" 버튼은 숨김(할 일 없는 버튼 없음)', (await page.getByRole('button', { name: /관계 그래프 보기/ }).count()) === 0);
+    // 다른 탭의 큰 버튼
+    await tabTo(page, '답변 검증');
+    const vb = await btnFill(page, '검증');
+    ck('답변 검증: 검증 버튼이 휴대폰에서는 카드 안쪽 폭을 가득 채우고 높이 44px 이상', vb && vb.w >= vb.inner - 1 && vb.w >= 300 && vb.h >= 44, vb);
+    await tabTo(page, '근거 기반 질의');
+    const rb = await btnFill(page, '사전에서 근거 찾기');
+    ck('근거 기반 질의: 주된 버튼이 휴대폰에서는 카드 안쪽 폭을 가득 채우고 높이 44px 이상', rb && rb.w >= rb.inner - 1 && rb.w >= 300 && rb.h >= 44, rb);
+    ck('모든 탭에서 가로 넘침 없음(문서·가운데)', await (async () => { for (const t of TAB_NAMES) { await tabTo(page, t); const o = await overflow(page); if (o.doc > 0 || o.center > 0) return false; } return true; })());
+    await snap(page, 'r_phone_final');
+    noErr('반응형 휴대폰', page); await ctx.close();
+  }
+
+  // 14-2. 태블릿 768×1024 · 노트북 1024×768 · 데스크톱 1440×900 · 와이드 1920×1080
+  for (const [w, h, wantCols, label] of [[768, 1024, 1, '태블릿 768'], [1024, 768, 2, '노트북 1024'], [1440, 900, 2, '데스크톱 1440'], [1920, 1080, 3, '와이드 1920']]) {
+    const { ctx, page } = await open(browser, w, h, { dpr: 1 });
+    ck(`${label}: 작업 탭은 본문 위 알약 탭 줄(하단 탭 아님), 아래 막대 없음`, (await page.locator('#center [role="tablist"][data-variant="top"]').count()) === 1 && (await page.locator('[data-variant="bottom"]').count()) === 0);
+    ck(`${label}: "분류" 앱 막대 버튼은 없음(휴대폰 전용)`, !(await page.locator('#nav-toggle').isVisible()));
+    ck(`${label}: 카드 목록이 ${wantCols}열`, (await cols(page)) === wantCols, await cols(page));
+    if (wantCols > 1) {
+      const rowsH = await page.evaluate(() => {
+        const rows = new Map();
+        for (const b of document.querySelectorAll('#panel-search ul.feed-grid > li > button')) { const r = b.getBoundingClientRect(); const k = Math.round(r.top); rows.set(k, [...(rows.get(k) || []), Math.round(r.height)]); }
+        return [...rows.values()].filter((a) => a.length > 1);
+      });
+      ck(`${label}: 같은 줄의 카드는 높이가 같음(줄이 들쭉날쭉하지 않음)`, rowsH.length > 0 && rowsH.every((a) => Math.max(...a) - Math.min(...a) <= 1), rowsH.slice(0, 4));
+    }
+    const widthRule = await page.evaluate(() => { const c = document.getElementById('panel-search').parentElement; const r = c.getBoundingClientRect(); const m = document.getElementById('center').getBoundingClientRect(); return { w: Math.round(r.width), left: Math.round(r.left - m.left), right: Math.round(m.right - r.right) }; });
+    ck(`${label}: 본문은 960px(60rem)을 넘지 않고, 넓으면 가운데 정렬`, widthRule.w <= 960 && (w < 1700 || Math.abs(widthRule.left - widthRule.right) <= 12), widthRule);
+    ck(`${label}: 분류 칩은 줄바꿈(옆 스크롤 없음)`, await page.evaluate(() => { const e = document.querySelector('.chip-row'); return getComputedStyle(e).flexWrap === 'wrap' && e.scrollWidth <= e.clientWidth + 1; }));
+    if (w >= 1100) {
+      const L = await rect(page, '#left'), C = await rect(page, '#center'), R = await rect(page, '#inspector');
+      ck(`${label}: 3단 배치(왼쪽 300 · 가운데 · 오른쪽 380)`, L.w === 300 && R.w === 380 && C.w === w - 680, { L: L.w, C: C.w, R: R.w });
+      await page.fill('#q', '오메프라졸'); await page.waitForTimeout(250);
+      ck(`${label}: 상세 단 아래에 "관계 그래프 보기" 버튼이 늘 보임`, await page.getByRole('button', { name: /관계 그래프 보기/ }).isVisible());
+      await page.getByRole('button', { name: /관계 그래프 보기/ }).click(); await page.waitForTimeout(500);
+      ck(`${label}: 그 버튼을 누르면 관계 그래프 탭으로(같은 성분), 포커스는 그래프 탭`, (await page.locator('#tab-graph').getAttribute('aria-selected')) === 'true' && (await page.locator('#graph-title').innerText()).includes('오메프라졸') && (await page.evaluate(() => document.activeElement.id)) === 'tab-graph');
+    } else {
+      ck(`${label}: 왼쪽 트리는 보이고 상세는 서랍(처음엔 숨김)`, (await page.evaluate(() => getComputedStyle(document.getElementById('left')).visibility)) === 'visible' && (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden');
+      await page.locator('#panel-search ul.feed-grid > li:first-child button').click(); await page.waitForTimeout(450);
+      const dr = await rect(page, '#inspector');
+      const drCss = await page.evaluate(() => { const c = getComputedStyle(document.getElementById('inspector')); return { tl: c.borderTopLeftRadius, vis: c.visibility }; });
+      ck(`${label}: 카드를 누르면 상세가 오른쪽 서랍(위~아래 가득, 오른쪽 끝, 폭 440 이하)으로 열림 — 시트 아님`, drCss.vis === 'visible' && dr.r === w && dr.y === 0 && dr.b === h && dr.w <= 440 && dr.x > 0 && drCss.tl === '0px', { dr, drCss });
+      await page.getByRole('button', { name: /관계 그래프 보기/ }).click(); await page.waitForTimeout(600);
+      ck(`${label}: 서랍의 "관계 그래프 보기" → 서랍이 닫히고 그래프 탭, 포커스는 그래프 탭`, (await page.evaluate(() => getComputedStyle(document.getElementById('inspector')).visibility)) === 'hidden' && (await page.locator('#tab-graph').getAttribute('aria-selected')) === 'true' && (await page.evaluate(() => document.activeElement.id)) === 'tab-graph');
+    }
+    await snap(page, `r_${w}`);
+    noErr(label, page); await ctx.close();
+  }
+
+  // 14-3. 창 크기를 바꾸는 동안: 탭 선택·검색 상태가 유지되고, 하단 탭 ↔ 상단 탭이 바뀜
+  {
+    const { ctx, page } = await open(browser, 1440, 900);
+    await tabTo(page, '답변 검증');
+    await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
+    ck('1440→390: 하단 탭으로 바뀌고 "답변 검증"이 그대로 선택됨, 본문 안 탭 줄은 사라짐', (await page.locator('[data-variant="bottom"] #tab-verify').getAttribute('aria-selected')) === 'true' && (await page.locator('#center [role="tablist"]').count()) === 0 && (await page.locator('#panel-verify').isVisible()));
+    await page.setViewportSize({ width: 1440, height: 900 }); await page.waitForTimeout(350);
+    ck('390→1440: 다시 상단 알약 탭 줄, 선택 유지, 하단 탭 없음', (await page.locator('#center [data-variant="top"] #tab-verify').getAttribute('aria-selected')) === 'true' && (await page.locator('[data-variant="bottom"]').count()) === 0);
+    await tabTo(page, '사전 검색'); await page.fill('#q', '메트포르민'); await page.waitForTimeout(250);
+    await page.setViewportSize({ width: 700, height: 900 }); await page.waitForTimeout(300);
+    ck('700px(경계): 휴대폰 방식이 아님(하단 탭 없음, 트리 보임) · 699px: 휴대폰 방식', (await page.locator('[data-variant="bottom"]').count()) === 0 && (await page.evaluate(() => getComputedStyle(document.getElementById('left')).visibility)) === 'visible');
+    await page.setViewportSize({ width: 699, height: 900 }); await page.waitForTimeout(300);
+    ck('699px: 하단 탭 · 검색어 "메트포르민" 유지 · 트리는 서랍', (await page.locator('[data-variant="bottom"]').count()) === 1 && (await page.inputValue('#q')) === '메트포르민' && (await page.evaluate(() => getComputedStyle(document.getElementById('left')).visibility)) === 'hidden');
+    noErr('창 크기 변경', page); await ctx.close();
+  }
+
+  // 14-4. 다크: 하단 탭·히어로·카드 색이 토큰
+  {
+    const { ctx, page } = await open(browser, 390, 844, { scheme: 'dark', touch: true, mobile: true, dpr: 2 });
+    const c = await page.evaluate(() => {
+      const cs = (e) => getComputedStyle(e);
+      const bar = document.querySelector('[data-variant="bottom"]');
+      const on = bar.querySelector('[aria-selected="true"]');
+      const off = bar.querySelector('[aria-selected="false"]');
+      const hero = document.getElementById('hero-title').closest('section');
+      const card = document.querySelector('#panel-search ul.feed-grid > li button');
+      return { bar: cs(bar).backgroundColor, on: cs(on).color, off: cs(off).color, hero: cs(hero).backgroundColor, card: cs(card).backgroundColor };
+    });
+    ck('다크: 하단 탭 막대(surface) · 선택된 탭 글씨(pri) · 안 선택(info) · 히어로(pri-soft) · 카드(surface)가 토큰 색', c.bar === rgb('surface', 'dark') && c.on === rgb('pri', 'dark') && c.off === rgb('info', 'dark') && c.hero === rgb('pri-soft', 'dark') && c.card === rgb('surface', 'dark'), { c, want: { bar: rgb('surface', 'dark'), on: rgb('pri', 'dark'), off: rgb('info', 'dark'), hero: rgb('pri-soft', 'dark') } });
+    await snap(page, 'r_phone_dark');
+    noErr('반응형 다크', page); await ctx.close();
   }
 
   await browser.close();

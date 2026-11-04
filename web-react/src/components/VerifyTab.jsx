@@ -89,7 +89,7 @@ export function VerifyTab() {
             <option value="">샘플 답변 불러오기…</option>
             {SAMPLES.map((s, i) => <option key={i} value={i}>{s[0]}</option>)}
           </select>
-          <Btn onClick={() => run(text)} disabled={!text.trim()}>검증</Btn>
+          <Btn onClick={() => run(text)} disabled={!text.trim()} className="lt-tree:w-full">검증</Btn>
         </div>
         <textarea
           id="vtext"

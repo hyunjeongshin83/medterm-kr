@@ -8,7 +8,8 @@
   /* 한 화면짜리 앱: 높이는 100vh가 아니라 html→body→#root의 100%로 잇는다(공유 페이지 바깥틀이 위아래 안전 여백을 html에 준다). */
   html { box-sizing: border-box; }
   html, body, #root { height: 100%; }
-  body { @apply m-0 bg-bg font-sans text-body text-ink; -webkit-text-size-adjust: 100%; }
+  /* 한글은 낱말(띄어쓰기) 단위로 줄을 바꾼다. 한 낱말이 한 줄보다 길면 그때만 글자 사이에서 끊는다(좁은 폰 화면에서 "분/류"처럼 끊기지 않게). */
+  body { @apply m-0 bg-bg font-sans text-body text-ink; -webkit-text-size-adjust: 100%; word-break: keep-all; overflow-wrap: anywhere; }
   [hidden] { display: none !important; }
   :focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
   button, input, select, textarea { font: inherit; color: inherit; }
@@ -28,6 +29,10 @@
   .center-pad { --cl: 20px; --cr: 20px; padding-left: var(--cl); padding-right: var(--cr); }
   /* 본문 폭 끝까지 이어지는 띠(탭 줄): 본문 좌우 여백만큼 바깥으로 내밀고 같은 만큼 안쪽 여백을 준다. */
   .center-bleed { margin-left: calc(var(--cl) * -1); margin-right: calc(var(--cr) * -1); padding-left: var(--cl); padding-right: var(--cr); }
+  /* 카드 목록: 칸 폭이 17rem(≈272px) 이상 들어가는 만큼 열을 만든다 → 폰 1열 · 태블릿 1~2열 · 데스크톱 2~3열. 화면 폭 기준이 아니라 본문 폭 기준이라 3단에서도 맞는다. */
+  .feed-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); }
+  /* 분류 칩 줄: 넓은 화면에서는 줄바꿈, 휴대폰에서는 아래 @screen lt-tree 규칙으로 옆으로 밀어 보기. */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 }
 @screen lt-insp {
   .center-pad { --cr: max(20px, var(--gr)); }
@@ -43,7 +48,22 @@
 }
 @screen lt-tree {
   .center-pad { --cl: var(--gl); --cr: var(--gr); }
+  /* 칩 줄은 화면 가장자리까지 이어져 옆으로 밀린다(스크롤 막대는 숨김). */
+  .chip-row { flex-wrap: nowrap; overflow-x: auto; margin-left: calc(var(--cl) * -1); margin-right: calc(var(--cr) * -1); padding: 2px var(--cr) 6px var(--cl); scrollbar-width: none; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row > * { flex: none; }
+  /* 상세: 오른쪽 서랍 대신 아래에서 올라오는 시트(손잡이 · 둥근 위 모서리 · 화면 높이의 88%까지). */
+  .pane-inspector {
+    top: auto; left: 0; right: 0; bottom: 0; width: auto;
+    max-height: 88vh; max-height: 88dvh;
+    padding-top: 0; padding-left: env(safe-area-inset-left, 0px);
+    border-left: 0; border-top: 1px solid var(--line); border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 28px rgba(15, 35, 39, 0.22);
+    transform: translateY(102%);
+  }
+  .pane-inspector[data-open="true"] { transform: none; }
   .pane-left {
+    border-radius: 0 20px 20px 0;
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
     width: min(var(--drawer-l), 88vw);

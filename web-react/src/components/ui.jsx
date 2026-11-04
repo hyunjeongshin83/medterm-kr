@@ -8,8 +8,8 @@ export const inertProps = (on) => (on ? { inert: '' } : {});
 export const INPUT_CLS = 'w-full rounded-lg border border-edge bg-surface px-3.5 py-2.5 text-body text-ink';
 
 export function Card({ className, children, ...rest }) {
-  // 메디노트 카드: 흰 바탕 · 모서리 20 · 가는 테두리 · 틸 기운이 도는 옅은 그림자
-  return <div className={cx('mb-3.5 rounded-xl border border-line bg-surface p-5 shadow-card lt-tree:p-4', className)} {...rest}>{children}</div>;
+  // 메디노트 카드: 흰 바탕 · 모서리 20 · 가는 테두리 · 틸 기운이 도는 옅은 그림자 (data-card: 시험이 카드를 찾는 표시)
+  return <div data-card="" className={cx('mb-3.5 rounded-xl border border-line bg-surface p-5 shadow-card lt-tree:p-4', className)} {...rest}>{children}</div>;
 }
 
 const BADGE = {
@@ -31,15 +31,18 @@ export function StatusBadge({ v, className }) {
 const BTN = {
   primary: 'border-pri-fill bg-pri-fill text-on-pri hover:brightness-110',
   secondary: 'border-pri bg-surface text-pri hover:bg-pri-soft',
+  tonal: 'border-pri-soft bg-pri-soft text-pri hover:border-pri',
   quiet: 'border-line bg-surface text-ink hover:border-pri hover:text-pri',
 };
-export function Btn({ variant = 'primary', className, type = 'button', ...rest }) {
-  return <button type={type} className={cx('inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-[9px] text-body font-bold disabled:opacity-50', BTN[variant], className)} {...rest} />;
+// 누르는 면은 손가락 기준 44px 이상(md), 화면 하단·카드 안의 주된 행동은 48px(lg)
+const BTN_SIZE = { md: 'min-h-11 px-4 py-2', lg: 'min-h-12 px-5 py-2.5' };
+export function Btn({ variant = 'primary', size = 'md', className, type = 'button', ...rest }) {
+  return <button type={type} className={cx('inline-flex items-center justify-center gap-2 rounded-lg border text-body font-bold disabled:opacity-50', BTN_SIZE[size], BTN[variant], className)} {...rest} />;
 }
 
-/** 작은 보조 버튼(그래프 도구줄·닫기 등). */
+/** 작은 보조 버튼(그래프 도구줄·닫기 등). 휴대폰 폭에서는 44px 이상으로 키운다. */
 export function IconBtn({ className, type = 'button', ...rest }) {
-  return <button type={type} className={cx('inline-flex items-center justify-center rounded-md border border-line bg-surface px-2.5 py-1 text-small font-semibold text-ink hover:border-pri hover:text-pri', className)} {...rest} />;
+  return <button type={type} className={cx('inline-flex min-h-9 items-center justify-center rounded-md border border-line bg-surface px-2.5 py-1 text-small font-semibold text-ink hover:border-pri hover:text-pri lt-tree:min-h-11 lt-tree:min-w-11', className)} {...rest} />;
 }
 
 export function Chip({ leaf, className, children, ...rest }) {

@@ -10,7 +10,7 @@ import { VerifyTab } from './components/VerifyTab.jsx';
 import { RagTab } from './components/RagTab.jsx';
 import { AboutTab } from './components/AboutTab.jsx';
 import { Inspector } from './components/Inspector.jsx';
-import { inertProps } from './components/ui.jsx';
+import { cx, inertProps } from './components/ui.jsx';
 
 export default function App() {
   const narrow = useMedia('(max-width: 1099px)'); // 상세가 서랍으로
@@ -24,6 +24,8 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(false);
 
   const lastOpener = useRef(null);
+  const navOpenRef = useRef(false);
+  navOpenRef.current = navOpen;
   const graphFocus = useRef(false);
   const selectedRef = useRef(selectedId);
   selectedRef.current = selectedId;
@@ -37,8 +39,9 @@ export default function App() {
     setSelectedId(id);
     writeHash(id);
     if (!open) return;
+    // 상세를 닫을 때 포커스가 돌아갈 곳: 분류 트리 서랍에서 골랐으면 그 서랍을 연 버튼, 아니면 누른 카드·항목.
     const ph = isPhone();
-    lastOpener.current = ph ? navToggleRef.current : document.activeElement;
+    lastOpener.current = ph && navOpenRef.current ? navToggleRef.current : document.activeElement;
     if (ph) setNavOpen(false);
     if (isNarrow()) setInspOpen(true);
   }, []);
@@ -103,6 +106,15 @@ export default function App() {
     if (centerRef.current) centerRef.current.scrollTop = 0;
   };
 
+  // 상세의 주된 버튼: 같은 성분의 관계 그래프로 넘어간다. 서랍·시트는 닫고, 포커스는 "관계 그래프" 탭으로 옮긴다.
+  const openGraph = () => {
+    const tabEl = document.getElementById('tab-graph');
+    lastOpener.current = tabEl;
+    changeTab('graph');
+    setInspOpen(false);
+    if (!isNarrow() && tabEl) tabEl.focus();
+  };
+
   const inspDrawer = narrow && inspOpen;
   const navDrawer = phone && navOpen;
   const bgInert = inspDrawer || navDrawer;
@@ -132,13 +144,15 @@ export default function App() {
           onCloseDrawer={() => setNavOpen(false)}
           inert={inspDrawer}
         />
-        <main id="center" ref={centerRef} tabIndex={-1} className="center-pad min-h-0 overflow-auto pb-12 focus:outline-none" {...inertProps(bgInert)}>
-          <Tabs tab={tab} onChange={changeTab} />
-          <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} /></Panel>
-          <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
-          <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
-          <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
-          <Panel id="about" active={tab === 'about'}><AboutTab /></Panel>
+        <main id="center" ref={centerRef} tabIndex={-1} className={cx('center-pad min-h-0 overflow-auto focus:outline-none', phone ? 'pb-6' : 'pb-12')} {...inertProps(bgInert)}>
+          {!phone && <Tabs tab={tab} onChange={changeTab} />}
+          <div className="mx-auto w-full max-w-[60rem] lt-tree:pt-4">
+            <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} /></Panel>
+            <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
+            <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
+            <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
+            <Panel id="about" active={tab === 'about'}><AboutTab /></Panel>
+          </div>
         </main>
         <Inspector
           id={selectedId}
@@ -146,8 +160,12 @@ export default function App() {
           onClose={() => setInspOpen(false)}
           closeRef={closeRef}
           inert={navDrawer}
+          onOpenGraph={openGraph}
+          showGraphCta={tab !== 'graph'}
         />
       </div>
+      {/* 휴대폰(≤699px): 작업 탭이 화면 맨 아래 막대가 된다(엄지 닿는 곳). 서랍·시트가 열리면 뒤 화면과 함께 막는다. */}
+      {phone && <Tabs variant="bottom" tab={tab} onChange={changeTab} inert={bgInert} />}
       <div
         className="fixed inset-0 z-30 bg-scrim"
         hidden={!(inspDrawer || navDrawer)}

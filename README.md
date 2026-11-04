@@ -8,7 +8,7 @@
 ## 바로 가기 (링크)
 - 웹 화면(공유 페이지, 2026-11-04 새 디자인): https://claude.ai/artifact/3sczdoo74SPLoMg8LmTQ5S — **비공개**라 소유자 계정으로 로그인해야 열린다(공개 주소 아님).
 - Figma 화면 설계(MedTerm-KR, 이전 파란 디자인): https://www.figma.com/design/PotdShI3iRc93DpN4DbsWw
-- Figma 참고 템플릿(Mobile app UI Template, 커뮤니티 파일, 2026-11-04 전달받음 — 아직 디자인에 반영하지 않음): https://www.figma.com/design/YWPjl2mqIzpjjl1OesjvRd/Mobile-app-UI-Template--Community-?node-id=1-9
+- Figma 참고 템플릿(Mobile app UI Template, 커뮤니티 파일, 2026-11-04 전달받음 — **화면 구성(버튼·사진 자리·카드)만** 웹·앱에 반영, 글씨는 그대로. 원본 화면은 열람하지 못해 말로 전달받은 설명으로 만들었음): https://www.figma.com/design/YWPjl2mqIzpjjl1OesjvRd/Mobile-app-UI-Template--Community-?node-id=1-9
 - 설치형 웹앱(PWA)·안드로이드 앱: 접속 주소 없음. 웹앱은 `web-react/dist/pwa/` 폴더째 https 서버에 올리면 동작하고, APK 만드는 법은 `android-app/README.md` 에 있다(저장소에는 APK 를 올리지 않음).
 - 누구나 여는 **공개 주소(GitHub Pages 등)는 아직 만들지 않았다**. 공개하려면 SNOMED CT · ATC 값의 재배포 조건부터 확인해야 한다(아래 "설치형 웹앱" 절과 `docs/research/05_수록범위확대_DB조사_20261103.md`).
 
@@ -18,6 +18,7 @@
 같은 3단 화면을 React 18 + Tailwind + React Flow 로 다시 만든 소스다. 사전 데이터와 검증 로직(`web/js/`)은 그대로이고 화면만 바뀌었다. 기존 `web/` 은 비교·문서용으로 그대로 동작한다.
 - 결과물: `web-react/dist/MedTerm-KR_react.html`(독립 실행, 서버 불필요, 글꼴 포함이라 약 1.8 MB) · `web-react/dist/artifact.html`(공유 페이지용 조각) · `web-react/dist/pwa/`(설치형 웹앱, 아래 참고). 성분 주소: `#v-7646`(예전 `#MT:VTM:7646` 도 열림).
 - 만들기·점검: `cd web-react && npm ci && npm run build`, 점검 방법과 구조는 `web-react/README.md`. 오픈소스 고지문: `web-react/THIRD_PARTY_NOTICES.txt`.
+- 반응형 화면 구성(2026-11-04): 휴대폰은 하단 탭 + 카드 목록 + 아래에서 올라오는 상세 시트, 태블릿은 서랍, 노트북 이상은 3단(카드 1~3열). 자세히: `web-react/README.md` 의 "화면 구성(모바일 앱 템플릿식)과 반응형".
 - 디자인(2026-11-04): 메디노트(MediNote)와 같은 글꼴(Pretendard)·색(브랜드 틸 `#0A7168`)·글자 크기·모서리로 바꿨다. 값의 원본은 `web-react/tokens.json`, 글꼴은 `web-react/fonts/`. Figma 파일 `PotdShI3iRc93DpN4DbsWw` 는 **아직 새 디자인으로 바꾸지 않았다**(이전 파란 계열). 현황과 Figma–React 차이: `docs/Figma_React_안내_20261103.md`.
 - 수록 범위 확대(식약처·심평원·RxNorm 등 데이터 출처, 라이선스, 단계별 계획) 조사: `docs/research/05_수록범위확대_DB조사_20261103.md`.
 

@@ -70,7 +70,7 @@ export function RagTab({ onSelect }) {
             autoComplete="off"
             className={cx(INPUT_CLS, 'min-w-0 flex-1 basis-60')}
           />
-          <Btn onClick={find} disabled={!question.trim()}>사전에서 근거 찾기</Btn>
+          <Btn onClick={find} disabled={!question.trim()} className="lt-tree:w-full">사전에서 근거 찾기</Btn>
         </div>
         <p className="mt-2 text-small text-mut">
           예:{' '}
@@ -88,7 +88,7 @@ export function RagTab({ onSelect }) {
                 const v = mt.byId.get(id);
                 return (
                   <li key={id} className="mb-2">
-                    <button type="button" onClick={() => onSelect(id)} className="block w-full rounded-md border border-line bg-surface px-3 py-2 text-left hover:border-pri">
+                    <button type="button" onClick={() => onSelect(id)} className="block min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-left hover:border-pri">
                       <b>{v.label_ko}</b> <span className="text-small text-mut">{v.label_en} · {id}</span>
                     </button>
                   </li>
@@ -98,7 +98,7 @@ export function RagTab({ onSelect }) {
             <h3 className="mb-1.5 mt-3 text-body-bold">LLM에 전달할 프롬프트</h3>
             <pre ref={preRef} className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-code-bg p-3 font-mono text-code text-code-ink">{promptText}</pre>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
-              <Btn variant="secondary" onClick={copy}>프롬프트 복사</Btn>
+              <Btn variant="secondary" onClick={copy} className="lt-tree:w-full">프롬프트 복사</Btn>
               <span role="status" className="text-small text-mut">{msg}</span>
             </div>
           </div>
@@ -123,7 +123,7 @@ export function RagTab({ onSelect }) {
                   aria-label="프록시 URL"
                   className={cx(INPUT_CLS, 'min-w-0 flex-1 basis-60')}
                 />
-                <Btn variant="secondary" onClick={callLlm}>LLM 호출</Btn>
+                <Btn variant="secondary" onClick={callLlm} className="lt-tree:w-full">LLM 호출</Btn>
               </div>
             </>
           ) : (
@@ -134,7 +134,7 @@ export function RagTab({ onSelect }) {
             </p>
           )}
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
-            <Btn variant="secondary" onClick={() => { setAnswer(MOCK_ANSWER); setShown(null); }}>시연용 답변 넣기(오프라인 데모)</Btn>
+            <Btn variant="secondary" onClick={() => { setAnswer(MOCK_ANSWER); setShown(null); }} className="lt-tree:w-full">시연용 답변 넣기(오프라인 데모)</Btn>
           </div>
           {isMock && (
             <p id="mock-note" className="mt-2 rounded-md bg-warn-bg px-3 py-2 text-small text-warn">
@@ -150,7 +150,7 @@ export function RagTab({ onSelect }) {
             className={cx(INPUT_CLS, 'mt-2.5 min-h-[130px] resize-y')}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2.5">
-            <Btn onClick={() => setShown({ text: answer, result: mt.verify(answer) })} disabled={!answer.trim()}>이 답변 검증</Btn>
+            <Btn onClick={() => setShown({ text: answer, result: mt.verify(answer) })} disabled={!answer.trim()} className="lt-tree:w-full">이 답변 검증</Btn>
           </div>
           <div id="rag-verify-out" aria-live="polite">{shown && <VerifyResult text={shown.text} result={shown.result} />}</div>
         </Card>

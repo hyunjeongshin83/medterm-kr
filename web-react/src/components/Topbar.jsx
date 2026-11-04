@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { inertProps } from './ui.jsx';
+import { IconMenu } from './icons.jsx';
 
 /** 로고 타일: 틸 바탕 위의 알약(앱 아이콘과 같은 그림). 장식이라 화면 읽기 프로그램에는 숨긴다. */
 function Logo() {
@@ -17,24 +18,26 @@ function Logo() {
 export const Topbar = forwardRef(function Topbar({ navOpen, onToggleNav, inert }, toggleRef) {
   return (
     <header className="flex flex-none items-center gap-3 border-b border-line bg-surface py-2.5 pl-[var(--gl)] pr-[var(--gr)]" {...inertProps(inert)}>
-      <button
-        ref={toggleRef}
-        id="nav-toggle"
-        type="button"
-        aria-controls="left"
-        aria-expanded={navOpen}
-        onClick={onToggleNav}
-        className="hidden items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-body font-semibold text-ink hover:border-pri lt-tree:inline-flex"
-      >
-        <span aria-hidden="true">☰</span> <span>분류 탐색</span>
-      </button>
       <Logo />
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h1 className="font-hand text-title-brand text-ink">
           MedTerm-KR <small className="font-sans text-caption font-normal text-mut">프로토타입</small>
         </h1>
         <p className="mt-0.5 text-caption text-mut lt-tree:hidden">약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증</p>
       </div>
+      {/* 휴대폰(≤699px)에서만 보이는 앱 막대 오른쪽 버튼: 분류 트리 서랍 열기. 접근 가능한 이름은 "분류 탐색". */}
+      <button
+        ref={toggleRef}
+        id="nav-toggle"
+        type="button"
+        aria-label="분류 탐색"
+        aria-controls="left"
+        aria-expanded={navOpen}
+        onClick={onToggleNav}
+        className="hidden min-h-11 flex-none items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-body font-semibold text-ink hover:border-pri lt-tree:inline-flex"
+      >
+        <IconMenu size={20} /> <span>분류</span>
+      </button>
     </header>
   );
 });

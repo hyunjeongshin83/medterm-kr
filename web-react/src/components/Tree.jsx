@@ -12,7 +12,7 @@ function Leaf({ v, code, selected, onSelect }) {
         data-id={v.id}
         aria-current={selected ? 'true' : undefined}
         onClick={() => onSelect(v.id)}
-        className={cx('block w-full rounded-md px-2.5 py-[5px] text-left text-ink hover:bg-pri-soft', selected && 'bg-pri-soft shadow-[inset_3px_0_0_var(--pri)]')}
+        className={cx('block w-full rounded-md px-2.5 py-[5px] text-left text-ink hover:bg-pri-soft lt-tree:py-2', selected && 'bg-pri-soft shadow-[inset_3px_0_0_var(--pri)]')}
       >
         <span className="block text-label-bold">{v.label_ko}</span>
         <small className="block text-caption text-mut">{code || 'ATC 없음'} · {v.label_en}</small>
@@ -30,7 +30,7 @@ function Branch({ n, ctx }) {
         type="button"
         aria-expanded={open}
         onClick={() => ctx.toggle(n.key)}
-        className="flex w-full items-baseline gap-1.5 rounded-md px-1.5 py-1 text-left hover:bg-info-bg"
+        className="flex w-full items-baseline gap-1.5 rounded-md px-1.5 py-1 text-left hover:bg-info-bg lt-tree:min-h-11 lt-tree:items-center"
       >
         <span aria-hidden="true" className={cx('inline-block w-3 flex-none text-graph-header text-mut transition-transform', open && 'rotate-90')}>▸</span>
         <span className="whitespace-nowrap text-small-bold">{n.code}</span>
@@ -111,7 +111,7 @@ export function TreePane({ selectedId, onSelect, seg, setSeg, filter, setFilter,
                 aria-selected={seg === k}
                 aria-controls={k === 'atc' ? 'tree' : 'az'}
                 onClick={() => setSeg(k)}
-                className={cx('flex-1 rounded-md px-2 py-[5px] text-small', seg === k ? 'bg-surface font-bold text-pri shadow-seg' : 'font-semibold text-mut hover:text-ink')}
+                className={cx('flex-1 rounded-md px-2 py-[5px] text-small lt-tree:min-h-10', seg === k ? 'bg-surface font-bold text-pri shadow-seg' : 'font-semibold text-mut hover:text-ink')}
               >
                 {label}
               </button>
@@ -121,7 +121,7 @@ export function TreePane({ selectedId, onSelect, seg, setSeg, filter, setFilter,
             type="button"
             onClick={onCloseDrawer}
             aria-label="분류 탐색 닫기"
-            className="hidden rounded-md border border-line bg-surface px-2.5 py-1 text-small font-semibold text-ink hover:border-pri lt-tree:inline-flex"
+            className="hidden min-h-11 items-center rounded-lg border border-line bg-surface px-3 text-small font-semibold text-ink hover:border-pri lt-tree:inline-flex"
           >
             ✕ 닫기
           </button>
@@ -134,7 +134,7 @@ export function TreePane({ selectedId, onSelect, seg, setSeg, filter, setFilter,
           placeholder="분류·성분·코드 걸러내기"
           aria-label="분류·성분·코드 걸러내기"
           autoComplete="off"
-          className="w-full rounded-lg border border-edge bg-surface px-3 py-[7px] text-small"
+          className="w-full rounded-lg border border-edge bg-surface px-3 py-[7px] text-small lt-tree:min-h-11"
         />
       </div>
       <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto px-2 pb-6 pt-1.5">

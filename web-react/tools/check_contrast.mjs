@@ -18,7 +18,7 @@ const TEXT = 4.5;
 const NONTEXT = 3;
 const PAIRS = [
   ['ink', 'bg', TEXT, '본문'], ['ink', 'surface', TEXT, '본문(카드)'], ['ink', 'surface-2', TEXT, '본문(분류 트리)'],
-  ['ink', 'pri-soft', TEXT, '선택된 줄'], ['ink', 'info-bg', TEXT, '칩'],
+  ['ink', 'pri-soft', TEXT, '선택된 줄·히어로·선택된 카드'], ['ink', 'info-bg', TEXT, '칩'],
   ['mut', 'bg', TEXT, '보조 글자'], ['mut', 'surface', TEXT, '보조 글자(카드)'], ['mut', 'surface-2', TEXT, '보조 글자(트리)'],
   ['mut', 'pri-soft', TEXT, '보조 글자(선택된 줄)'], ['mut', 'info-bg', TEXT, '보조 글자(칩)'],
   ['pri', 'bg', TEXT, '강조 글자·링크'], ['pri', 'surface', TEXT, '강조 글자(카드)'], ['pri', 'surface-2', TEXT, '강조 글자(트리)'], ['pri', 'pri-soft', TEXT, '켜진 탭'],
@@ -32,7 +32,8 @@ const PAIRS = [
   ['code-ink', 'code-bg', TEXT, '코드 상자'],
   // 글자 아닌 것
   ['edge', 'surface', NONTEXT, '그래프 선·입력 칸 테두리'], ['edge', 'bg', NONTEXT, '그래프 선(바탕)'], ['edge', 'surface-2', NONTEXT, '입력 칸 테두리(트리)'],
-  ['pri', 'surface', NONTEXT, '초점 링'], ['pri', 'bg', NONTEXT, '초점 링(바탕)'],
+  ['edge', 'pri-soft', NONTEXT, '입력 칸 테두리(검색 히어로)'],
+  ['pri', 'surface', NONTEXT, '초점 링'], ['pri', 'bg', NONTEXT, '초점 링(바탕)'], ['pri', 'pri-soft', NONTEXT, '초점 링(히어로·선택 카드)'],
 ];
 
 let fails = 0;

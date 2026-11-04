@@ -36,7 +36,7 @@ export default {
         'shell-md': `${px(L.leftMd)} minmax(0,1fr)`,
         'shell-1': 'minmax(0,1fr)',
       },
-      boxShadow: { seg: tokens.shadow.seg, card: tokens.shadow.card, 'card-hi': tokens.shadow['card-hi'], 'drawer-r': tokens.shadow['drawer-r'], 'drawer-l': tokens.shadow['drawer-l'] },
+      boxShadow: Object.fromEntries(Object.entries(tokens.shadow).map(([k, v]) => [k, v])),
     },
   },
   plugins: [],
