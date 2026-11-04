@@ -67,7 +67,7 @@ function Detail({ d }) {
         const list = d.byForm[f];
         return (
           <details key={f} open={i === 0} className="my-1.5 rounded-lg border border-line bg-surface px-3 py-1">
-            <summary className="min-h-9 py-1.5">
+            <summary className="min-h-9 py-1.5 coarse:py-3 lt-tree:py-3">
               <b>{f}</b>
               {list[0].form_ko ? <span className="text-mut"> · {list[0].form_ko}</span> : null}
               <span className="text-mut"> ({list.length})</span>
@@ -102,13 +102,16 @@ export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, o
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [id]); // 다른 성분을 고르면 위에서부터 보여 준다
   const title = d ? d.vtm.label_ko : dx ? nameOf(dx.ext) : '';
   return (
-    <aside
+    // <aside> 는 role="dialog" 를 가질 수 없으므로 <div> 에 역할을 직접 준다: 평소 보조 구역(complementary), 서랍·시트로 열리면 대화상자(dialog).
+    <div
       id="inspector"
       ref={paneRef}
       tabIndex={-1}
       data-open={drawerOpen}
       className="pane-inspector focus:outline-none"
-      {...(drawerOpen ? { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'insp-title' } : { 'aria-labelledby': 'insp-title' })}
+      role={drawerOpen ? 'dialog' : 'complementary'}
+      aria-modal={drawerOpen ? 'true' : undefined}
+      aria-labelledby="insp-title"
       {...inertProps(inert)}
     >
       <div aria-hidden="true" className="mx-auto mt-2 hidden h-1 w-10 flex-none rounded-pill bg-edge opacity-40 lt-tree:block" />
@@ -134,6 +137,6 @@ export function Inspector({ id, drawerOpen, onClose, closeRef, inert, paneRef, o
           </Btn>
         </div>
       )}
-    </aside>
+    </div>
   );
 }

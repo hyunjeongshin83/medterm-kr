@@ -42,7 +42,7 @@ export function Btn({ variant = 'primary', size = 'md', className, type = 'butto
 
 /** 작은 보조 버튼(그래프 도구줄·닫기 등). 휴대폰 폭에서는 44px 이상으로 키운다. */
 export function IconBtn({ className, type = 'button', ...rest }) {
-  return <button type={type} className={cx('inline-flex min-h-9 items-center justify-center rounded-md border border-line bg-surface px-2.5 py-1 text-small font-semibold text-ink hover:border-pri hover:text-pri lt-tree:min-h-11 lt-tree:min-w-11', className)} {...rest} />;
+  return <button type={type} className={cx('inline-flex min-h-9 items-center justify-center rounded-md border border-line bg-surface px-2.5 py-1 text-small font-semibold text-ink hover:border-pri hover:text-pri coarse:min-h-11 coarse:min-w-11 lt-tree:min-h-11 lt-tree:min-w-11', className)} {...rest} />;
 }
 
 export function Chip({ leaf, className, children, ...rest }) {

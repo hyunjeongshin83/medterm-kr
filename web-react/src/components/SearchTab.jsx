@@ -128,16 +128,18 @@ export function SearchTab({ selectedId, onSelect }) {
 
   return (
     <>
-      {/* 히어로: 검색 입력이 첫눈에 들어오게. 입력 높이 48px, 지우기 버튼 44px. */}
-      <section aria-labelledby="hero-title" className="relative mb-4 overflow-hidden rounded-xl border border-line bg-pri-soft p-5 shadow-card lt-tree:p-4">
-        <PillArt className="pointer-events-none absolute right-2 top-2 h-[5.25rem] w-auto lt-tree:right-1.5 lt-tree:top-3 lt-tree:h-[4.5rem]" />
-        <div className="relative pr-24 lt-tree:pr-20">
+      {/* 히어로: 검색 입력이 첫눈에 들어오게. 입력 높이 48px, 지우기 버튼 44px.
+          휴대폰(≤699px)에서는 검색어를 쓰는 순간 안내(제목·수록 수·예시·도움말)를 접어, 결과 카드가 첫 화면(하단 탭 막대 위)에 바로 보이게 한다.
+          접은 안내는 화면에서만 숨기고(sr-only) 제목은 구역 이름(aria-labelledby)으로 남긴다. 검색어를 지우면 다시 펼쳐진다. 넓은 화면은 그대로. */}
+      <section aria-labelledby="hero-title" className={cx('relative mb-4 overflow-hidden rounded-xl border border-line bg-pri-soft p-5 shadow-card', asked ? 'lt-tree:mb-2.5 lt-tree:p-2.5' : 'lt-tree:p-4')}>
+        <PillArt className={cx('pointer-events-none absolute right-2 top-2 h-[5.25rem] w-auto lt-tree:right-1.5 lt-tree:top-3 lt-tree:h-[4.5rem]', asked && 'lt-tree:hidden')} />
+        <div className={cx('relative pr-24', asked ? 'lt-tree:sr-only' : 'lt-tree:pr-20')}>
           <h2 id="hero-title" className="text-heading-l text-ink">어떤 성분을 찾으세요?</h2>
           <p className="mt-1 text-small text-mut">
             핵심 성분 {c.VTM}개 · 제형·용량(VMP) {c.VMP}개 · 제품(AMP) {c.AMP}개{nExt ? <>, 확장 수록 {nf(nExt)}개 성분(자동 수집 초안)</> : null}이 수록되어 있습니다. <span className="whitespace-nowrap">(자료 기준 {META.built_at})</span>
           </p>
         </div>
-        <div className="relative mt-4">
+        <div className={cx('relative mt-4', asked && 'lt-tree:mt-0')}>
           <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mut"><IconSearch /></span>
           <input
             ref={inputRef}
@@ -162,29 +164,29 @@ export function SearchTab({ selectedId, onSelect }) {
             </button>
           )}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <div className={cx('mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5', asked && 'lt-tree:hidden')}>
           <span className="text-small text-mut">예:</span>
           {SEARCH_EXAMPLES.map((ex) => (
             <button
               key={ex}
               type="button"
               onClick={() => setQ(ex)}
-              className="inline-flex min-h-9 items-center rounded-pill border border-line bg-surface px-3 text-small font-semibold text-pri hover:border-pri"
+              className="inline-flex min-h-9 items-center rounded-pill border border-line bg-surface px-3 text-small font-semibold text-pri hover:border-pri coarse:min-h-11 lt-tree:min-h-11"
             >
               {ex}
             </button>
           ))}
         </div>
-        <p className="mt-3 text-small text-mut">분류 이름(PPI·진통제)이나 ID(MT:VTM:7646, RxCUI 7646)로도 찾을 수 있습니다.</p>
-        <p className="mt-1.5 text-small text-mut">
+        <p className={cx('mt-3 text-small text-mut', asked && 'lt-tree:hidden')}>분류 이름(PPI·진통제)이나 ID(MT:VTM:7646, RxCUI 7646)로도 찾을 수 있습니다.</p>
+        <p className={cx('mt-1.5 text-small text-mut', asked && 'lt-tree:hidden')}>
           <span className="lt-tree:hidden">왼쪽 ATC 트리에서도 탐색할 수 있고, 성분을 선택하면 상세가 표시됩니다.</span>
           <span className="hidden lt-tree:inline">성분을 누르면 상세가 아래에서 올라옵니다. 분류 트리는 위쪽 ‘분류’ 버튼으로 엽니다.</span>
         </p>
       </section>
 
       {/* 분류로 찾기: ATC 대분류 칩(휴대폰에서는 옆으로 밀어 보기, 넓은 화면에서는 줄바꿈) */}
-      <section aria-labelledby="cat-title" className="mb-4">
-        <h2 id="cat-title" className="mb-2 text-body-bold">분류로 찾기 <span className="text-small font-normal text-mut">ATC 대분류 · 한글 이름은 검수 전 초안</span></h2>
+      <section aria-labelledby="cat-title" className={cx('mb-4', asked && 'lt-tree:mb-2')}>
+        <h2 id="cat-title" className={cx('mb-2 text-body-bold', asked && 'lt-tree:sr-only')}>분류로 찾기 <span className="text-small font-normal text-mut">ATC 대분류 · 한글 이름은 검수 전 초안</span></h2>
         <div role="group" aria-label="ATC 대분류로 걸러 보기" className="chip-row">
           <Pill on={!cat} onClick={() => setCat('')}>전체 <span className={cx('text-graph-l1', !cat ? 'text-on-pri-2' : 'text-mut')}>{nf(nAll)}</span></Pill>
           {ATC_GROUPS.map((g) => {

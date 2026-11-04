@@ -10,6 +10,12 @@
 사용: python build/ext_build.py --raw <ext_fetch.py 저장폴더> [--out data/medterm_ext.json] [--no-net]"""
 import argparse, collections, concurrent.futures as cf, csv, difflib, hashlib, io, json, os, re, sys, time, unicodedata
 here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
+
+
+def app_version():
+    # 자료 버전은 앱 버전(web-react/package.json)과 같게 둔다 — 버전은 그 한 곳에서만 정한다(tests/test_ext_pipeline.py 가 확인).
+    return json.load(open(os.path.join(root, 'web-react', 'package.json'), encoding='utf-8'))['version']
+
 sys.path.insert(0, here)
 import ext_norm as N
 from ext_fetch import RXNAV, http_get
@@ -382,7 +388,7 @@ def main():
             b_ = rd(p_); api_files[k_] = {'src': s_, 'name': k_ + '.json', 'fetched': fetch_log.get(k_ + '.json'), 'bytes': len(b_), 'sha256': hashlib.sha256(b_).hexdigest()}
     if 'pin_in' in api_files: api_files['pin_in']['note'] = '빌드할 때 RxNav 에서 조회해 둔 정확 성분(PIN)→성분(IN) 관계(캐시)'
     out = {'meta': {
-        'name': 'MedTerm-KR 확장 수록(ext)', 'version': '1.2.0', 'built_at': a.built_at, 'review_status': 'draft',
+        'name': 'MedTerm-KR 확장 수록(ext)', 'version': app_version(), 'built_at': a.built_at, 'review_status': 'draft',
         'notice': '자동 수집·연결한 초안입니다. 약사 검수 전이며, 한글 이름은 후보입니다. 국내 허가·급여·처방 판단의 근거가 아닙니다.',
         'grade_legend': {'a': '이름 일치 + ATC 코드(7자리) 일치', 'b': '이름 일치(ATC 근거가 한쪽에 없거나 4단계까지만 일치)', 'c': '후보(이름은 맞으나 ATC가 서로 달라 연결에 쓰지 않음)', 'd': '미매핑(심평원에만 있는 성분)', '-': '심평원과 연결되지 않은 RxNorm 성분(ATC 보유)'},
         'src_legend': {s['id']: s['name'] for s in srcs}, 'sources': srcs,

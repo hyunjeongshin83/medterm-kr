@@ -84,5 +84,6 @@
 .react-flow__pane, .react-flow__pane.draggable, .react-flow__pane.dragging { cursor: inherit; touch-action: pan-y pinch-zoom; }
 .react-flow__handle { opacity: 0; pointer-events: none; }
 .react-flow__attribution { background: var(--surface); color: var(--mut); font-size: 0.625rem; border-radius: 8px 0 0 0; }
-.react-flow__attribution a { color: var(--mut); }
+/* 출처 표기 링크는 그대로 두되(라이브러리 표기), 누르는 면만 24px 이상으로 넓힌다(WCAG 2.2 목표 크기). */
+.react-flow__attribution a { color: var(--mut); display: inline-flex; align-items: center; min-height: 24px; padding: 0 4px; }
 .react-flow__node, .react-flow__node.draggable { cursor: inherit; }

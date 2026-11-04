@@ -16,36 +16,43 @@ function Logo() {
   );
 }
 
+/**
+ * 맨 위 띠(banner 구역): 앱 이름 줄과 면책 안내(role="note")를 한 구역으로 묶는다.
+ * 안내가 구역 밖에 떠 있으면 화면 읽기 프로그램의 구역 이동(landmark)에서 빠지므로, 같은 <header> 안에 둔다.
+ */
 export const Topbar = forwardRef(function Topbar({ navOpen, onToggleNav, inert }, toggleRef) {
   return (
-    <header className="flex flex-none items-center gap-3 border-b border-line bg-surface py-2.5 pl-[var(--gl)] pr-[var(--gr)]" {...inertProps(inert)}>
-      <Logo />
-      <div className="min-w-0 flex-1">
-        <h1 className="font-hand text-title-brand text-ink">
-          MedTerm-KR <small className="font-sans text-caption font-normal text-mut">v{APP_VERSION}</small>
-        </h1>
-        <p className="mt-0.5 text-caption text-mut lt-tree:hidden">약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증</p>
+    <header className="flex-none" {...inertProps(inert)}>
+      <div className="flex items-center gap-3 border-b border-line bg-surface py-2.5 pl-[var(--gl)] pr-[var(--gr)]">
+        <Logo />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-hand text-title-brand text-ink">
+            MedTerm-KR <small className="font-sans text-caption font-normal text-mut">v{APP_VERSION}</small>
+          </h1>
+          <p className="mt-0.5 text-caption text-mut lt-tree:hidden">약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증</p>
+        </div>
+        {/* 휴대폰(≤699px)에서만 보이는 앱 막대 오른쪽 버튼: 분류 트리 서랍 열기. 접근 가능한 이름은 "분류 탐색". */}
+        <button
+          ref={toggleRef}
+          id="nav-toggle"
+          type="button"
+          aria-label="분류 탐색"
+          aria-controls="left"
+          aria-expanded={navOpen}
+          onClick={onToggleNav}
+          className="hidden min-h-11 flex-none items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-body font-semibold text-ink hover:border-pri lt-tree:inline-flex"
+        >
+          <IconMenu size={20} /> <span>분류</span>
+        </button>
       </div>
-      {/* 휴대폰(≤699px)에서만 보이는 앱 막대 오른쪽 버튼: 분류 트리 서랍 열기. 접근 가능한 이름은 "분류 탐색". */}
-      <button
-        ref={toggleRef}
-        id="nav-toggle"
-        type="button"
-        aria-label="분류 탐색"
-        aria-controls="left"
-        aria-expanded={navOpen}
-        onClick={onToggleNav}
-        className="hidden min-h-11 flex-none items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-body font-semibold text-ink hover:border-pri lt-tree:inline-flex"
-      >
-        <IconMenu size={20} /> <span>분류</span>
-      </button>
+      <Disclaimer />
     </header>
   );
 });
 
-export function Disclaimer({ inert }) {
+export function Disclaimer() {
   return (
-    <div role="note" className="flex-none border-b border-notice-line bg-notice-bg py-1.5 pl-[var(--gl)] pr-[var(--gr)] text-caption text-notice-ink" {...inertProps(inert)}>
+    <div role="note" className="border-b border-notice-line bg-notice-bg py-1.5 pl-[var(--gl)] pr-[var(--gr)] text-caption text-notice-ink">
       약무용어 정보 제공용입니다. 진단·처방·개인별 복용량 판단을 하지 않으며, 한글명·상품명은 약사 검수 전 초안입니다. 복약 결정은 의사·약사와 상담하세요.
     </div>
   );

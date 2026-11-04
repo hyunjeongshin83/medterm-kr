@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { idFromHash, isNarrow, isPhone, writeHash } from './lib/mt.js';
 import { useMedia } from './lib/useMedia.js';
-import { Disclaimer, Topbar } from './components/Topbar.jsx';
+import { Topbar } from './components/Topbar.jsx';
 import { TreePane } from './components/Tree.jsx';
 import { Panel, Tabs } from './components/Tabs.jsx';
 import { SearchTab } from './components/SearchTab.jsx';
@@ -147,7 +147,6 @@ export default function App() {
         본문으로 건너뛰기
       </a>
       <Topbar ref={navToggleRef} navOpen={navOpen} onToggleNav={() => setNavOpen((o) => !o)} inert={bgInert} />
-      <Disclaimer inert={bgInert} />
       <div id="shell" className="grid min-h-0 flex-1 grid-cols-shell lt-insp:grid-cols-shell-md lt-tree:grid-cols-shell-1">
         <TreePane
           paneRef={leftRef}

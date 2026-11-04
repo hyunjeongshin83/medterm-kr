@@ -39,5 +39,8 @@ export default {
       boxShadow: Object.fromEntries(Object.entries(tokens.shadow).map(([k, v]) => [k, v])),
     },
   },
-  plugins: [],
+  plugins: [
+    // coarse: 손가락으로 누르는 화면(주 입력 장치가 터치)일 때만. 화면 폭과 무관하게 터치 태블릿에서도 누르는 면을 44px 이상으로 키운다(마우스 화면은 촘촘하게 둔다).
+    ({ addVariant }) => addVariant('coarse', '@media (pointer: coarse)'),
+  ],
 };

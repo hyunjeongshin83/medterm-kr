@@ -31,16 +31,16 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
     onChange(TABS[n][0]);
     refs.current[TABS[n][0]]?.focus();
   };
-  return (
+  const list = (
     <div
       role="tablist"
       aria-label="작업 화면"
       data-variant={variant}
       onKeyDown={onKeyDown}
       className={bottom
-        ? 'flex flex-none items-stretch gap-0.5 border-t border-line bg-surface pl-[max(6px,env(safe-area-inset-left,0px))] pr-[max(6px,env(safe-area-inset-right,0px))] shadow-nav'
+        ? 'flex items-stretch gap-0.5 border-t border-line bg-surface pl-[max(6px,env(safe-area-inset-left,0px))] pr-[max(6px,env(safe-area-inset-right,0px))] shadow-nav'
         : 'center-bleed sticky top-0 z-[5] mb-3.5 flex gap-1 overflow-x-auto border-b border-line bg-bg py-2'}
-      {...inertProps(inert)}
+      {...(bottom ? {} : inertProps(inert))}
     >
       {TABS.map(([k, label, short, Icon]) => {
         const on = k === tab;
@@ -71,6 +71,8 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
       })}
     </div>
   );
+  // 휴대폰의 하단 막대는 화면 이동 구역(nav)에 담는다(구역 밖에 떠 있으면 화면 읽기 프로그램의 구역 이동에서 빠진다). 서랍·시트가 열리면 구역째 막는다.
+  return bottom ? <nav aria-label="화면 전환" className="flex-none" {...inertProps(inert)}>{list}</nav> : list;
 }
 
 export function Panel({ id, active, children }) {

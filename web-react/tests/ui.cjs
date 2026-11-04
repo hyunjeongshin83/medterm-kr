@@ -1379,6 +1379,139 @@ const overflow = (page) => page.evaluate(() => {
     noErr('출처 표기 키보드', page); await ctx.close();
   }
 
+  /* ───── 20. 실브라우저 점검(v1.2.1): 휴대폰 검색 결과 위치 · 화면 폭별 안내 문구 · 구역·제목 · 서랍 역할 · 터치 크기 ───── */
+  const minH = (page, sel) => page.evaluate((q) => { const a = [...document.querySelectorAll(q)].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 1 && r.height > 1; }); return a.length ? Math.min(...a.map((e) => Math.round(e.getBoundingClientRect().height))) : -1; }, sel);
+  const coarse = (page) => page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+  const HERO = '#panel-search section[aria-labelledby="hero-title"]';
+  const heroState = (page) => page.evaluate((hero) => {
+    const th = document.getElementById('hero-title');
+    const t = th.getBoundingClientRect();
+    const wr = th.parentElement.getBoundingClientRect(); // 접히면 제목을 감싼 상자가 1×1px(sr-only)로 잘린다
+    const chip = [...document.querySelectorAll(hero + ' button')].find((b) => b.textContent.trim() === '메트포르민');
+    const cr = chip ? chip.getBoundingClientRect() : null;
+    const hint = [...document.querySelectorAll(hero + ' p')].find((p) => p.textContent.includes('분류 이름(PPI'));
+    const hr = hint ? hint.getBoundingClientRect() : null;
+    const q = document.getElementById('q').getBoundingClientRect();
+    const bar = document.querySelector('[data-variant="bottom"]');
+    const card = document.querySelector('#panel-search ul.feed-grid button');
+    const c = card ? card.getBoundingClientRect() : null;
+    return {
+      titleH: Math.round(t.height), titleW: Math.round(t.width), wrapW: Math.round(wr.width), wrapH: Math.round(wr.height),
+      chipShown: !!cr && cr.width > 1 && cr.height > 1, hintShown: !!hr && hr.width > 1 && hr.height > 1,
+      qTop: Math.round(q.top), qBottom: Math.round(q.bottom),
+      barTop: bar ? Math.round(bar.getBoundingClientRect().top) : Math.round(innerHeight),
+      card: c ? { top: Math.round(c.top), bottom: Math.round(c.bottom) } : null,
+    };
+  }, HERO);
+
+  // 20-1. 휴대폰(390×844 · 320×640): 검색어를 쓰면 안내가 접혀 첫 결과 카드가 첫 화면(하단 탭 막대 위)에 통째로 보이고, 검색어를 지우면 다시 펼쳐짐
+  for (const [w, h] of [[390, 844], [320, 640]]) {
+    const { ctx, page } = await open(browser, w, h, { touch: true, mobile: true });
+    const a = await heroState(page);
+    ck(`${w}: 처음에는 안내(제목·예시 칩·도움말)가 모두 펼쳐져 있음`, a.titleH > 20 && a.chipShown && a.hintShown, a);
+    await page.fill('#q', '오메프라졸'); await page.waitForTimeout(350);
+    const b = await heroState(page);
+    ck(`${w}: 검색어를 쓰면 안내(제목·예시 칩·도움말)가 접히고 입력 칸은 그대로 화면 안에 있음`, b.wrapW <= 2 && b.wrapH <= 2 && !b.chipShown && !b.hintShown && b.qTop >= 0 && b.qBottom <= b.barTop, b);
+    ck(`${w}: 안내를 접어도 "어떤 성분을 찾으세요?" 는 구역 이름으로 남음(화면 읽기용)`, (await page.getByRole('region', { name: '어떤 성분을 찾으세요?' }).count()) === 1);
+    ck(`${w}: 첫 결과 카드가 첫 화면에서 하단 탭 막대 위에 통째로 보임`, !!b.card && b.card.top >= 0 && b.card.bottom <= b.barTop, b);
+    await page.getByRole('button', { name: '검색어 지우기' }).tap(); await page.waitForTimeout(250);
+    const c = await heroState(page);
+    ck(`${w}: 검색어를 지우면 안내가 다시 펼쳐지고 포커스는 입력 칸`, c.titleH > 20 && c.chipShown && c.hintShown && (await page.evaluate(() => document.activeElement.id)) === 'q', c);
+    noErr(`${w} 검색 안내 접기`, page); await ctx.close();
+  }
+
+  // 20-2. 넓은 화면(태블릿 768 · 데스크톱 1280)에서는 안내를 접지 않음
+  for (const [w, h, o] of [[768, 1024, { touch: true }], [1280, 800, {}]]) {
+    const { ctx, page } = await open(browser, w, h, o);
+    await page.fill('#q', '오메프라졸'); await page.waitForTimeout(350);
+    const s = await heroState(page);
+    ck(`${w}: 검색어를 써도 안내(제목·예시 칩·도움말)가 그대로 보임`, s.titleH > 20 && s.chipShown && s.hintShown, s);
+    noErr(`${w} 검색 안내 유지`, page); await ctx.close();
+  }
+
+  // 20-3. 그래프 탭: 제목 단계(h2) · 화면 폭에 맞는 방향 안내(휴대폰엔 왼쪽·오른쪽 말이 없음)
+  for (const [w, h, o, label] of [[390, 844, { touch: true, mobile: true }, '휴대폰'], [900, 800, { touch: true }, '태블릿'], [1280, 800, {}, '데스크톱']]) {
+    const { ctx, page } = await open(browser, w, h, o);
+    await tabTo(page, '관계 그래프');
+    const e = await page.locator('#panel-graph').innerText();
+    ck(`그래프 ${label}(${w}): 성분을 고르기 전 안내 문구가 화면 폭에 맞음`, label === '휴대폰' ? e.includes('위쪽 ‘분류’ 버튼') && !/왼쪽|오른쪽/.test(e) : e.includes('왼쪽 분류 트리나 검색에서 성분을 고르면') && !e.includes('위쪽 ‘분류’'), e);
+    ck(`그래프 ${label}(${w}): 제목이 h2(앞 제목 h1 바로 다음 단계)`, (await page.locator('#panel-graph h2').count()) === 1 && (await page.locator('#panel-graph h3').count()) === 0);
+    await tabTo(page, '사전 검색'); await page.fill('#q', '오메프라졸'); await page.waitForTimeout(300); await tabTo(page, '관계 그래프'); await page.waitForTimeout(600);
+    const g = await page.locator('#panel-graph').innerText();
+    ck(`그래프 ${label}(${w}): 성분을 고른 뒤 제목이 h2#graph-title 이고 안내 문구가 화면 폭에 맞음`, (await page.locator('h2#graph-title').count()) === 1 && (await page.locator('h3#graph-title').count()) === 0
+      && (label === '휴대폰' ? g.includes('위쪽 ‘분류’ 버튼의 트리에서') && !/왼쪽|오른쪽/.test(g) : g.includes('왼쪽 트리에서') && !g.includes('위쪽 ‘분류’') && !g.includes('오른쪽 상세')), g.slice(0, 80));
+    noErr(`그래프 ${label} 문구`, page); await ctx.close();
+  }
+
+  // 20-4. 구역(landmark)과 서랍 역할
+  {
+    const { ctx, page } = await open(browser, 1280, 800);
+    ck('구역(1280): 맨 위 안내(role=note)가 앱 제목과 같은 <header>(banner) 안에 있음 · note 는 하나뿐', (await page.locator('header > [role="note"]').count()) === 1 && (await page.locator('header h1').count()) === 1 && (await page.getByRole('banner').count()) === 1 && (await page.getByRole('note').count()) === 1);
+    ck('구역(1280): main 1 · 보조 구역(분류 탐색 · 상세) 2 · <aside> 없음 · 화면 이동(nav) 없음', (await page.getByRole('main').count()) === 1 && (await page.getByRole('complementary').count()) === 2 && (await page.locator('aside').count()) === 0 && (await page.getByRole('navigation').count()) === 0);
+    ck('구역(1280): #left · #inspector 는 평소 role=complementary, aria-modal 없음', (await page.locator('#left').getAttribute('role')) === 'complementary' && (await page.locator('#inspector').getAttribute('role')) === 'complementary' && (await page.locator('#left').getAttribute('aria-modal')) === null && (await page.locator('#inspector').getAttribute('aria-modal')) === null);
+    noErr('구역 1280', page); await ctx.close();
+  }
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true });
+    ck('구역(390): 하단 탭 막대가 이름 있는 화면 이동(nav) 구역 안에 있고 탭 목록 이름은 그대로 "작업 화면"', (await page.locator('nav[aria-label="화면 전환"] > [role="tablist"][data-variant="bottom"]').count()) === 1 && (await page.getByRole('navigation', { name: '화면 전환' }).count()) === 1 && (await page.getByRole('tablist', { name: '작업 화면' }).count()) === 1);
+    ck('구역(390): 닫힌 서랍·시트는 role=complementary(aria-modal 없음)', (await page.locator('#left').getAttribute('role')) === 'complementary' && (await page.locator('#inspector').getAttribute('role')) === 'complementary' && (await page.locator('#left').getAttribute('aria-modal')) === null);
+    await page.locator('#nav-toggle').tap(); await page.waitForTimeout(400);
+    ck('구역(390): 분류 트리 서랍이 열리면 role=dialog · aria-modal=true · 뒤의 하단 탭 막대 구역도 inert', (await page.locator('#left').getAttribute('role')) === 'dialog' && (await page.locator('#left').getAttribute('aria-modal')) === 'true' && (await page.locator('nav[aria-label="화면 전환"]').getAttribute('inert')) !== null);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(350);
+    ck('구역(390): 서랍을 닫으면 다시 complementary · 하단 탭 막대 구역의 inert 도 풀림', (await page.locator('#left').getAttribute('role')) === 'complementary' && (await page.locator('nav[aria-label="화면 전환"]').getAttribute('inert')) === null);
+    await page.fill('#q', '메트포르민'); await page.waitForTimeout(300); await page.locator('#panel-search ul.feed-grid button').first().tap(); await page.waitForTimeout(450);
+    ck('구역(390): 상세 시트가 열리면 role=dialog · aria-modal=true, 닫으면 complementary', (await page.locator('#inspector').getAttribute('role')) === 'dialog' && (await page.locator('#inspector').getAttribute('aria-modal')) === 'true' && (await (async () => { await page.keyboard.press('Escape'); await page.waitForTimeout(350); return page.locator('#inspector').getAttribute('role'); })()) === 'complementary');
+    noErr('구역 390', page); await ctx.close();
+  }
+
+  // 20-5. 답변 검증 탭에도 화면 읽기용 제목(h2)이 있음
+  {
+    const { ctx, page } = await open(browser, 1280, 800);
+    await tabTo(page, '답변 검증');
+    ck('답변 검증 탭: 화면 읽기용 제목 h2 "답변 검증" 하나(화면에는 탭 이름이 이미 보이므로 sr-only)', (await page.locator('#panel-verify h2').count()) === 1 && (await page.locator('#panel-verify h2').textContent()) === '답변 검증' && ((await rect(page, '#panel-verify h2')).w <= 2));
+    noErr('답변 검증 제목', page); await ctx.close();
+  }
+
+  // 20-6. 누르는 면의 크기: 마우스 화면은 촘촘하게(24px 이상), 손가락 화면(터치 태블릿·휴대폰)은 44px 이상
+  {
+    const { ctx, page } = await open(browser, 768, 1024, { touch: true });
+    ck('터치 태블릿(768): 주 입력 장치가 터치(pointer: coarse)', await coarse(page));
+    const row = await minH(page, '#tree button[aria-expanded]'), seg = await minH(page, '#seg-atc, #seg-az'), flt = await minH(page, '#tree-filter');
+    ck('터치 태블릿(768): 분류 트리 행 · 분류 방식 탭 · 걸러내기 칸이 모두 44px 이상', row >= 44 && seg >= 44 && flt >= 44, { row, seg, flt });
+    await page.fill('#q', '메트포르민'); await page.waitForTimeout(300); await page.locator('#panel-search ul.feed-grid button').first().tap(); await page.waitForTimeout(450);
+    ck('터치 태블릿(768): 상세 서랍의 VMP 접기 줄(summary)이 44px 이상', (await minH(page, '#detail details > summary')) >= 44, await minH(page, '#detail details > summary'));
+    await page.getByRole('button', { name: '상세 닫기' }).tap(); await page.waitForTimeout(350);
+    await page.fill('#q', '오메프라졸'); await page.waitForTimeout(300); await tabTo(page, '관계 그래프'); await page.waitForTimeout(600);
+    const tools = await page.evaluate(() => ['축소', '확대', '전체 보기', '가운데'].map((t) => { const b = [...document.querySelectorAll('#panel-graph button')].find((x) => (x.getAttribute('aria-label') || x.textContent).trim() === t); return b ? Math.round(b.getBoundingClientRect().height) : -1; }));
+    ck('터치 태블릿(768): 그래프 도구 버튼(축소·확대·전체 보기·가운데)이 44px 이상', tools.every((x) => x >= 44), tools);
+    noErr('터치 태블릿 크기', page); await ctx.close();
+  }
+  {
+    const { ctx, page } = await open(browser, 1280, 800);
+    ck('마우스 데스크톱(1280): 주 입력 장치가 마우스(pointer: fine)이고 분류 트리 행은 촘촘함(44px 미만)', !(await coarse(page)) && (await minH(page, '#tree button[aria-expanded]')) < 44 && (await minH(page, '#tree button[aria-expanded]')) >= 24, await minH(page, '#tree button[aria-expanded]'));
+    await page.fill('#q', '에페리손'); await page.waitForTimeout(400);
+    const lk = await minH(page, '#detail [data-provenance] a');
+    ck('마우스 데스크톱(1280): 상세 출처 블록의 원자료 링크가 24px 이상', lk >= 24, lk);
+    await tabTo(page, '근거 기반 질의');
+    const ex = await minH(page, '#panel-rag p button');
+    await page.locator('#panel-rag p button').click();
+    ck('마우스 데스크톱(1280): 질의 화면의 예시 질문 링크가 24px 이상이고, 누르면 질문 칸에 들어감', ex >= 24 && (await page.inputValue('#rq')).startsWith('오메프라졸과 에스오메프라졸의'), { ex, v: await page.inputValue('#rq') });
+    noErr('마우스 크기', page); await ctx.close();
+  }
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true });
+    ck('휴대폰(390): 처음 화면의 예시 칩이 44px 이상', (await minH(page, HERO + ' button')) >= 44, await minH(page, HERO + ' button'));
+    await page.fill('#q', '에페리손'); await page.waitForTimeout(350); await page.locator('#panel-search ul.feed-grid button').first().tap(); await page.waitForTimeout(450);
+    const lk = await minH(page, '#detail [data-provenance] a');
+    ck('휴대폰(390): 상세 시트의 출처 원자료 링크가 44px 이상', lk >= 44, lk);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(350);
+    await tabTo(page, '답변 검증');
+    ck('휴대폰(390): 답변 검증의 샘플 선택 칸이 44px 이상', (await minH(page, '#panel-verify select')) >= 44, await minH(page, '#panel-verify select'));
+    await tabTo(page, '근거 기반 질의');
+    ck('휴대폰(390): 질의 화면의 예시 질문 링크가 44px 이상', (await minH(page, '#panel-rag p button')) >= 44, await minH(page, '#panel-rag p button'));
+    noErr('휴대폰 크기', page); await ctx.close();
+  }
+
   await browser.close();
   console.log(`\n${total}개 중 ${total - bad}개 통과` + (bad ? `, ${bad}개 실패` : ' — 모두 통과'));
   process.exit(bad ? 1 : 0);

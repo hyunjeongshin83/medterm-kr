@@ -41,7 +41,8 @@ export function VerifyResult({ text, result }) {
         )}
       </p>
       {rows.length > 0 && (
-        <Card className="mt-3 overflow-x-auto">
+        // 표가 좁은 화면보다 넓으면 옆으로 밀려 보인다: 키보드로도 밀 수 있게 포커스를 받고(tabIndex) 이름을 붙인다.
+        <Card className="mt-3 overflow-x-auto" role="region" tabIndex={0} aria-label="검증 근거 표">
           <table className="w-full text-base">
             <thead>
               <tr className="text-left text-small-bold text-mut">
@@ -83,9 +84,11 @@ export function VerifyTab() {
 
   return (
     <>
+      {/* 화면에는 탭 이름이 이미 보이므로 제목은 화면 읽기 프로그램의 제목 이동용으로만 둔다. */}
+      <h2 className="sr-only">답변 검증</h2>
       <Card>
         <div className="flex flex-wrap items-center gap-2.5">
-          <select value={sample} onChange={onSample} aria-label="샘플 답변" className={cx(INPUT_CLS, 'min-w-0 flex-1 basis-60')}>
+          <select value={sample} onChange={onSample} aria-label="샘플 답변" className={cx(INPUT_CLS, 'min-h-11 min-w-0 flex-1 basis-60')}>
             <option value="">샘플 답변 불러오기…</option>
             {SAMPLES.map((s, i) => <option key={i} value={i}>{s[0]}</option>)}
           </select>

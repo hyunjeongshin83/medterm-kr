@@ -85,9 +85,10 @@ export function RagTab({ onSelect }) {
           />
           <Btn onClick={find} disabled={!question.trim()} className="lt-tree:w-full">사전에서 근거 찾기</Btn>
         </div>
-        <p className="mt-2 text-small text-mut">
-          예:{' '}
-          <button type="button" onClick={() => setQuestion(QUESTION_EXAMPLE)} className="text-left text-pri underline underline-offset-2">{QUESTION_EXAMPLE}</button>
+        {/* 예시 질문: 누르는 면은 마우스에서 24px 이상, 손가락(터치·휴대폰)에서 44px 이상. */}
+        <p className="mt-2 flex items-baseline gap-1.5 text-small text-mut">
+          <span className="flex-none">예:</span>
+          <button type="button" onClick={() => setQuestion(QUESTION_EXAMPLE)} className="inline-flex min-h-6 items-center text-left text-pri underline underline-offset-2 coarse:min-h-11 lt-tree:min-h-11">{QUESTION_EXAMPLE}</button>
         </p>
 
         {found && (

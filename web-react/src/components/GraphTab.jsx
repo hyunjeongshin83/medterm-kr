@@ -214,7 +214,7 @@ function GraphCard({ id, onAction, focusRequest }) {
   return (
     <Card>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h3 id="graph-title" className="text-body-bold">{nameOf(v)} · 관계 그래프</h3>
+        <h2 id="graph-title" className="text-body-bold">{nameOf(v)} · 관계 그래프</h2>
         <GraphToolbarSlot flow={flow} size={size} />
       </div>
       <div id="graph-note" className="text-small text-mut">{note}</div>
@@ -222,10 +222,11 @@ function GraphCard({ id, onAction, focusRequest }) {
       <Legend />
       <p className="mt-2 text-small text-mut">
         끌어서(휴대폰은 좌우로 밀어서) 이동하고 −/＋ 버튼으로 크기를 바꿉니다(Ctrl+휠도 가능). 키보드는 그래프 칸에 포커스한 뒤 방향키로 이동, + − 로 확대·축소, 0 으로 가운데 정렬합니다.
-        같은 세부군 성분과 ATC 분류 상자는 눌러서 이동하거나 왼쪽 트리에서 찾을 수 있습니다(키보드: Tab, Enter).
+        같은 세부군 성분과 ATC 분류 상자는 눌러서 이동하거나{' '}
+        <span className="lt-tree:hidden">왼쪽 트리</span><span className="hidden lt-tree:inline">위쪽 ‘분류’ 버튼의 트리</span>에서 찾을 수 있습니다(키보드: Tab, Enter).
       </p>
       <p className="mt-1.5 text-small text-mut">
-        “같은 세부군 성분”은 <b>이 사전에 수록된 성분 안에서만</b> 찾습니다(실제 같은 계열 약물 전체가 아닙니다). VMP·AMP는 미국 RxNorm 기준이고 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다. 표시 개수에는 상한이 있어 일부는 “외 N개”로 줄여 표시하며, 전체 목록은 오른쪽 상세에 있습니다.
+        “같은 세부군 성분”은 <b>이 사전에 수록된 성분 안에서만</b> 찾습니다(실제 같은 계열 약물 전체가 아닙니다). VMP·AMP는 미국 RxNorm 기준이고 한국 허가 제품(MFDS)은 아직 연동되지 않았습니다. 표시 개수에는 상한이 있어 일부는 “외 N개”로 줄여 표시하며, 전체 목록은 성분 상세에 있습니다.
       </p>
       {(v.ext || mt.extList.length > 0) && (
         <p id="graph-ext-note" className="mt-1.5 text-small text-mut">
@@ -360,8 +361,12 @@ export function GraphTab({ id, onAction, focusRequest }) {
   if (!id) {
     return (
       <Card>
-        <h3 className="text-body-bold">관계 그래프</h3>
-        <p className="mt-2 px-1 py-3 text-mut">왼쪽 분류 트리나 검색에서 성분을 고르면 관계가 표시됩니다.</p>
+        <h2 className="text-body-bold">관계 그래프</h2>
+        {/* 분류 트리는 700px 이상에서 왼쪽에 보이고, 휴대폰(≤699px)에서는 위쪽 ‘분류’ 버튼으로 여는 서랍이다. */}
+        <p className="mt-2 px-1 py-3 text-mut">
+          <span className="lt-tree:hidden">왼쪽 분류 트리나 검색에서 성분을 고르면 관계가 표시됩니다.</span>
+          <span className="hidden lt-tree:inline">위쪽 ‘분류’ 버튼의 분류 트리나 아래 ‘검색’ 화면에서 성분을 고르면 관계가 표시됩니다.</span>
+        </p>
       </Card>
     );
   }

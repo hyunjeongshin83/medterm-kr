@@ -125,7 +125,7 @@ export function KrBlock({ kr, title = '국내 등재 현황 (심평원 약가마
             <Chips list={head} />
             {rest.length > 0 && (
               <details className="mt-1">
-                <summary className="min-h-9 py-1.5 text-small text-pri">나머지 {rest.length}개 보기</summary>
+                <summary className="min-h-9 py-1.5 text-small text-pri coarse:py-3.5 lt-tree:py-3.5">나머지 {rest.length}개 보기</summary>
                 <Chips list={rest} />
               </details>
             )}
@@ -162,7 +162,7 @@ export function ProvenanceBlock({ id, title = '출처·이용 조건' }) {
             {s.note ? <span className="mt-1 block text-small text-mut">{s.note}</span> : null}
             {s.links.length > 0 && (
               <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-small">
-                {s.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="text-pri underline">{l.label}</a>)}
+                {s.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-6 items-center text-pri underline coarse:min-h-11">{l.label}</a>)}
               </span>
             )}
           </Row>
