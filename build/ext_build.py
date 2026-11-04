@@ -16,6 +16,7 @@ from ext_fetch import RXNAV, http_get
 
 csv.field_size_limit(10 ** 8)
 HANGUL = re.compile(r'[가-힣]')
+HIRA_CODE = re.compile(r'[0-9A-Z]{6}[A-Z]{3}')                                    # 심평원 일반명코드 9자리 = 6자리 번호(일부는 앞 1자리가 영문) + 투여 구분 영문 1자리(A 내복·B 주사·C 외용·D 기타; 원자료 59,631행 중 59,619행 일치) + 제형 영문 2자리(제형구분코드와 전 행 일치). 번호의 앞 4자리는 성분 식별자가 아니다(같은 약이 여러 앞자리를 쓰고, 다른 약이 앞자리를 공유한다). 번호의 공식 정의는 확인하지 못했다
 KO_ONLY = re.compile(r'^[가-힣]{2,30}$')
 HERBAL = re.compile(r'[가-힣·]')                                              # 이름에 한글·가운뎃점(혼합 표기)이 들어 있는 심평원 전용 항목(한약 엑스제·혼합 제제 등)
 KO_BLOCK = ('수출', '별치', '분말', '주사', '외용', '내복', '기타')
@@ -99,9 +100,11 @@ def main():
     ing = csv_rows(os.path.join(raw, 'hira_ing', 'raw.bin')); std = csv_rows(os.path.join(raw, 'hira_std', 'raw.bin'))
     meta_of = lambda d: json.load(open(os.path.join(raw, d, 'meta.json'), encoding='utf-8')) if os.path.exists(os.path.join(raw, d, 'meta.json')) else {}
     ing_meta, std_meta = meta_of('hira_ing'), meta_of('hira_std')
+    fl_path = os.path.join(raw, 'fetch_log.json')   # ext_fetch.py 가 파일을 받을 때마다 받은 날을 적는 기록(없으면 받은 날은 비움)
+    fetch_log = json.load(open(fl_path, encoding='utf-8')) if os.path.exists(fl_path) else {}
     def file_meta(d, m, pk):   # 파일 이름·기준일은 내려받을 때 적어 둔 것만 쓰고(없으면 비움), 크기·SHA-256 은 받은 파일에서 직접 계산한다
         b = rd(os.path.join(raw, d, 'raw.bin'))
-        return {'pk': pk, 'filename': m.get('filename'), 'file_date': m.get('file_date'), 'portal': m.get('portal'), 'fetched': m.get('fetched'), 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()}
+        return {'pk': pk, 'filename': m.get('filename'), 'file_date': m.get('file_date'), 'portal': m.get('portal'), 'fetched': m.get('fetched') or fetch_log.get(d + '/raw.bin'), 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()}
     hira_files = {'hira_ing': file_meta('hira_ing', ing_meta, '15067461'), 'hira_std': file_meta('hira_std', std_meta, '15067462')}
     atc_cls = {c['classId']: c['className'] for c in json.loads(rd(os.path.join(raw, 'rx_atc_classes.json')))['rxclassMinConceptList']['rxclassMinConcept']}
 
@@ -140,6 +143,8 @@ def main():
             for p, ins in ex.map(rel, need):
                 if ins is not None: pin_in[p] = ins
         json.dump(pin_in, open(cache, 'w', encoding='utf-8'))
+        fetch_log['pin_in.json'] = time.strftime('%Y-%m-%d')   # 캐시를 새로 채운 날 — 받은 날 기록에 함께 적는다
+        json.dump(fetch_log, open(fl_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=1, sort_keys=True)
     def resolve(m):
         via, rule, rid = m
         if via == 'IN': return rid
@@ -277,6 +282,8 @@ def main():
         if kr: rec['kr'] = kr
         rec['grade'] = e.grade
         rec['src'] = ('R' if rid else '') + ('H' if e.codes else '') + ('W' if rid and rid in WDITEM else '')
+        cds = sorted(c for c in e.single_codes if HIRA_CODE.fullmatch(c))   # 출처 추적용: 단일성분 일반명코드 전체(9자리). 복합제 코드는 넣지 않는다. 코드 앞 4자리는 성분 식별자가 아니라서(같은 약이 여러 앞자리를 쓰고 다른 약이 앞자리를 공유함) 쓰지 않는다.
+        if cds: rec['hira_codes'] = cds
         if rid and e.rules: rec['map'] = {'rule': e.rules.most_common(1)[0][0], 'atc': e.atc_chk}
         if e.cand: rec['cand'] = e.cand
         if rid in WDITEM: rec['wd'] = WDITEM[rid]
@@ -354,23 +361,38 @@ def main():
         for c in r.get('atc', []): used_atc |= {c[:1], c[:3], c[:4], c[:5]}
     atc_names = {c: atc_cls[c] for c in sorted(used_atc) if c in atc_cls}
     g = collections.Counter((r['grade'] or '-') for r in recs)
+    # 출처마다 이용 조건을 기계가 읽을 수 있게 적는다(화면의 '출처·이용 조건'과 하단 표기가 이것을 읽는다).
+    #  license_class: open(표기 의무 없음) · attribution(출처 표기 필요) · pending(재배포 조건 미결정 — 외부 공개 전에 결정해야 함)
+    #  rec_url: 성분 한 개의 원자료로 가는 주소 틀({rxcui}·{wd}) · file_urls: 파일 자료의 포털 상세 페이지 · files: 이 출처에서 읽은 입력 파일(meta.files 의 키)
     srcs = [
-        {'id': 'R', 'name': 'RxNorm (미국 NLM) — RxNav 공개 REST API', 'use': '성분(IN)·정확 성분(PIN) 이름과 RxCUI', 'license': 'RxNorm 이름·RXCUI 는 퍼블릭 도메인(NLM 표기 필요), NLM 보증 아님·최신 아닐 수 있음', 'url': 'https://lhncbc.nlm.nih.gov/RxNav/'},
-        {'id': 'H', 'name': '건강보험심사평가원 약가마스터 의약품주성분(15067461) · 의약품표준코드(15067462)', 'use': '국내 등재 성분·품목명·ATC(제품 단위)·제형·함량', 'license': '공공누리 제1유형(출처표시)', 'url': 'https://www.data.go.kr/data/15067461/fileData.do', 'files': ['hira_ing', 'hira_std']},
-        {'id': 'W', 'name': 'Wikidata (RxCUI P3345 · ATC P267 · 한/영 이름)', 'use': 'ATC 대조, 영문 동의어, 한국어 이름 후보', 'license': 'CC0', 'url': 'https://www.wikidata.org/'},
-        {'id': 'A', 'name': 'RxClass ATC1-4 분류명 (RxNav)', 'use': 'ATC 1~4단계 분류 영문명', 'license': 'ATC 분류는 WHO 저작물 — 재배포 범위 미결정(핵심 수록분과 동일 보류 항목)', 'url': 'https://lhncbc.nlm.nih.gov/RxNav/'},
+        {'id': 'R', 'name': 'RxNorm (미국 NLM) — RxNav 공개 REST API', 'use': '성분(IN)·정확 성분(PIN) 이름과 RxCUI', 'license': 'RxNorm 이름·RXCUI 는 퍼블릭 도메인(NLM 표기 필요), NLM 보증 아님·최신 아닐 수 있음', 'license_tag': 'NLM 공개(표기 필요)', 'license_class': 'attribution',
+         'credit': 'U.S. National Library of Medicine (NLM)', 'url': 'https://lhncbc.nlm.nih.gov/RxNav/', 'rec_url': RXNAV + '/rxcui/{rxcui}/properties.json', 'files': ['rx_in', 'rx_pin', 'pin_in']},
+        {'id': 'H', 'name': '건강보험심사평가원 약가마스터 의약품주성분(15067461) · 의약품표준코드(15067462)', 'use': '국내 등재 성분·품목명·ATC(제품 단위)·제형·함량', 'license': '공공누리 제1유형(출처표시)', 'license_tag': '공공누리 제1유형', 'license_class': 'attribution',
+         'credit': '건강보험심사평가원', 'url': 'https://www.data.go.kr/data/15067461/fileData.do', 'file_urls': {'hira_ing': 'https://www.data.go.kr/data/15067461/fileData.do', 'hira_std': 'https://www.data.go.kr/data/15067462/fileData.do'}, 'files': ['hira_ing', 'hira_std']},
+        {'id': 'W', 'name': 'Wikidata (RxCUI P3345 · ATC P267 · 한/영 이름)', 'use': 'ATC 대조, 영문 동의어, 한국어 이름 후보', 'license': 'CC0', 'license_tag': 'CC0', 'license_class': 'open',
+         'url': 'https://www.wikidata.org/', 'rec_url': 'https://www.wikidata.org/wiki/{wd}', 'files': ['wd_items', 'wd_atc', 'wd_en_label', 'wd_en_alias', 'wd_ko_label', 'wd_ko_alias']},
+        {'id': 'A', 'name': 'RxClass ATC1-4 분류명 (RxNav)', 'use': 'ATC 1~4단계 분류 영문명', 'license': 'ATC 분류는 WHO 저작물 — 재배포 범위 미결정(핵심 수록분과 동일 보류 항목)', 'license_tag': '재배포 미결정(WHO ATC)', 'license_class': 'pending',
+         'url': 'https://lhncbc.nlm.nih.gov/RxNav/', 'files': ['rx_atc_classes']},
     ]
+    # 입력 파일 기록: 크기·SHA-256 은 파일에서 직접 계산하고, 받은 날은 fetch_log.json 에 있는 것만 적는다
+    api_files = {}
+    for k_, s_ in (('rx_in', 'R'), ('rx_pin', 'R'), ('pin_in', 'R'), ('rx_atc_classes', 'A'), ('wd_items', 'W'), ('wd_atc', 'W'), ('wd_en_label', 'W'), ('wd_en_alias', 'W'), ('wd_ko_label', 'W'), ('wd_ko_alias', 'W')):
+        p_ = os.path.join(raw, k_ + '.json')
+        if os.path.exists(p_):
+            b_ = rd(p_); api_files[k_] = {'src': s_, 'name': k_ + '.json', 'fetched': fetch_log.get(k_ + '.json'), 'bytes': len(b_), 'sha256': hashlib.sha256(b_).hexdigest()}
+    if 'pin_in' in api_files: api_files['pin_in']['note'] = '빌드할 때 RxNav 에서 조회해 둔 정확 성분(PIN)→성분(IN) 관계(캐시)'
     out = {'meta': {
-        'name': 'MedTerm-KR 확장 수록(ext)', 'version': '1.1.0', 'built_at': a.built_at, 'review_status': 'draft',
+        'name': 'MedTerm-KR 확장 수록(ext)', 'version': '1.2.0', 'built_at': a.built_at, 'review_status': 'draft',
         'notice': '자동 수집·연결한 초안입니다. 약사 검수 전이며, 한글 이름은 후보입니다. 국내 허가·급여·처방 판단의 근거가 아닙니다.',
         'grade_legend': {'a': '이름 일치 + ATC 코드(7자리) 일치', 'b': '이름 일치(ATC 근거가 한쪽에 없거나 4단계까지만 일치)', 'c': '후보(이름은 맞으나 ATC가 서로 달라 연결에 쓰지 않음)', 'd': '미매핑(심평원에만 있는 성분)', '-': '심평원과 연결되지 않은 RxNorm 성분(ATC 보유)'},
         'src_legend': {s['id']: s['name'] for s in srcs}, 'sources': srcs,
         'counts': {'entities': len(recs), 'grades': dict(sorted(g.items())), 'rx_mapped': sum(1 for r in recs if r['rxcui'] and 'H' in r['src']), 'rx_only': rx_only,
                    'kr_only': sum(1 for r in recs if not r['rxcui']), 'core_overlap': sum(1 for r in recs if r.get('core')),
                    'with_ko': sum(1 for r in recs if r.get('ko')), 'with_brands': sum(1 for r in recs if r.get('brands_ko')), 'brand_names': brand_total,
-                   'with_atc': sum(1 for r in recs if r.get('atc')), 'active_items': len(items), 'hira_codes': len(code_rows), 'with_near': n_near, 'dropped_kr_only': inc['kr_drop'], 'dropped_herbal': inc['kr_herbal']},
+                   'with_atc': sum(1 for r in recs if r.get('atc')), 'with_hira_codes': sum(1 for r in recs if r.get('hira_codes')), 'active_items': len(items), 'hira_codes': len(code_rows), 'with_near': n_near, 'dropped_kr_only': inc['kr_drop'], 'dropped_herbal': inc['kr_herbal']},
         'atc_names': atc_names,
-        'files': hira_files,
+        'files': {**hira_files, **api_files},
+        **({'fetch_note': fetch_log['_note']} if fetch_log.get('_note') else {}),
     }}
     with open(a.out, 'w', encoding='utf-8', newline='\n') as f:
         f.write('{"meta":' + json.dumps(out['meta'], ensure_ascii=False, separators=(',', ':')) + ',\n"entities":[\n')

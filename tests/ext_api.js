@@ -1,6 +1,6 @@
 // 확장 수록 API 점검(core.js) — node tests/ext_api.js
 // ① 확장 자료를 주지 않거나 이상한 값을 줘도 핵심 사전만으로 이전과 똑같이 동작한다(핵심 API 결과가 같고 오류가 나지 않는다)
-// ② searchExt  ③ describeExt/anyById  ④ graph  ⑤ verify(확장 이름·ATC·단위용량·모호한 이름·가짜 이름)  ⑥ contextFor/프롬프트/retrieve  ⑦ 분류  ⑧ 속도
+// ② searchExt  ③ describeExt/anyById  ④ graph  ⑤ verify(확장 이름·ATC·단위용량·모호한 이름·가짜 이름)  ⑥ contextFor/프롬프트/retrieve  ⑦ 분류  ⑧ 속도  ⑨ 출처·이용 조건(provenance·attribution)
 // 실패가 있으면 종료 코드 1.
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
@@ -116,6 +116,26 @@ ck('정렬: 점수 높은 순 → 같은 점수는 이름 순(안정적)', (() =
   ck('분류 33개 중 핵심만으로는 성분이 없는 분류가 있고(ACE 억제제·베타차단제), 확장 수록을 더하면 모든 분류에 성분이 있음', A.classes.length === 33 && emptyA.includes('ACE 억제제') && emptyA.includes('베타차단제') && emptyB.length === 0, { emptyA, emptyB });
   const k = B.searchClass('PPI')[0];
   ck('searchClass("PPI"): 핵심 3개(members) + 확장(extMembers) 따로 돌려줌, 확장 쪽에 핵심 성분이 섞이지 않음', k.members.length === 3 && k.extMembers.length >= 1 && k.extMembers.every((v) => !B.byId.has(v.id)) && [OME, ESO, PAN].every((id) => k.members.some((v) => v.id === id)));
+}
+
+// ── ⑨ 출처·이용 조건 (provenance · provenanceStats · attribution) ──
+{
+  const P = B.provenance(ATV), S = B.provenanceStats(), AT = B.attribution();
+  const NLM = 'This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.';
+  ck('provenance: 확장 자료가 없으면 null · 확장에 없는 ID 도 null · provenanceStats 도 null', A.provenance(ATV) === null && B.provenance('MT:VTM:0') === null && B.provenance('') === null && A.provenanceStats() === null);
+  ck('provenance(아토르바스타틴): 출처 R·H·W·A 와 식별자(RxCUI · 심평원 일반명코드 전체 · Wikidata)', same(P.sources.map((s) => s.id), ['R', 'H', 'W', 'A']) && P.ids.rxcui === '83367' && P.ids.hira_codes.length > 0 && P.ids.hira_codes.every((c) => /^[0-9A-Z]{6}[A-Z]{3}$/.test(c)) && /^Q\d+$/.test(P.ids.wd), P.ids);
+  ck('provenance: 이용 조건 태그 3종이 구분되고 ATC 만 재배포 미결정(pending)', P.license_tags.includes('NLM 공개(표기 필요)') && P.license_tags.includes('공공누리 제1유형') && P.license_tags.includes('CC0') && P.pending.join() === 'A', [P.license_tags, P.pending]);
+  ck('provenance: 원자료 주소(RxNav 속성 JSON · data.go.kr 두 파일 · Wikidata 항목)', P.urls.includes('https://rxnav.nlm.nih.gov/REST/rxcui/83367/properties.json') && P.urls.includes('https://www.data.go.kr/data/15067461/fileData.do') && P.urls.includes('https://www.data.go.kr/data/15067462/fileData.do') && P.urls.some((u) => u.startsWith('https://www.wikidata.org/wiki/Q')), P.urls);
+  ck('provenance: 받은 날 형식 · review_status=draft · 누락 없음', /^\d{4}-\d{2}-\d{2}$/.test(P.retrieved_at) && P.review_status === 'draft' && P.missing.length === 0, [P.retrieved_at, P.missing]);
+  ck('provenance: 심평원 자료 시점 두 개가 따로 적힘(의약품주성분 2025-10-31 · 의약품표준코드 2026-08-31)', (() => { const h = P.sources.find((s) => s.id === 'H'); return h.asof.length === 2 && h.asof[0].endsWith('2025-10-31') && h.asof[1].endsWith('2026-08-31'); })());
+  ck('provenance(에페리손, 심평원 전용): RxCUI·Wikidata 출처 없이 H 와 A 만, 누락 없음, 일반명코드가 식별자', (() => { const q = B.provenance(EPE); return same(q.sources.map((s) => s.id), ['H', 'A']) && q.ids.rxcui === null && q.ids.hira_codes.length > 0 && q.missing.length === 0; })());
+  ck('provenance: 핵심 사전과 겹치는 항목(오메프라졸)도 확장 쪽 기록의 출처를 돌려줌', (() => { const q = B.provenance(OME); return q && q.ids.rxcui === '7646' && q.sources.length >= 2 && q.missing.length === 0; })());
+  ck('provenanceStats: 전체 항목 수 · 누락 0 · 출처별 건수가 레코드의 src 글자와 같음 · 일반명코드 항목 수가 meta 와 같음', S.total === ext.entities.length && S.missing === 0 && S.bySource.R === ext.entities.filter((e) => /R/.test(e.src)).length && S.bySource.H === ext.entities.filter((e) => /H/.test(e.src)).length && S.bySource.W === ext.entities.filter((e) => /W/.test(e.src)).length && S.withHiraCodes === ext.meta.counts.with_hira_codes, S);
+  ck('provenanceStats: 두 번 불러도 같은 결과(캐시)', B.provenanceStats() === S);
+  ck('attribution: NLM 영문 고지문이 NLM 약관이 요청한 문장 그대로이고, 한국어 풀이는 공식 문구가 아니라고 밝힘', AT.nlm_en === NLM && AT.nlm_ko.includes('공식 문구는 영문'));
+  ck('attribution: 공공누리 제1유형 표기에 기관 · 자료명 · 자료 날짜 · 내려받는 곳이 있음', /건강보험심사평가원/.test(AT.kogl) && /의약품주성분/.test(AT.kogl) && /2025-10-31/.test(AT.kogl) && /2026-08-31/.test(AT.kogl) && /data\.go\.kr/.test(AT.kogl) && AT.sources.length === 3 && /CC0/.test(AT.wikidata), AT.kogl);
+  ck('attribution: 확장 자료가 없으면 NLM 문구만(공공누리 표기 없음)', A.attribution().kogl === null && A.attribution().nlm_en === NLM && same(A.attribution().sources, ['미국 NLM RxNorm(RxNav)']));
+  ck('attribution: NLM 이름을 보증처럼 쓰지 않음(NLM 로고·후원 표현 없음)', !/sponsor|endorsed by NLM|official NLM/i.test(JSON.stringify(AT)));
 }
 
 // ── ⑧ 속도(넉넉한 한도) ──

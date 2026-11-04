@@ -8,6 +8,7 @@ import { Thumb } from './Thumb.jsx';
  * - ExtCard: 검색 결과·분류 목록의 카드(핵심 ResultCard와 같은 모양, "확장·약사 검수 전" 표시)
  * - ExtDetail: 오른쪽 상세 단(이름 후보와 출처 · 식별자 · 연결 등급 · 국내 등재 현황 · ATC · 비슷한 이름 안내)
  * - KrBlock / CoreExtBlock: 심평원 약가마스터에서 모은 "국내 등재 현황"(제품 규격). 핵심 성분 상세에도 덧붙인다.
+ * - ProvenanceBlock: 성분마다 "출처·이용 조건"(출처별 식별자·원자료 링크·이용 조건·받은 날). mt.provenance(id) 를 그대로 보여 준다.
  * 자동 수집한 값은 모두 "후보·미검수"로 표시하고, 용법·용량·허가·급여 판단의 근거가 아님을 함께 적는다.
  */
 
@@ -136,7 +137,44 @@ export function KrBlock({ kr, title = '국내 등재 현황 (심평원 약가마
   );
 }
 
-/** 핵심 성분(32개) 상세에 덧붙이는 확장 수록 자료: 국내 등재 현황 + 자동 추출한 상품명(미검증). */
+const LIC_TONE = { open: 'ok', attribution: 'info', pending: 'draft' };
+const timeText = (s) => [s.asof.length ? `자료 기준 ${s.asof.join(' · ')}` : '', s.fetched.length ? `받은 날 ${s.fetched[s.fetched.length - 1]}` : ''].filter(Boolean).join(' · ');
+
+/** 출처·이용 조건: 이 성분이 어느 공개 자료에서 왔는지(식별자 · 원자료 링크 · 이용 조건 · 받은 날). 확장 수록에 없는 id 면 그리지 않는다. */
+export function ProvenanceBlock({ id, title = '출처·이용 조건' }) {
+  const p = mt.provenance(id);
+  if (!p) return null;
+  return (
+    <section aria-label={title} data-provenance="">
+      <h4 className="mb-1.5 mt-5 text-body-bold">{title}</h4>
+      <Table>
+        {p.sources.map((s) => (
+          <Row key={s.id} th={SRC_SHORT[s.id] || s.id}>
+            {s.ids.length > 0 && (
+              <span className="block">
+                {s.ids.map((x, i) => <span key={x.label}>{i > 0 ? ' · ' : ''}<span className="text-small text-mut">{x.label} </span><b>{x.value}</b></span>)}
+              </span>
+            )}
+            <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <Badge tone={LIC_TONE[s.license_class] || 'info'}>{s.license_tag}</Badge>
+              {timeText(s) ? <span className="text-small text-mut">{timeText(s)}</span> : null}
+            </span>
+            {s.note ? <span className="mt-1 block text-small text-mut">{s.note}</span> : null}
+            {s.links.length > 0 && (
+              <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-small">
+                {s.links.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="text-pri underline">{l.label}</a>)}
+              </span>
+            )}
+          </Row>
+        ))}
+        <Row th="검수 상태"><Badge tone="draft">약사 검수 전 초안</Badge></Row>
+      </Table>
+      <p className="mt-1.5 text-small text-mut">공개 자료를 가공한 초안이며 원 기관이 보증하지 않습니다. 자료 시점 이후 바뀌었을 수 있습니다. 표기 문구는 화면 맨 아래와 ‘데이터·한계’ 탭에 있습니다.</p>
+    </section>
+  );
+}
+
+/** 핵심 성분(32개) 상세에 덧붙이는 확장 수록 자료: 국내 등재 현황 + 자동 추출한 상품명(미검증) + 출처·이용 조건. */
 export function CoreExtBlock({ id }) {
   const x = mt.extOfCore.get(id);
   if (!x || !x.rec.kr) return null;
@@ -149,6 +187,7 @@ export function CoreExtBlock({ id }) {
           심평원 품목명에서 자동 추출한 상품명(미검증): {brands.join(', ')} — 품목명 앞부분을 기계적으로 잘라 낸 것이라 틀릴 수 있고, 허가·판매·급여 여부를 뜻하지 않습니다.
         </p>
       )}
+      <ProvenanceBlock id={id} title="확장 수록 자료의 출처·이용 조건" />
     </div>
   );
 }
@@ -229,6 +268,8 @@ export function ExtDetail({ d, onSelect }) {
         </Row>
         <Row th="자료 출처">{srcText(r.src)}</Row>
       </Table>
+
+      <ProvenanceBlock id={v.id} />
 
       <KrBlock kr={d.kr} />
 

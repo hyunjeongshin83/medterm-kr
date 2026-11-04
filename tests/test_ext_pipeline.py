@@ -47,6 +47,20 @@ ok('portal_info: 없는 항목은 None(오류 없음)', F.portal_info('<html></h
 ok('수집기: 사용자 이메일 등 개인정보를 요청 머리글에 넣지 않음(일반 UA)', '@' not in F.UA and 'MedTermKR' in F.UA, F.UA)
 ok('수집기: data.go.kr 인증키(서비스키)를 코드에 쓰지 않음', not re.search(r'serviceKey|DATA_GO_KR_KEY', open(os.path.join(root, 'build', 'ext_fetch.py'), encoding='utf-8').read()))
 
+# ── 받은 날 기록(fetch_log.json) · 일반명코드 형식 ──
+import tempfile
+import ext_build as B
+with tempfile.TemporaryDirectory() as td:
+    F.note_fetch(td, 'rx_in.json'); F.note_fetch(td, 'hira_ing/raw.bin')
+    lg = json.load(open(os.path.join(td, 'fetch_log.json'), encoding='utf-8'))
+    ok('받은 날 기록: 파일마다 YYYY-MM-DD 로 쌓이고 앞의 기록을 지우지 않음', sorted(lg) == ['hira_ing/raw.bin', 'rx_in.json'] and all(re.fullmatch(r'\d{4}-\d{2}-\d{2}', v) for v in lg.values()), lg)
+    open(os.path.join(td, 'fetch_log.json'), 'w').write('{깨진 파일')
+    F.note_fetch(td, 'wd_atc.json')
+    ok('받은 날 기록: 기록 파일이 깨져 있어도 멈추지 않고 새로 시작', list(json.load(open(os.path.join(td, 'fetch_log.json'), encoding='utf-8'))) == ['wd_atc.json'])
+ok('일반명코드 형식: 숫자 6자리 + 영문 3자리, 또는 앞 1자리가 영문인 것을 받아들임', all(B.HIRA_CODE.fullmatch(c) for c in ('193801ATR', '611901CCH', 'A12301ATB')), None)
+ok('일반명코드 형식: 8자리·10자리·소문자·공백·빈 값은 거절', not any(B.HIRA_CODE.fullmatch(c) for c in ('19380ATR', '1938011ATR', '193801atr', '193801 AT', '')), None)
+ok('ext_build: 레코드에 쓰는 필드가 hira_codes(전체 9자리)이고, 앞 4자리만 담던 hira_cd 는 코드에 남아 있지 않음', "rec['hira_codes']" in open(os.path.join(root, 'build', 'ext_build.py'), encoding='utf-8').read() and "'hira_cd'" not in open(os.path.join(root, 'build', 'ext_build.py'), encoding='utf-8').read())
+
 # ── 만들어진 자료의 입력 파일 기록(자료가 있을 때만) ──
 p = os.path.join(root, 'data', 'medterm_ext.json')
 if os.path.exists(p):
@@ -55,6 +69,10 @@ if os.path.exists(p):
     fl = meta.get('files', {})
     ok('자료: 입력 파일 두 개의 SHA-256 이 64자리 16진수', all(re.fullmatch(r'[0-9a-f]{64}', (fl.get(k) or {}).get('sha256', '')) for k in ('hira_ing', 'hira_std')), {k: (fl.get(k) or {}).get('sha256', '')[:12] for k in ('hira_ing', 'hira_std')})
     ok('자료: 표준코드 파일 날짜가 포털 자료명 끝의 날짜와 같음', fl['hira_std'].get('file_date', '').replace('-', '') == re.search(r'_(\d{8})$', fl['hira_std']['portal']['title']).group(1), fl['hira_std'])
+    pkg = json.load(open(os.path.join(root, 'web-react', 'package.json'), encoding='utf-8'))['version']
+    ok('자료: meta.version 이 앱 버전(web-react/package.json)과 같음', meta.get('version') == pkg, (meta.get('version'), pkg))
+    ok('자료: 입력 파일 모두에 받은 날(YYYY-MM-DD)이 있음', all(re.fullmatch(r'\d{4}-\d{2}-\d{2}', f.get('fetched') or '') for f in fl.values()), [k for k, f in fl.items() if not f.get('fetched')])
+    ok('자료: 출처 4종(R·H·W·A)에 이용 조건 태그·분류가 있고 ATC 는 재배포 미결정', {x['id']: x['license_class'] for x in meta['sources']} == {'R': 'attribution', 'H': 'attribution', 'W': 'open', 'A': 'pending'}, {x['id']: x['license_class'] for x in meta['sources']})
 
 bad = [c for c in checks if c[0] == 'FAIL']
 for c in checks: print(' | '.join(c))

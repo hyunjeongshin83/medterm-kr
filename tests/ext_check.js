@@ -128,6 +128,38 @@ ok(Array.isArray(hSrc.files) && hSrc.files.length === 2 && hSrc.files.every((k) 
 ok(FL.hira_std.file_date === '2026-08-31' || /_\d{8}$/.test(FL.hira_std.portal.title), '표준코드 파일의 날짜가 기록됨');
 ok(E.filter((e) => e.wd).every((e) => /^Q\d+$/.test(e.wd)), 'Wikidata 항목 번호는 모두 Q숫자 형식');
 
+// 7) 출처·이용 조건 (v1.2.0) — 레코드별 출처 식별자·이용 조건 표시가 빠지지 않았는지(연구 개선안 1)
+{
+  const { MedTerm } = require(path.join(root, 'web/js/core.js'));
+  const T = new MedTerm(core, JSON.parse(rd('data/class_lexicon.json')), x);
+  const SRC = M.sources || [];
+  ok(SRC.length === 4 && ['R', 'H', 'W', 'A'].every((k) => SRC.some((s) => s.id === k)), 'meta.sources 가 R·H·W·A 네 출처', SRC.map((s) => s.id));
+  ok(SRC.every((s) => s.license_tag && ['open', 'attribution', 'pending'].includes(s.license_class)), '모든 출처에 이용 조건 태그(license_tag)와 분류(open·attribution·pending)가 있음', SRC.map((s) => [s.id, s.license_tag, s.license_class]));
+  ok(SRC.filter((s) => s.license_class === 'attribution').every((s) => s.credit), '출처 표시가 필요한 출처(attribution)는 표시할 기관 이름(credit)이 있음');
+  ok(SRC.every((s) => (s.files || []).every((k) => FL[k])), '모든 출처의 files 가 meta.files 에 있음');
+  ok(SRC.find((s) => s.id === 'A').license_class === 'pending' && SRC.find((s) => s.id === 'R').rec_url.includes('{rxcui}'), 'ATC 는 재배포 미결정(pending), RxNorm 은 레코드별 원자료 주소(rec_url)가 있음');
+  const noFetched = Object.entries(FL).filter(([, f]) => !/^\d{4}-\d{2}-\d{2}$/.test(f.fetched || '')).map(([k]) => k);
+  ok(noFetched.length === 0, 'meta.files 모든 항목에 받은 날(fetched)이 있음', noFetched);
+  ok(typeof M.fetch_note === 'string' && M.fetch_note.length > 0, 'meta.fetch_note: 받은 날이 파일 시각에서 추정된 것임을 밝힘');
+  ok(E.every((e) => !('hira_cd' in e)), '옛 필드 hira_cd(코드 앞 4자리)는 없음 — 앞 4자리는 성분 식별자가 아니라서 쓰지 않음');
+  const HC = E.filter((e) => e.hira_codes);
+  ok(HC.length === C.with_hira_codes, 'meta.counts.with_hira_codes 가 hira_codes 를 가진 항목 수와 같음', [HC.length, C.with_hira_codes]);
+  ok(HC.every((e) => e.hira_codes.every((c) => /^[0-9A-Z]{6}[A-Z]{3}$/.test(c)) && [...e.hira_codes].sort().join() === e.hira_codes.join() && new Set(e.hira_codes).size === e.hira_codes.length), 'hira_codes: 9자리 형식·정렬·중복 없음');
+  ok(HC.every((e) => e.kr && e.hira_codes.length === e.kr.codes), 'hira_codes 개수가 kr.codes(단일성분 코드 수)와 같음', HC.filter((e) => !e.kr || e.hira_codes.length !== e.kr.codes).slice(0, 3).map((e) => e.id));
+  ok(E.filter((e) => /H/.test(e.src) && !e.hira_codes).every((e) => !(e.kr && e.kr.codes)), '단일성분 코드가 있는 심평원 항목은 모두 hira_codes 를 가짐(복합제 행에서만 나오는 항목만 없음)');
+  // 전체 + 균등 표본 50개: 출처 식별자·이용 조건 표시 누락 0건(연구가 정한 통과 기준)
+  const st = T.provenanceStats();
+  ok(st.total === E.length && st.missing === 0, '전체 항목에서 출처 식별자·이용 조건 표시 누락 0건', st);
+  const sample = E.filter((_, i) => i % 71 === 0).slice(0, 50);
+  ok(sample.length === 50 && sample.every((e) => { const p = T.provenance(e.id); return p && p.review_status === 'draft' && p.sources.length >= 1 && p.license_tags.length >= 1 && p.missing.length === 0 && /^\d{4}-\d{2}-\d{2}$/.test(p.retrieved_at || ''); }), '균등 표본 50개: 출처·이용 조건 태그·받은 날·review_status 누락 0건');
+  ok(E.every((e) => { const L = new Set(T.provenance(e.id).sources.map((s) => s.id)); return (!/R/.test(e.src) || L.has('R')) && (!/H/.test(e.src) || L.has('H')) && (!/W/.test(e.src) || L.has('W')); }), '레코드 src 글자(R·H·W)와 provenance 출처가 일치');
+  const hasAtc = E.filter((e) => (e.atc && e.atc.length) || (e.atc_class && e.atc_class.length));
+  ok(hasAtc.every((e) => T.provenance(e.id).pending.includes('A')) && st.pending === hasAtc.length, 'ATC 코드·분류를 가진 항목은 모두 재배포 미결정(pending)으로 표시', [st.pending, hasAtc.length]);
+  ok(E.filter((e) => e.rxcui).every((e) => T.provenance(e.id).urls.includes(`https://rxnav.nlm.nih.gov/REST/rxcui/${e.rxcui}/properties.json`)), 'RxCUI 가 있는 항목은 모두 RxNav 원자료 주소를 가짐');
+  const gc2 = (g) => E.filter((e) => e.grade === g).length;
+  ok(M.grade_legend && ['a', 'b', 'c', 'd', '-'].every((g) => M.grade_legend[g]) && ['a', 'b', 'c', 'd', '-'].every((g) => (C.grades || {})[g] === gc2(g)), '매핑 등급(a·b·c·d·-) 범례가 있고 meta.counts.grades 와 실제 건수가 같음', C.grades);
+}
+
 console.log(`\n확장 수록 정합성 점검: 통과 ${pass} · 실패 ${fail}`);
 console.log(`성분 ${E.length}개 (RxNorm·심평원 연결 ${C.rx_mapped} · 심평원 전용 ${C.kr_only} · RxNorm 전용 ${C.rx_only} · 핵심과 겹침 ${C.core_overlap}) · 등급 ${JSON.stringify(gc)}`);
 if (warns.length) { console.log('주의(실패 아님):'); warns.forEach((w) => console.log(' -', w)); }

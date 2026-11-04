@@ -11,7 +11,7 @@ const SHOTS = path.join(ROOT, 'shots', 'ui'); fs.mkdirSync(SHOTS, { recursive: t
 
 let bad = 0, total = 0;
 const ck = (name, ok, extra) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); };
-const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
+const { DISC, NLM_EN, VERSION, OLD_LABEL } = require('./_copy.cjs');
 
 async function open(browser, w, h, o = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: o.dpr || 1, colorScheme: o.scheme || 'light', hasTouch: !!o.touch, isMobile: !!o.mobile });
@@ -1163,6 +1163,220 @@ const overflow = (page) => page.evaluate(() => {
     ck(`색(${scheme}): 확장 카드의 배경·글자·테두리·모서리·그림자가 핵심 카드와 같은 토큰`, st.core === st.ext && st.on.every((x) => x === null), st);
     ck(`색(${scheme}): "확장·약사 검수 전" 배지 글자·배경 대비 4.5 이상`, st.ratio >= 4.5, st);
     noErr(`확장 색(${scheme})`, page); await ctx.close();
+  }
+
+  /* ───── 19. 출처 표기(v1.2.0): 모든 탭 하단의 출처 표기 · 정보 탭의 표기 문구 · 성분 상세의 "출처·이용 조건" ───── */
+  const FOOT = '[data-source-footer]';
+  const TAB5 = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+  const SHORT = { R: 'RxNorm', H: '심평원', W: 'Wikidata', A: 'RxClass ATC명' };
+  const CORE_OF = (page) => (id) => page.evaluate((x) => new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT).provenance(x), id);
+  // 글자 대비(WCAG 상대 휘도): 글자색과, 위쪽 조상의 배경을 겹쳐 쌓은 실제 배경색. own=true 면 요소 자신의 배경(배지)을 포함한다.
+  const contrastOf = (page, sel) => page.evaluate((q) => {
+    const el = document.querySelector(q);
+    if (!el) return { missing: q };
+    const P = (c) => { const a = c.match(/[\d.]+/g).map(Number); return { r: a[0], g: a[1], b: a[2], a: a.length > 3 ? a[3] : 1 }; };
+    const over = (t, b) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a), a: 1 });
+    const L = (c) => { const v = [c.r, c.g, c.b].map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+    const chain = []; for (let n = el; n; n = n.parentElement) chain.push(n);
+    let bg = { r: 255, g: 255, b: 255, a: 1 };
+    for (const n of chain.reverse()) bg = over(P(getComputedStyle(n).backgroundColor), bg);
+    const fg = over(P(getComputedStyle(el).color), bg);
+    const [hi, lo] = [L(fg), L(bg)].sort((p, q) => q - p);
+    return { ratio: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100 };
+  }, sel);
+
+  // 19-1. 데스크톱 1440: 다섯 화면 모두 맨 아래에 같은 출처 표기, NLM 영문 문구는 원문 그대로
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    const A = await page.evaluate(() => { const a = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT).attribution(); return { sources: a.sources, en: a.nlm_en, kogl: a.kogl, wd: a.wikidata }; });
+    ck('출처 문구(core.js): NLM 영문은 공식 문구 그대로 · 출처는 RxNorm·심평원·Wikidata 세 곳 · 심평원 문장은 기관명·공공누리 제1유형·자료명 날짜 2개·내려받기 안내를 담음',
+      A.en === NLM_EN && A.sources.length === 3 && /건강보험심사평가원/.test(A.kogl) && /공공누리 제1유형/.test(A.kogl) && (A.kogl.match(/\d{4}-\d{2}-\d{2}/g) || []).length === 2 && /data\.go\.kr/.test(A.kogl), A);
+    for (const name of TAB5) {
+      await tabTo(page, name);
+      const f = await page.evaluate((q) => {
+        const all = document.querySelectorAll(q), e = all[0];
+        if (!e) return { n: 0 };
+        const r = e.getBoundingClientRect(), en = e.querySelector('p[lang="en"]');
+        return { n: all.length, shown: r.width > 0 && r.height > 0, inCenter: !!e.closest('#center'), label: e.getAttribute('aria-label'), text: e.innerText, en: en ? en.textContent.trim() : null, extra: e.querySelectorAll('img, svg, canvas, iframe, [role="note"]').length, buttons: e.querySelectorAll('button').length };
+      }, FOOT);
+      ck(`출처 표기(${name}): 화면 중앙 영역 맨 아래에 하나 · 이름 "자료 출처 표기" · 버튼 하나 · 출처 세 곳과 단서 문구`,
+        f.n === 1 && f.shown && f.inCenter && f.label === '자료 출처 표기' && f.buttons === 1 && A.sources.every((s) => f.text.includes(s))
+        && f.text.includes('원 기관이 보증하지 않으며 최신이 아닐 수 있고') && f.text.includes('한글명·상품명은 약사 검수 전 초안') && f.text.includes('ATC·SNOMED CT의 재배포 조건은 확인 전입니다'),
+        { n: f.n, label: f.label, buttons: f.buttons, text: (f.text || '').slice(0, 90) });
+      ck(`출처 표기(${name}): NLM 영문 문구가 공식 문구와 한 글자도 다르지 않음 · NLM 로고·그림 없음 · role=note 는 맨 위 안내 하나뿐`,
+        f.en === NLM_EN && f.extra === 0 && (await page.getByRole('note').count()) === 1, { sameEn: f.en === NLM_EN, extra: f.extra });
+    }
+    await snap(page, 'r19_footer_1440');
+
+    // "자세히" 버튼 → 정보 탭의 "출처 표기와 이용 조건" 카드
+    await tabTo(page, '사전 검색');
+    const btn = page.locator(FOOT).getByRole('button', { name: '출처·이용 조건 자세히' });
+    const bb = await btn.boundingBox();
+    ck('출처 표기: "출처·이용 조건 자세히" 버튼은 데스크톱에서도 높이 44px 이상', bb.height >= 44 && bb.width >= 44, bb);
+    await btn.click(); await page.waitForTimeout(400);
+    const go = await page.evaluate(() => {
+      const el = document.getElementById('about-sources'), c = document.getElementById('center').getBoundingClientRect(), r = el.getBoundingClientRect();
+      const bar = document.querySelector('[role="tablist"][aria-label="작업 화면"]').getBoundingClientRect();
+      return { cardTop: Math.round(r.top), barBottom: Math.round(bar.bottom), inView: r.top < c.bottom && r.bottom > c.top, focusId: document.activeElement.id, title: el.innerText.split('\n')[0] };
+    });
+    ck('출처 표기: 버튼을 누르면 "데이터·한계" 탭으로 가서 "출처 표기와 이용 조건" 카드에 포커스가 가고, 카드 제목이 위쪽 고정 탭 줄에 가려지지 않음',
+      (await page.getByRole('tab', { name: '데이터·한계', exact: true }).getAttribute('aria-selected')) === 'true' && go.focusId === 'about-sources' && go.inView && go.cardTop >= go.barBottom - 1 && go.title === '출처 표기와 이용 조건', go);
+    await snap(page, 'r19_about_sources_1440');
+
+    // 정보 탭의 표기 문구
+    const PSx = await page.evaluate(() => new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT).provenanceStats());
+    const ab = await page.evaluate(() => { const g = (q) => { const e = document.querySelector(q); return e ? e.innerText.trim() : null; }; return { nlm: g('[data-nlm-statement]'), kogl: g('[data-kogl-statement]'), sec: document.getElementById('about-sources').innerText, nLang: document.querySelectorAll('[data-nlm-statement]').length }; });
+    ck('정보 탭: NLM 영문 문구는 공식 문구 그대로 하나만 있고, 아래에 한국어 풀이("공식 문구는 영문")가 붙음', ab.nlm === NLM_EN && ab.nLang === 1 && ab.sec.includes('위 영문 문구의 한국어 풀이입니다(공식 문구는 영문)'), { sameEn: ab.nlm === NLM_EN, n: ab.nLang });
+    ck('정보 탭: 심평원 문장은 core.js 가 만든 문장 그대로(기관명 · 공공누리 제1유형 · 자료명 날짜 · 공공데이터포털 내려받기 안내)', ab.kogl === A.kogl, ab.kogl);
+    ck('정보 탭: NLM 약관 확인 결과를 솔직히 적음(로고 안 씀 · 재배포 범위는 확인하지 못함) · Wikidata(CC0) · 재배포 조건 미결정(ATC·SNOMED CT)은 외부 공개 전 결정',
+      ab.sec.includes('이 사전은 로고를 쓰지 않습니다') && ab.sec.includes('약관의 재배포 범위는 그 페이지에서 확인하지 못했습니다') && ab.sec.includes('Wikidata — CC0') && ab.sec.includes('재배포 조건이 정해지지 않은 자료') && ab.sec.includes('이 사전을 외부에 공개하기 전에 결정해야 합니다'));
+    const want = clean(['RxNorm(NLM)에서 온 항목', nfx(PSx.bySource.R), '심평원 약가마스터에서 온 항목 (이 중 단일성분 일반명코드가 기록된 항목)', `${nfx(PSx.bySource.H)} (${nfx(PSx.withHiraCodes)})`,
+      'Wikidata에서 온 항목', nfx(PSx.bySource.W), 'ATC 코드·분류 이름을 가진 항목 (재배포 조건 미결정)', nfx(PSx.bySource.A), '출처 식별자·이용 조건 표시가 빠진 항목 (자동 점검)', nfx(PSx.missing)].join(' '));
+    ck('정보 탭: "확장 수록의 출처별 항목 수" 표가 core.js provenanceStats() 숫자와 같고, 출처·이용 조건 표시가 빠진 항목은 0', clean(ab.sec).includes(want) && PSx.missing === 0 && PSx.total > 0, { want, PSx });
+    ck('정보 탭: 일반명코드는 "단일성분 9자리 전체 · 원자료 행을 되짚는 용도 · 앞 4자리는 성분 식별자가 아니라 합치는 열쇠로 쓰지 않음"이라고 설명', ab.sec.includes('단일성분 일반명코드 전체(9자리)') && ab.sec.includes('원자료의 행을 되짚는 용도') && ab.sec.includes('앞 4자리는 성분 식별자가 아니므로') && ab.sec.includes('합치는 열쇠로 쓰지 않습니다'));
+    noErr('출처 표기(1440)', page); await ctx.close();
+  }
+
+  // 19-2. 태블릿 900: 같은 버튼, 카드 제목이 고정 탭 줄에 가려지지 않음
+  {
+    const { ctx, page } = await open(browser, 900, 800);
+    await page.locator(FOOT).getByRole('button', { name: '출처·이용 조건 자세히' }).click(); await page.waitForTimeout(400);
+    const go = await page.evaluate(() => { const el = document.getElementById('about-sources'), r = el.getBoundingClientRect(), bar = document.querySelector('[role="tablist"][aria-label="작업 화면"]').getBoundingClientRect(); return { cardTop: Math.round(r.top), barBottom: Math.round(bar.bottom), focusId: document.activeElement.id }; });
+    ck('태블릿(900): "자세히"를 누르면 카드 제목이 고정 탭 줄 아래에서 시작하고 포커스가 카드로 감', go.focusId === 'about-sources' && go.cardTop >= go.barBottom - 1, go);
+    noErr('출처 표기(900)', page); await ctx.close();
+  }
+
+  // 19-3. 성분 상세의 "출처·이용 조건" — 확장 전용 성분(에페리손: RxCUI·Wikidata 없음)
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'k-eperisone' });
+    const P = await CORE_OF(page)('MT:KRI:eperisone');
+    const codes = await page.evaluate((id) => (MEDTERM_EXT.entities.find((x) => x.id === id) || {}).hira_codes || [], 'MT:KRI:eperisone');
+    const blk = await page.evaluate(() => {
+      const all = document.querySelectorAll('#detail [data-provenance]'), e = all[0];
+      if (!e) return { n: 0 };
+      return {
+        n: all.length, label: e.getAttribute('aria-label'), h: e.querySelector('h4').innerText.trim(),
+        rows: [...e.querySelectorAll('tbody > tr')].map((tr) => ({ th: tr.querySelector('th').innerText.trim(), td: tr.querySelector('td').innerText.replace(/\s+/g, ' ').trim(), badges: [...tr.querySelectorAll('.rounded-pill')].map((b) => b.innerText.trim()), links: [...tr.querySelectorAll('a')].map((a) => ({ t: a.innerText.trim(), href: a.getAttribute('href'), rel: a.getAttribute('rel') || '', target: a.getAttribute('target') })) })),
+        foot: (e.querySelector(':scope > p') || { innerText: '' }).innerText.trim(),
+      };
+    });
+    ck('상세 출처(에페리손): 상세에 "출처·이용 조건" 블록이 하나 있고, 행은 core.js provenance() 의 출처 순서 + "검수 상태"',
+      blk.n === 1 && blk.label === '출처·이용 조건' && blk.h === '출처·이용 조건' && JSON.stringify(blk.rows.map((r) => r.th)) === JSON.stringify([...P.sources.map((s) => SHORT[s.id]), '검수 상태']), { rows: blk.rows && blk.rows.map((r) => r.th), want: P.sources.map((s) => s.id) });
+    ck('상세 출처(에페리손): RxCUI·Wikidata 가 없는 성분이라 RxNorm·Wikidata 행이 없고 심평원 · RxClass ATC명 행만 있음',
+      !P.ids.rxcui && !P.ids.wd && !blk.rows.some((r) => r.th === 'RxNorm' || r.th === 'Wikidata') && blk.rows.some((r) => r.th === '심평원') && blk.rows.some((r) => r.th === 'RxClass ATC명'), { rxcui: P.ids.rxcui, wd: P.ids.wd });
+    const hRow = blk.rows.find((r) => r.th === '심평원') || { td: '', badges: [], links: [] };
+    const shown = codes.length > 6 ? `${codes.slice(0, 6).join(', ')} 외 ${codes.length - 6}개` : codes.join(', ');
+    ck('상세 출처(에페리손): 심평원 행에 일반명코드가 9자리 전체로(데이터와 같은 순서·개수), 이용 조건 배지 "공공누리 제1유형", 자료 기준일·받은 날',
+      codes.length > 0 && hRow.td.includes(`심평원 일반명코드 ${shown}`) && (hRow.td.match(/\b[0-9A-Z]{6}[A-Z]{3}\b/g) || []).length === Math.min(6, codes.length) && hRow.badges.includes('공공누리 제1유형') && /자료 기준 .*\d{4}-\d{2}-\d{2}/.test(hRow.td) && /받은 날 \d{4}-\d{2}-\d{2}/.test(hRow.td), { codes: codes.length, td: hRow.td });
+    ck('상세 출처(에페리손): 심평원 원자료 링크 2개(의약품주성분 15067461 · 의약품표준코드 15067462)',
+      JSON.stringify(hRow.links.map((l) => l.href)) === JSON.stringify(['https://www.data.go.kr/data/15067461/fileData.do', 'https://www.data.go.kr/data/15067462/fileData.do']), hRow.links);
+    const aRow = blk.rows.find((r) => r.th === 'RxClass ATC명') || { td: '', badges: [] };
+    ck('상세 출처(에페리손): ATC 행은 이용 조건 "재배포 미결정(WHO ATC)" 배지와 "재배포 조건이 정해지지 않았습니다" 안내', aRow.badges.includes('재배포 미결정(WHO ATC)') && aRow.td.includes('재배포 조건이 정해지지 않았습니다'), aRow);
+    const rv = blk.rows.find((r) => r.th === '검수 상태') || { badges: [] };
+    ck('상세 출처(에페리손): 검수 상태는 "약사 검수 전 초안", 아래에 "원 기관이 보증하지 않습니다 · 자료 시점 이후 바뀌었을 수 있습니다 · 표기 문구는 화면 맨 아래와 ‘데이터·한계’ 탭에 있습니다"',
+      rv.badges.includes('약사 검수 전 초안') && blk.foot.includes('원 기관이 보증하지 않습니다') && blk.foot.includes('자료 시점 이후 바뀌었을 수 있습니다') && blk.foot.includes('표기 문구는 화면 맨 아래와 ‘데이터·한계’ 탭에 있습니다'), blk.foot);
+    const allLinks = blk.rows.flatMap((r) => r.links);
+    ck('상세 출처(에페리손): 모든 링크가 https · 허용한 공개 사이트(data.go.kr) · 새 탭 + noopener noreferrer · 링크 글자가 있음 · 개수가 core.js 와 같음',
+      allLinks.length === P.sources.reduce((n, s) => n + s.links.length, 0) && allLinks.every((l) => /^https:\/\/(www\.data\.go\.kr|rxnav\.nlm\.nih\.gov|www\.wikidata\.org)\//.test(l.href) && l.target === '_blank' && /\bnoopener\b/.test(l.rel) && /\bnoreferrer\b/.test(l.rel) && l.t.length > 0), allLinks);
+    await snap(page, 'r19_prov_eperisone');
+    ck('상세 출처(에페리손): 화면 맨 아래 출처 표기도 같은 화면에 있음(중복 아닌 하나)', (await page.locator(FOOT).count()) === 1);
+    noErr('상세 출처(에페리손)', page); await ctx.close();
+  }
+
+  // 19-4. 성분 상세의 "출처·이용 조건" — RxNorm·Wikidata 가 있는 성분(암브록솔 RxCUI 625)
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'v-625' });
+    const P = await CORE_OF(page)('MT:VTM:625');
+    const blk = await page.evaluate(() => {
+      const e = document.querySelector('#detail [data-provenance]');
+      if (!e) return null;
+      return [...e.querySelectorAll('tbody > tr')].map((tr) => ({ th: tr.querySelector('th').innerText.trim(), td: tr.querySelector('td').innerText.replace(/\s+/g, ' ').trim(), badges: [...tr.querySelectorAll('.rounded-pill')].map((b) => b.innerText.trim()), hrefs: [...tr.querySelectorAll('a')].map((a) => a.getAttribute('href')) }));
+    });
+    const row = (th) => (blk || []).find((r) => r.th === th) || { td: '', badges: [], hrefs: [] };
+    ck('상세 출처(암브록솔 625): 행 순서가 RxNorm · 심평원 · Wikidata · RxClass ATC명 · 검수 상태', JSON.stringify((blk || []).map((r) => r.th)) === JSON.stringify(['RxNorm', '심평원', 'Wikidata', 'RxClass ATC명', '검수 상태']), (blk || []).map((r) => r.th));
+    ck('상세 출처(암브록솔 625): RxNorm 행 = "RxCUI 625" + 이용 조건 "NLM 공개(표기 필요)" + NLM RxNav 원자료 링크', row('RxNorm').td.includes('RxCUI 625') && row('RxNorm').badges.includes('NLM 공개(표기 필요)') && row('RxNorm').hrefs.join() === 'https://rxnav.nlm.nih.gov/REST/rxcui/625/properties.json' && P.ids.rxcui === '625', row('RxNorm'));
+    const q = P.ids.wd;
+    ck('상세 출처(암브록솔 625): Wikidata 행 = Q 번호 + CC0 + 해당 Wikidata 항목 링크(데이터의 Q 번호와 같음)', /^Q\d+$/.test(q || '') && row('Wikidata').td.includes(`Wikidata ${q}`) && row('Wikidata').badges.includes('CC0') && row('Wikidata').hrefs.join() === `https://www.wikidata.org/wiki/${q}`, { q, row: row('Wikidata') });
+    await snap(page, 'r19_prov_ambroxol');
+    noErr('상세 출처(암브록솔)', page); await ctx.close();
+  }
+
+  // 19-5. 핵심 성분(오메프라졸)에 덧붙는 확장 수록 블록의 출처·이용 조건
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { hash: 'v-7646' });
+    const n = await page.evaluate(() => ({ all: document.querySelectorAll('#detail [data-provenance]').length, inCore: document.querySelectorAll('#detail [data-core-ext] [data-provenance]').length, label: (document.querySelector('#detail [data-core-ext] [data-provenance]') || { getAttribute: () => null }).getAttribute('aria-label') }));
+    ck('상세 출처(오메프라졸): 핵심 성분 상세에는 "확장 수록 자료의 출처·이용 조건" 블록이 하나, 확장 수록 국내 등재 블록 안에 있음', n.all === 1 && n.inCore === 1 && n.label === '확장 수록 자료의 출처·이용 조건', n);
+    noErr('상세 출처(오메프라졸)', page); await ctx.close();
+  }
+
+  // 19-6. 휴대폰 390: 맨 아래까지 내리면 출처 표기가 하단 탭 줄에 가려지지 않고, 버튼이 손가락 크기이며 가로로 넘치지 않음
+  {
+    const { ctx, page } = await open(browser, 390, 844, { touch: true, mobile: true, dpr: 2 });
+    await page.evaluate(() => { const c = document.getElementById('center'); c.scrollTop = c.scrollHeight; }); await page.waitForTimeout(200);
+    const m = await page.evaluate(() => {
+      const f = document.querySelector('[data-source-footer]'), fr = f.getBoundingClientRect(), b = f.querySelector('button').getBoundingClientRect(), en = f.querySelector('p[lang="en"]');
+      const tl = document.querySelector('[role="tablist"][aria-label="작업 화면"]'), tr = tl.getBoundingClientRect(), c = document.getElementById('center').getBoundingClientRect();
+      return { fTop: Math.round(fr.top), fBottom: Math.round(fr.bottom), fLeft: Math.round(fr.left), fRight: Math.round(fr.right), btnW: Math.round(b.width), btnH: Math.round(b.height), tabTop: Math.round(tr.top), centerTop: Math.round(c.top), variant: tl.getAttribute('data-variant'), enOver: en.scrollWidth - en.clientWidth, fOver: f.scrollWidth - f.clientWidth };
+    });
+    ck('휴대폰: 맨 아래까지 내리면 출처 표기가 하단 탭 줄 바로 위에 모두 보이고(가려지지 않음) 좌우 여백 안에 들어옴', m.variant === 'bottom' && m.fBottom <= m.tabTop + 1 && m.fTop >= m.centerTop && m.fLeft >= 0 && m.fRight <= 390, m);
+    const ov = await overflow(page);
+    ck('휴대폰: "자세히" 버튼 44×44 이상 · 영문 문구가 가로로 넘치지 않음 · 문서·가운데 영역에 가로 스크롤 없음', m.btnH >= 44 && m.btnW >= 44 && m.enOver <= 0 && m.fOver <= 0 && ov.doc <= 0 && ov.center <= 0, { m, ov });
+    await snap(page, 'r19_footer_phone');
+    await page.locator(FOOT).getByRole('button', { name: '출처·이용 조건 자세히' }).tap(); await page.waitForTimeout(400);
+    const go = await page.evaluate(() => { const el = document.getElementById('about-sources'), r = el.getBoundingClientRect(), c = document.getElementById('center').getBoundingClientRect(); return { top: Math.round(r.top - c.top), inView: r.top < c.bottom && r.bottom > c.top, focusId: document.activeElement.id }; });
+    ck('휴대폰: 버튼을 누르면 "데이터·한계" 탭의 "출처 표기와 이용 조건" 카드가 가운데 영역 맨 위에 보이고 포커스가 카드로 감',
+      (await page.getByRole('tab', { name: '데이터·한계', exact: true }).getAttribute('aria-selected')) === 'true' && go.inView && go.top >= -1 && go.top <= 24 && go.focusId === 'about-sources', go);
+    ck('휴대폰: 정보 탭 표기 카드도 가로로 넘치지 않음', (await overflow(page)).doc <= 0 && (await overflow(page)).center <= 0, await overflow(page));
+    await snap(page, 'r19_about_sources_phone');
+    noErr('출처 표기(390)', page); await ctx.close();
+  }
+
+  // 19-7. 색: 출처 표기·정보 탭 문구·상세 출처 블록의 글자 대비 4.5 이상(밝은·어두운)
+  for (const scheme of ['light', 'dark']) {
+    const { ctx, page } = await open(browser, 1440, 1000, { scheme });
+    const c = { 본문: await contrastOf(page, FOOT + ' > p:first-child'), 강조: await contrastOf(page, FOOT + ' b'), 버튼: await contrastOf(page, FOOT + ' button'), 영문: await contrastOf(page, FOOT + ' p[lang="en"]') };
+    ck(`색(${scheme}): 출처 표기의 본문 · 강조 글자 · "자세히" 버튼 · 영문 문구 대비 4.5 이상`, Object.values(c).every((x) => x.ratio >= 4.5), c);
+    await tabTo(page, '데이터·한계');
+    const d = { 영문: await contrastOf(page, '[data-nlm-statement]'), 심평원: await contrastOf(page, '[data-kogl-statement]') };
+    ck(`색(${scheme}): 정보 탭의 NLM 영문 · 심평원 문장 대비 4.5 이상`, Object.values(d).every((x) => x.ratio >= 4.5), d);
+    await page.evaluate(() => { location.hash = 'v-625'; }); await page.waitForTimeout(350);
+    const e = await page.evaluate(async () => {
+      const blk = document.querySelector('#detail [data-provenance]'); if (!blk) return null;
+      const out = { 링크: [], 배지: [], 설명: [] };
+      blk.querySelectorAll('a').forEach((a, i) => { a.setAttribute('data-c19', 'a' + i); out.링크.push('[data-c19="a' + i + '"]'); });
+      blk.querySelectorAll('.rounded-pill').forEach((a, i) => { a.setAttribute('data-c19', 'b' + i); out.배지.push('[data-c19="b' + i + '"]'); });
+      blk.querySelectorAll('.text-small').forEach((a, i) => { a.setAttribute('data-c19', 's' + i); out.설명.push('[data-c19="s' + i + '"]'); });
+      return out;
+    });
+    const rs = { 링크: [], 배지: [], 설명: [] };
+    for (const k of Object.keys(rs)) for (const s of e[k]) rs[k].push((await contrastOf(page, s)).ratio);
+    ck(`색(${scheme}): 상세 출처 블록의 링크 · 이용 조건 배지 · 보조 설명 글자 대비가 모두 4.5 이상`, Object.values(rs).every((a) => a.length > 0 && a.every((x) => x >= 4.5)), { 링크: Math.min(...rs.링크), 배지: Math.min(...rs.배지), 설명: Math.min(...rs.설명), n: [rs.링크.length, rs.배지.length, rs.설명.length] });
+    noErr(`출처 색(${scheme})`, page); await ctx.close();
+  }
+
+  // 19-8. 확장 수록 자료가 없는 모드(핵심 사전만): 출처 표기는 RxNorm 만 적고 심평원·Wikidata 문장은 없음
+  {
+    const { ctx, page } = await open(browser, 1440, 1000, { noExt: true });
+    const f = await page.evaluate((q) => { const e = document.querySelector(q); return e ? { n: document.querySelectorAll(q).length, text: e.innerText, en: (e.querySelector('p[lang="en"]') || {}).textContent } : null; }, FOOT);
+    ck('핵심만: 출처 표기는 하나, RxNorm 만 적고(심평원·Wikidata 없음) NLM 영문 문구는 공식 문구 그대로', f && f.n === 1 && f.text.includes('미국 NLM RxNorm(RxNav)') && !f.text.includes('건강보험심사평가원') && !f.text.includes('Wikidata') && (f.en || '').trim() === NLM_EN, f);
+    await tabTo(page, '데이터·한계');
+    const a = await page.evaluate(() => ({ kogl: !!document.querySelector('[data-kogl-statement]'), nlm: (document.querySelector('[data-nlm-statement]') || { innerText: '' }).innerText.trim(), sec: document.getElementById('about-sources').innerText }));
+    ck('핵심만: 정보 탭에는 NLM 문구만 있고 심평원 문장 · Wikidata · 출처별 항목 수 표는 없음(ATC·SNOMED CT 재배포 미결정 안내는 있음)', !a.kogl && a.nlm === NLM_EN && !a.sec.includes('건강보험심사평가원 — 공공누리') && !a.sec.includes('Wikidata — CC0') && !a.sec.includes('확장 수록의 출처별 항목 수') && a.sec.includes('재배포 조건이 정해지지 않은 자료'), { kogl: a.kogl, nlm: a.nlm === NLM_EN });
+    await page.locator(FOOT).getByRole('button', { name: '출처·이용 조건 자세히' }).click(); await page.waitForTimeout(300);
+    ck('핵심만: "자세히" 버튼도 같은 카드로 이동', (await page.evaluate(() => document.activeElement.id)) === 'about-sources');
+    noErr('핵심만 출처 표기', page); await ctx.close();
+  }
+
+  // 19-9. 키보드: Tab 으로 "자세히" 버튼에 닿으면 초점 테두리가 보이고, Enter 로 누르면 카드로 이동
+  {
+    const { ctx, page } = await open(browser, 1440, 1000);
+    const b = page.locator(FOOT + ' button');
+    await b.focus(); await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+    const ring = await b.evaluate((e) => { const s = getComputedStyle(e); return { on: document.activeElement === e, style: s.outlineStyle, w: s.outlineWidth }; });
+    ck('출처 표기: 키보드로 "자세히" 버튼에 닿으면 초점 테두리(실선 2px)가 보임', ring.on && ring.style === 'solid' && ring.w === '2px', ring);
+    await page.keyboard.press('Enter'); await page.waitForTimeout(400);
+    ck('출처 표기: Enter 로 누르면 "데이터·한계" 탭이 선택되고 포커스가 "출처 표기와 이용 조건" 카드로 감', (await page.getByRole('tab', { name: '데이터·한계', exact: true }).getAttribute('aria-selected')) === 'true' && (await page.evaluate(() => document.activeElement.id)) === 'about-sources');
+    noErr('출처 표기 키보드', page); await ctx.close();
   }
 
   await browser.close();

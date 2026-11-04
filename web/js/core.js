@@ -17,6 +17,9 @@
   // 확장 수록(ext)의 영어 이름 중 일상 낱말·부형제와 겹쳐 답변 검증 결과를 어지럽히는 것(검색에는 그대로 쓴다)
   const EXT_EN_STOP = new Set(['alcohol', 'ethanol', 'methanol', 'glucose', 'sucrose', 'fructose', 'lactose', 'glycerin', 'glycerol', 'nitrogen', 'hydrogen', 'calcium', 'sodium', 'potassium', 'magnesium', 'chloride', 'vitamin', 'protein', 'starch', 'petrolatum', 'paraffin']);
 
+  // NLM 이 응용 프로그램에 넣어 달라고 요청한 문구(RxNav 이용 약관 'Your Own Apps' 항목, 2026-11-04 확인). 번역하거나 줄이지 않고 그대로 쓴다. NLM 이름·로고는 따로 쓰지 않는다(약관이 금지).
+  const NLM_STATEMENT = 'This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.';
+
   function lev(a, b) {
     const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
     let prev = Array.from({ length: n + 1 }, (_, j) => j);
@@ -293,6 +296,96 @@
         atc: (r.atc || []).map(code => ({ code, src: (r.atc_src || {})[code] || '', path: this.atcPath(code) })),
         atcClass: (r.atc_class || []).map(code => ({ code, name: this.atcLabel(code) })),
         names: (r.ko || []).map(x => ({ ...x })), grade: v.grade, gradeText: legend[v.grade] || '', kr: r.kr || null
+      };
+    }
+
+    // ---------- 출처·이용 조건 ----------
+    // 확장 성분 한 개가 어느 공개 자료에서 왔는지: 출처별 식별자·원자료 주소·이용 조건·받은 날/자료 시점.
+    // 빠진 것(식별자 없음·이용 조건 표시 없음 등)은 missing 에 이유를 적는다 — 시험이 표본 50개에서 0건인지 확인한다.
+    // 확장 항목이 아니거나 확장 수록이 없으면 null. 핵심 성분(core:true)은 확장 쪽 기록의 출처를 돌려준다(핵심 사전 자체의 출처는 meta.sources).
+    provenance(id) {
+      const v = this.extById && this.extById.get(id); if (!v) return null;
+      const r = v.rec, M = this.extMeta || {}, files = M.files || {};
+      const srcById = new Map((M.sources || []).map(s => [s.id, s]));
+      const fill = (t, o) => String(t).replace(/\{(\w+)\}/g, (m, k) => encodeURIComponent(o[k] == null ? '' : o[k]));
+      const ymd = (t) => { const m = /_(\d{4})(\d{2})(\d{2})$/.exec(t || ''); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
+      const letters = new Set(String(r.src || ''));
+      if ((r.atc && r.atc.length) || (r.atc_class && r.atc_class.length)) letters.add('A');   // ATC 분류 이름은 RxClass(WHO ATC)에서 온다
+      const sources = [], missing = [];
+      for (const L of ['R', 'H', 'W', 'A']) {
+        if (!letters.has(L)) continue;
+        const s = srcById.get(L);
+        if (!s) { missing.push(`${L}: 출처 설명 없음`); continue; }
+        const fk = (s.files || []).map(k => files[k]).filter(Boolean);
+        const o = { id: L, name: s.name, use: s.use, license: s.license, license_tag: s.license_tag || '', license_class: s.license_class || '', credit: s.credit || '',
+          ids: [], links: [], asof: [], fetched: [...new Set(fk.map(f => f.fetched).filter(Boolean))].sort(), note: '' };
+        if (!o.license_tag) missing.push(`${L}: 이용 조건 표시 없음`);
+        if (L === 'R') {
+          if (r.rxcui) { o.ids.push({ label: 'RxCUI', value: String(r.rxcui) }); if (s.rec_url) o.links.push({ label: 'RxNav 원자료(JSON)', url: fill(s.rec_url, { rxcui: r.rxcui }) }); }
+          else missing.push('R: RxCUI 없음');
+        } else if (L === 'W') {
+          if (r.wd) { o.ids.push({ label: 'Wikidata', value: r.wd }); if (s.rec_url) o.links.push({ label: 'Wikidata 항목', url: fill(s.rec_url, { wd: r.wd }) }); }
+          else missing.push('W: Wikidata 번호 없음');
+        } else if (L === 'H') {
+          if ((r.hira_codes || []).length) { const hc = r.hira_codes; o.ids.push({ label: '심평원 일반명코드', value: hc.length > 6 ? `${hc.slice(0, 6).join(', ')} 외 ${hc.length - 6}개` : hc.join(', ') }); }
+          else if (r.label_en) { o.ids.push({ label: '심평원 일반명', value: r.label_en }); o.note = '단일성분 일반명코드가 없어(복합제 행에서만 나옴) 영문 일반명으로 찾습니다.'; }
+          else missing.push('H: 식별자 없음');
+          const fu = s.file_urls || {}, kr = r.kr || {};
+          if (fu.hira_ing) o.links.push({ label: '의약품주성분(15067461)', url: fu.hira_ing });
+          if (fu.hira_std && (kr.items || kr.combo || Object.values(r.atc_src || {}).some(x => String(x).includes('H')))) o.links.push({ label: '의약품표준코드(15067462)', url: fu.hira_std });
+          const f1 = files.hira_ing || {}, f2 = files.hira_std || {};
+          const d1 = ymd((f1.portal || {}).title), d2 = f2.file_date || ymd((f2.portal || {}).title);
+          if (d1) o.asof.push(`의약품주성분 ${d1}`);
+          if (d2) o.asof.push(`의약품표준코드 ${d2}`);
+        } else if (L === 'A') {
+          o.note = 'ATC 분류 이름(WHO ATC)은 재배포 조건이 정해지지 않았습니다.';
+        }
+        sources.push(o);
+      }
+      const dates = sources.flatMap(s => s.fetched).sort();
+      return {
+        id, review_status: r.review_status || 'draft',
+        ids: { rxcui: r.rxcui || null, hira_codes: r.hira_codes || [], wd: r.wd || null },
+        sources, license_tags: [...new Set(sources.map(s => s.license_tag).filter(Boolean))],
+        pending: sources.filter(s => s.license_class === 'pending').map(s => s.id),
+        urls: sources.flatMap(s => s.links.map(l => l.url)),
+        retrieved_at: dates.length ? dates[dates.length - 1] : null, missing
+      };
+    }
+
+    // 확장 수록 전체의 출처 현황(소개 탭·공개 전 검토용): 출처별로 쓰는 항목 수 / 재배포 조건이 정해지지 않은 출처를 쓰는 항목 수 / 빠진 것이 있는 항목 수.
+    provenanceStats() {
+      if (!this.ext) return null;
+      if (this._provStats) return this._provStats;
+      const by = { R: 0, H: 0, W: 0, A: 0 }; let pending = 0, missing = 0, withHiraCodes = 0;
+      for (const v of this.extAll) {
+        const p = this.provenance(v.id);
+        p.sources.forEach(s => { by[s.id] += 1; });
+        if (p.pending.length) pending += 1;
+        if (p.missing.length) missing += 1;
+        if (p.ids.hira_codes.length) withHiraCodes += 1;
+      }
+      return (this._provStats = { total: this.extAll.length, bySource: by, pending, missing, withHiraCodes });
+    }
+
+    // 출처 표기 문구(화면 하단·소개 탭). nlm_en 은 NLM 이 요청한 영문 문구 그대로이고, kogl 은 공공누리 제1유형의 표시 방식(기관명·연도·무료 내려받기 안내)에 맞춘 문장이다.
+    // 확장 수록이 없으면 심평원 자료를 쓰지 않았으므로 kogl 은 null.
+    attribution() {
+      const M = this.extMeta, files = (M && M.files) || {};
+      const ymd = (t) => { const m = /_(\d{4})(\d{2})(\d{2})$/.exec(t || ''); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
+      let kogl = null;
+      if (M && (files.hira_ing || files.hira_std)) {
+        const d1 = ymd(((files.hira_ing || {}).portal || {}).title), d2 = (files.hira_std || {}).file_date || ymd(((files.hira_std || {}).portal || {}).title);
+        const ys = [d1, d2].filter(Boolean).map(d => d.slice(0, 4)).sort();
+        const yr = ys.length ? (ys[0] === ys[ys.length - 1] ? `${ys[0]}년 ` : `${ys[0]}~${ys[ys.length - 1]}년 `) : '';
+        kogl = `본 저작물은 건강보험심사평가원에서 ${yr}작성하여 공공누리 제1유형으로 개방한 ‘약가마스터 의약품주성분’${d1 ? `(자료명 날짜 ${d1})` : ''}과 ‘약가마스터 의약품표준코드’${d2 ? `(자료명 날짜 ${d2})` : ''}를 가공하여 이용하였으며, 해당 저작물은 건강보험심사평가원, 공공데이터포털(www.data.go.kr)에서 무료로 내려받으실 수 있습니다.`;
+      }
+      return {
+        nlm_en: NLM_STATEMENT,
+        nlm_ko: '위 영문 문구의 한국어 풀이입니다(공식 문구는 영문). 이 제품은 미국 국립의학도서관(NLM)·국립보건원(NIH)·보건복지부(HHS)가 공개한 자료를 이용하며, NLM은 이 제품에 책임이 없고 이 제품이나 다른 어떤 제품도 보증·추천하지 않습니다.',
+        kogl,
+        wikidata: M ? 'Wikidata의 공개 자료(CC0)를 이용했습니다. 표기 의무는 없으나 출처를 밝힙니다.' : null,
+        sources: ['미국 NLM RxNorm(RxNav)', ...(kogl ? ['건강보험심사평가원 약가마스터(공공누리 제1유형)', 'Wikidata(CC0)'] : [])]
       };
     }
 

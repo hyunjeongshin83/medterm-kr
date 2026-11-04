@@ -23,9 +23,9 @@ function Facts({ rows }) {
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, id, children }) {
   return (
-    <Card>
+    <Card id={id} tabIndex={id ? -1 : undefined} className={id ? 'focus:outline-none' : undefined}>
       <h3 className="mb-2 text-heading-m">{title}</h3>
       {children}
     </Card>
@@ -92,7 +92,7 @@ function ExtSection() {
       <ul className="list-disc pl-5 text-base">
         {(XMETA.sources || []).map((s) => (
           <li key={s.id} className="my-1">
-            <b>{s.name}</b> — {s.use}. <span className="text-mut">{s.license}</span>
+            <b>{s.name}</b> — {s.use}. <Badge tone={s.license_class === 'pending' ? 'draft' : s.license_class === 'open' ? 'ok' : 'info'}>{s.license_tag || s.license}</Badge> <span className="text-mut">{s.license}</span>
           </li>
         ))}
       </ul>
@@ -105,6 +105,61 @@ function ExtSection() {
         <li className="my-1">이름이 비슷하고 ATC 코드가 같은 항목(표기 차이일 수 있음)은 자동으로 합치지 않고 ‘이름이 비슷한 항목’으로만 알립니다. 심평원에만 있는 성분 중 쓸모가 낮은 2,070개와 혼합 한약 제제 27개는 목록에서 뺐습니다(제외 목록은 저장소 data/medterm_ext_dropped.tsv).</li>
         <li className="my-1">ATC 분류명은 WHO 저작물이라 재배포 범위가 정해지지 않았습니다(핵심 사전과 같은 보류 항목). 외부에 공개하기 전에 확인해야 합니다.</li>
       </ul>
+    </Section>
+  );
+}
+
+const ATT = mt.attribution();
+const PS = mt.provenanceStats();
+
+/** 출처 표기와 이용 조건 — 이 사전을 화면·문서·논문 등에 옮겨 쓸 때 함께 적는 문구(core.js attribution())와 출처별 현황. 하단 표기의 "자세히"가 여기로 온다. */
+function AttributionSection() {
+  const pct = PS && PS.total ? Math.round((PS.pending / PS.total) * 100) : 0;
+  return (
+    <Section title="출처 표기와 이용 조건" id="about-sources">
+      <p className="mb-2 text-small text-mut">이 사전의 내용을 화면·문서·논문 등에 옮겨 쓸 때는 아래 문구를 함께 적습니다. 성분마다의 출처와 이용 조건은 성분 상세의 ‘출처·이용 조건’에 있습니다. 모두 약사 검수 전 초안이며, 법률 검토를 거친 문구가 아닙니다.</p>
+
+      <h4 className="mb-1 mt-3 text-body-bold">미국 국립의학도서관(NLM) — RxNorm</h4>
+      <p lang="en" data-nlm-statement="" className="text-base">{ATT.nlm_en}</p>
+      <p className="mt-1 text-small text-mut">{ATT.nlm_ko}</p>
+      <p className="mt-1 text-small text-mut">NLM 이용 약관(RxNav 이용 약관, 2026-11-04 확인)은 위 문구를 응용 프로그램에 넣도록 요청하고, NLM 이름·로고를 응용 프로그램과 함께 쓰는 것을 금지합니다. 이 사전은 로고를 쓰지 않습니다. 약관의 재배포 범위는 그 페이지에서 확인하지 못했습니다.</p>
+
+      {ATT.kogl && (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">건강보험심사평가원 — 공공누리 제1유형</h4>
+          <p data-kogl-statement="" className="text-base">{ATT.kogl}</p>
+          <p className="mt-1 text-small text-mut">제1유형은 출처를 표시하면 상업적 이용과 변형이 가능합니다. 가공한 결과는 원 기관이 보증하지 않습니다.</p>
+        </>
+      )}
+
+      {ATT.wikidata && (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">Wikidata — CC0</h4>
+          <p className="text-base">{ATT.wikidata}</p>
+        </>
+      )}
+
+      <h4 className="mb-1 mt-4 text-body-bold">재배포 조건이 정해지지 않은 자료</h4>
+      <p className="text-base">
+        ATC 분류(WHO)와 핵심 사전의 SNOMED CT 코드는 재배포 조건을 확인하지 못했습니다. 이 사전을 외부에 공개하기 전에 결정해야 합니다.
+        {PS ? ` 확장 수록에서는 ${nf(PS.pending)}개 항목(${pct}%)이 ATC 코드 또는 분류 이름을 가지고 있습니다.` : ''}
+      </p>
+
+      {PS && (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">확장 수록의 출처별 항목 수</h4>
+          <Facts
+            rows={[
+              ['RxNorm(NLM)에서 온 항목', nf(PS.bySource.R)],
+              ['심평원 약가마스터에서 온 항목 (이 중 단일성분 일반명코드가 기록된 항목)', `${nf(PS.bySource.H)} (${nf(PS.withHiraCodes)})`],
+              ['Wikidata에서 온 항목', nf(PS.bySource.W)],
+              ['ATC 코드·분류 이름을 가진 항목 (재배포 조건 미결정)', nf(PS.bySource.A)],
+              ['출처 식별자·이용 조건 표시가 빠진 항목 (자동 점검)', nf(PS.missing)],
+            ]}
+          />
+          <p className="mt-2 text-small text-mut">기록한 것은 단일성분 일반명코드 전체(9자리)이며, 원자료의 행을 되짚는 용도입니다. 코드 번호의 앞 4자리는 성분 식별자가 아니므로(같은 약이 여러 앞자리를 쓰고, 다른 약이 앞자리를 공유함) 성분을 합치는 열쇠로 쓰지 않습니다. 복합제 행에서만 나오는 성분은 코드 없이 영문 일반명으로 찾습니다.</p>
+        </>
+      )}
     </Section>
   );
 }
@@ -142,6 +197,8 @@ export function AboutTab() {
       </Section>
 
       <ExtSection />
+
+      <AttributionSection />
 
       <Section title="검증기 점검 결과 (자동 테스트)">
         <p className="mb-2 text-small text-mut">개발 세트는 이 사전에서 합성한 문장이라 사실상 단위 테스트이며, 실제 LLM 답변의 성능이 아닙니다.</p>

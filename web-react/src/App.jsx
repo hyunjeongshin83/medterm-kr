@@ -10,6 +10,7 @@ import { VerifyTab } from './components/VerifyTab.jsx';
 import { RagTab } from './components/RagTab.jsx';
 import { AboutTab } from './components/AboutTab.jsx';
 import { Inspector } from './components/Inspector.jsx';
+import { SourceFooter } from './components/SourceFooter.jsx';
 import { cx, inertProps } from './components/ui.jsx';
 
 export default function App() {
@@ -106,6 +107,22 @@ export default function App() {
     if (centerRef.current) centerRef.current.scrollTop = 0;
   };
 
+  // 하단 출처 표기의 "자세히": 데이터·한계 탭으로 가서 "출처 표기와 이용 조건" 카드로 내려간다(탭이 그려진 다음 틱에서 이동).
+  const openSources = () => {
+    changeTab('about');
+    setTimeout(() => {
+      const el = document.getElementById('about-sources');
+      if (el) {
+        // 데스크톱·태블릿의 작업 탭 줄은 화면 위에 붙어 있으므로(sticky) 카드 제목이 그 밑에 가려지지 않게 그만큼 비켜서 멈춘다. 휴대폰은 탭 줄이 아래에 있어 0.
+        const bar = document.querySelector('[role="tablist"][aria-label="작업 화면"]');
+        const cover = bar && getComputedStyle(bar).position === 'sticky' ? bar.offsetHeight + 8 : 0;
+        el.style.scrollMarginTop = `${cover}px`;
+        el.scrollIntoView({ block: 'start' });
+        el.focus({ preventScroll: true });
+      }
+    }, 0);
+  };
+
   // 상세의 주된 버튼: 같은 성분의 관계 그래프로 넘어간다. 서랍·시트는 닫고, 포커스는 "관계 그래프" 탭으로 옮긴다.
   const openGraph = () => {
     const tabEl = document.getElementById('tab-graph');
@@ -152,6 +169,7 @@ export default function App() {
             <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
             <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
             <Panel id="about" active={tab === 'about'}><AboutTab /></Panel>
+            <SourceFooter onMore={openSources} />
           </div>
         </main>
         <Inspector

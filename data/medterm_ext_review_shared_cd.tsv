@@ -1,0 +1,61 @@
+prefix4	n	ids	labels	grades
+1040	2	MT:KRI:aesculus_hippocastanum_l_seeds_ext | MT:KRI:triterpene_glycoside	aesculus hippocastanum l. seeds ext | triterpene glycoside	d | d
+1120	2	MT:VTM:133050 | MT:VTM:18516	activated attapulgite | attapulgite	b | b
+1157	2	MT:KRI:benzethonium_cl | MT:VTM:1390	benzethonium. cl | benzethonium	d | b
+1219	2	MT:KRI:p_p_t | MT:VTM:1897	p.p.t | calcium carbonate	d | a
+1238	2	MT:KRI:carboxymethylcysteine_s | MT:VTM:2023	carboxymethylcysteine-s | carbocysteine	d | a
+1239	2	MT:KRI:carduus_marianus_ext | MT:KRI:milk_thistle_fruit_ext	carduus marianus ext | milk thistle fruit ext	d | d
+1242	2	MT:KRI:carbomere | MT:VTM:235535	carbomere | carbomer	d | b
+1245	2	MT:VTM:2106 | MT:VTM:42955	carnitine | levocarnitine	a | b
+1302	2	MT:KRI:cerebrolysin | MT:KRI:proteolytic_peptide_from_porcine_brain	cerebrolysin | proteolytic peptide from porcine brain	d | d
+1500	3	MT:KRI:hederacoside_c_2_5mg | MT:KRI:ivy_leaf_ethanol_ext | MT:KRI:ivy_leaf_ethanol_fluid_ext	hederacoside c 2.5mg | ivy leaf ethanol ext | ivy leaf ethanol fluid ext	d | d | d
+1586	2	MT:KRI:fe_iii | MT:KRI:ferric_hydroxide_polymaltose_complex	fe iii | ferric hydroxide polymaltose complex	d | d
+1699	2	MT:KRI:human_immunoglobulin_g | MT:VTM:5666	human immunoglobulin-g | immunoglobulin G	d | b
+1716	2	MT:VTM:2393 | MT:VTM:5521	chloroquine | hydroxychloroquine	b | a
+1719	2	MT:KRI:hydroxypropylmethylcellulose | MT:VTM:27334	hydroxypropylmethylcellulose | hypromellose	d | a
+1775	2	MT:VTM:5992 | MT:VTM:90176	iron-dextran complex | iron	b | b
+1782	2	MT:VTM:135313 | MT:VTM:2612691	isopropyl unoprostone | omidenepag	b | b
+1798	2	MT:KRI:ketoprofen_lysinate | MT:VTM:6142	ketoprofen lysinate | ketoprofen	d | a
+1808	2	MT:KRI:lactulose_cone | MT:VTM:6218	lactulose cone | lactulose	d | a
+1867	2	MT:KRI:bacterial_lysates | MT:KRI:bacterial_lysates_7mg	bacterial lysates | bacterial lysates 7mg	d | d
+1919	2	MT:VTM:6837 | MT:VTM:9100	methionine | racemethionine	b | b
+1938	2	MT:VTM:6915 | MT:VTM:6918	metoclopramide | metoprolol	a | a
+2026	3	MT:KRI:diluted_nitroglycerin | MT:KRI:nitroglycerin_diluted | MT:VTM:4917	diluted nitroglycerin | nitroglycerin diluted | nitroglycerin	d | d | a
+2050	2	MT:KRI:ornithine_l_aspartate | MT:VTM:7704	ornithine-l-aspartate | ornithine	d | b
+2076	2	MT:KRI:oyster_shell | MT:VTM:1895	oyster shell | calcium	d | b
+2146	2	MT:KRI:plantago_seed_plantago_seed_cortex | MT:VTM:82088	plantago seed/plantago seed cortex | Plantago seed	d | b
+2153	2	MT:VTM:105669 | MT:VTM:1804843	polysaccharide iron complex | polysaccharide-K	b | b
+2155	2	MT:KRI:polyvinyl_alcohol_iodine | MT:VTM:8570	polyvinyl alcohol iodine | polyvinyl alcohol	d | b
+2162	2	MT:VTM:8610 | MT:VTM:8611	povidone | povidone-iodine	b | a
+2376	2	MT:VTM:10464 | MT:VTM:10493	thiamylal | thiopental	b | a
+2507	2	MT:VTM:39993 | MT:VTM:40001	zolpidem | zopiclone	a | b
+3597	2	MT:KRI:fe | MT:KRI:iron_hydoxide_sucrose_complex	fe | iron hydoxide sucrose complex	d | d
+3935	2	MT:KRI:glutara | MT:VTM:4888	glutara | glutaral	d | b
+4136	2	MT:KRI:azulene_soluble | MT:VTM:2675343	azulene soluble | azulene	d | b
+4290	2	MT:KRI:levocloperastine_fendizoate | MT:VTM:2104180	levocloperastine fendizoate | cloperastine	d | b
+4423	2	MT:KRI:risedronate_2_5 | MT:VTM:73056	risedronate 2.5 | risedronate	d | a
+4483	2	MT:VTM:1310594 | MT:VTM:221147	polyethylene glycol 4000 | polyethylene glycol 3350	b | b
+4611	2	MT:KRI:freeze_dried_lactobacillus_casei_var_rha | MT:KRI:lactobacillus_casei_var_rhamnosus	freeze-dried lactobacillus casei var. rhamnosus culture | lactobacillus casei var. rhamnosus	d | d
+4618	2	MT:VTM:253182 | MT:VTM:274783	insulin, regular, human | insulin glargine	b | b
+4728	3	MT:KRI:von_willebrand_factor_125i_u | MT:KRI:von_willebrand_factor_250i_u | MT:KRI:von_willebrand_factor_500i_u	von-willebrand factor 125i.u | von-willebrand factor 250i.u | von-willebrand factor 500i.u	d | d | d
+4746	2	MT:KRI:clostridium_botulinum_toxin_type_a | MT:KRI:clostridium_botulinum_toxin_type_a_haema	clostridium botulinum toxin type a | clostridium botulinum toxin type a haemagglutinin complex	d | d
+4751	2	MT:KRI:cyclosporin | MT:VTM:3008	cyclosporin | cyclosporine	d | a
+4851	2	MT:KRI:peroxyacetic_acid | MT:VTM:2045732	peroxyacetic acid | peracetic acid	d | b
+4903	3	MT:KRI:pelargonium_sidoides_ethanol_ext | MT:KRI:pelargonium_sidoides_ethanol_ext_glyceri | MT:KRI:pelargonium_sidoides_ext	pelargonium sidoides ethanol ext | pelargonium sidoides ethanol ext. ᆞglycerin mixed | pelargonium sidoides ext	d | d | d
+4955	2	MT:KRI:duloxetine_as_duloxetine | MT:VTM:72625	duloxetine (as duloxetine | duloxetine	d | a
+4956	2	MT:KRI:decitabine_50mg | MT:VTM:15657	decitabine 50mg | decitabine	d | a
+5062	2	MT:KRI:beroctocog | MT:KRI:beroctocog_alfa	beroctocog α | beroctocog alfa	d | d
+5668	2	MT:VTM:9640 | MT:VTM:9641	selenite | selenium	b | b
+5796	2	MT:KRI:influenza_virus_antigen_type_a | MT:KRI:influenza_virus_antigen_type_a_inactivat	influenza virus antigen type a | influenza virus antigen type a inactivated and	d | d
+5803	2	MT:KRI:influenza_virus_antigen | MT:KRI:influenza_virus_antigen_inactivated_and	influenza virus antigen | influenza virus antigen inactivated and	d | d
+5947	2	MT:VTM:11416 | MT:VTM:39954	zinc | zinc sulfate	b | b
+6119	2	MT:VTM:1114326 | MT:VTM:619693	indacaterol | peramivir	a | b
+6202	2	MT:VTM:11253 | MT:VTM:2418	vitamin D | cholecalciferol	b | a
+6217	2	MT:KRI:artemisiae_argyi_folium_isopropanol_ext | MT:KRI:artemisiae_argyi_folium_isopropanol_soft	artemisiae argyi folium isopropanol ext | artemisiae argyi folium isopropanol soft ext	d | d
+6226	2	MT:KRI:levofolinate | MT:VTM:877015	levofolinate | levoleucovorin	d | b
+6280	2	MT:VTM:1369713 | MT:VTM:27084	pomalidomide | homatropine	a | a
+6281	2	MT:VTM:1442981 | MT:VTM:29998	ibrutinib | ocriplasmin	b | b
+6378	2	MT:KRI:agalsidase_960c2f | MT:VTM:2691830	agalsidase α | agalsidase alfa	d | b
+6783	2	MT:KRI:house_dust_mite_allergen_extract_1000au | MT:KRI:house_dust_mite_allergen_extract_300au	house dust mite allergen extract 1000au | house dust mite allergen extract 300au	d | d
+6794	3	MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl | MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl_801ed1 | MT:KRI:omega_3_acid_ethyl_esters90_as_epa_ethyl_e9339d	omega-3-acid ethyl esters90 (as epa ethylester 0.92g | omega-3-acid ethyl esters90 (as epa ethylester 0.23g | omega-3-acid ethyl esters90 (as epa ethylester 0.46g	d | d | d
+7070	2	MT:VTM:2262435 | MT:VTM:2587901	zanubrutinib | molnupiravir	b | b

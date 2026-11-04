@@ -33,19 +33,27 @@ def http_get(url, headers=None, tries=4, timeout=120):
             last = e; time.sleep(3 * (i + 1))
     raise RuntimeError(f'요청 실패: {url[:90]} — {last}')
 
+def note_fetch(raw, rel):
+    """받은 파일의 받은 날(이 컴퓨터의 날짜)을 raw/fetch_log.json 에 적는다 — 자료 시점의 근거(ext_build 가 meta.files 에 옮긴다)."""
+    p = os.path.join(raw, 'fetch_log.json')
+    try: log = json.load(open(p, encoding='utf-8'))
+    except (OSError, ValueError): log = {}
+    log[rel] = time.strftime('%Y-%m-%d')
+    json.dump(log, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1, sort_keys=True)
+
 def fetch_rx(raw):
     for tty, fn in (('IN', 'rx_in.json'), ('PIN', 'rx_pin.json')):
         b = http_get(f'{RXNAV}/allconcepts.json?tty={tty}', {'Accept': 'application/json'}, timeout=300)
-        open(os.path.join(raw, fn), 'wb').write(b); print(fn, len(b))
+        open(os.path.join(raw, fn), 'wb').write(b); note_fetch(raw, fn); print(fn, len(b))
     b = http_get(f'{RXNAV}/rxclass/allClasses.json?classTypes=ATC1-4', {'Accept': 'application/json'})
-    open(os.path.join(raw, 'rx_atc_classes.json'), 'wb').write(b); print('rx_atc_classes.json', len(b))
+    open(os.path.join(raw, 'rx_atc_classes.json'), 'wb').write(b); note_fetch(raw, 'rx_atc_classes.json'); print('rx_atc_classes.json', len(b))
 
 def fetch_wd(raw):
     for name, q in WD_QUERIES.items():
         url = WDQS + '?format=json&query=' + urllib.parse.quote(q)
         b = http_get(url, {'Accept': 'application/sparql-results+json'}, timeout=300)
         json.loads(b)  # 형식 확인
-        open(os.path.join(raw, name + '.json'), 'wb').write(b); print(name + '.json', len(b))
+        open(os.path.join(raw, name + '.json'), 'wb').write(b); note_fetch(raw, name + '.json'); print(name + '.json', len(b))
         time.sleep(2)
 
 def portal_info(html):
@@ -76,7 +84,7 @@ def fetch_datago(raw, key, pk):
     except UnicodeError: cd = urllib.parse.unquote(cd_raw)
     m_fn = re.search(r'filename="?([^";]+)"?', cd); filename = m_fn.group(1).strip() if m_fn else None
     m_dt = re.search(r'(20\d{2})(\d{2})(\d{2})', filename or ''); file_date = f'{m_dt.group(1)}-{m_dt.group(2)}-{m_dt.group(3)}' if m_dt else None
-    open(os.path.join(d, 'raw.bin'), 'wb').write(body)
+    open(os.path.join(d, 'raw.bin'), 'wb').write(body); note_fetch(raw, key + '/raw.bin')
     json.dump({'pk': pk, 'dataNm': nm, 'filename': filename, 'file_date': file_date, 'portal': portal_info(html), 'bytes': len(body), 'fetched': time.strftime('%Y-%m-%d')},
               open(os.path.join(d, 'meta.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(key, pk, filename or nm, len(body))
