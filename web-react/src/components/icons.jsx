@@ -41,3 +41,9 @@ export const IconChevron = ({ size = 20 }) => (
 export const IconArrow = ({ size = 20 }) => (
   <svg {...svg(size)}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
 );
+export const IconPill = ({ size = 22 }) => (
+  <svg {...svg(size)}><rect x="2.8" y="8.4" width="18.4" height="7.2" rx="3.6" transform="rotate(-35 12 12)" /><path d="m9.2 6.6 5.6 8" /></svg>
+);
+export const IconFlask = ({ size = 22 }) => (
+  <svg {...svg(size)}><path d="M9.5 3.5h5M10.3 3.5v5.2L5.4 17.6A2.2 2.2 0 0 0 7.3 21h9.4a2.2 2.2 0 0 0 1.9-3.4l-4.9-8.9V3.5" /><path d="M7.6 15h8.8" /></svg>
+);

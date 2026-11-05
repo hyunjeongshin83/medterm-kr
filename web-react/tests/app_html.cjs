@@ -10,7 +10,7 @@ const OUT = process.argv[2] || path.join(ROOT, 'shots', 'app'); fs.mkdirSync(OUT
 const FILE = path.join(ROOT, 'dist', 'MedTerm-KR_app.html');
 const URL = 'file://' + FILE;
 const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
-const TABS = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+const TABS = ['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];   // v1.3.0: 국내 제품·최신·임상 탭 추가(자료 파일이 있는 빌드)
 
 let bad = 0, total = 0;
 const ck = (n, ok, x) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  → ' + JSON.stringify(x) : '')); };
@@ -56,7 +56,7 @@ const overflow = (page) => page.evaluate(() => {
     ck(`${w}px: 제목`, (await page.title()) === 'MedTerm-KR', await page.title());
     ck(`${w}px: 면책 문구 원문 그대로`, (await page.getByRole('note').innerText()).trim() === DISC);
     ck(`${w}px: 상단 제목 옆 버전 v${VERSION}`, (await page.locator('header h1').innerText()).replace(/\s+/g, ' ').trim() === `MedTerm-KR v${VERSION}`);
-    ck(`${w}px: 탭 5개`, (await page.getByRole('tab').count()) === 5 || (await page.getByRole('tab').filter({ hasText: new RegExp(TABS.join('|')) }).count()) === 5);
+    ck(`${w}px: 탭 ${TABS.length}개`, (await page.getByRole('tab').count()) === TABS.length || (await page.getByRole('tab').filter({ hasText: new RegExp(TABS.join('|')) }).count()) === TABS.length);
 
     await page.fill('#q', '오메프라졸'); await page.waitForTimeout(400);
     ck(`${w}px: 검색하면 오메프라졸이 선택되고 주소가 #v-7646`, (await page.evaluate(() => location.hash)) === '#v-7646' && (await page.locator('#panel-search').innerText()).includes('오메프라졸'));
@@ -66,7 +66,7 @@ const overflow = (page) => page.evaluate(() => {
       flows[t] = await overflow(page);
       if (w === 390) await page.screenshot({ path: path.join(OUT, `phone_${TABS.indexOf(t) + 1}.png`) });
     }
-    ck(`${w}px: 5개 탭 모두 가로 넘침 없음`, Object.values(flows).every((f) => f.doc <= 0 && f.center <= 0), flows);
+    ck(`${w}px: ${TABS.length}개 탭 모두 가로 넘침 없음`, Object.values(flows).every((f) => f.doc <= 0 && f.center <= 0), flows);
 
     // 근거 기반 질의: 앱에서는 서버 프록시 입력이 없고 안내 문구가 "이 앱"
     await tabTo(page, '근거 기반 질의');

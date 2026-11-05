@@ -36,8 +36,17 @@ const STATES = [
   { id: '답변 검증(결과 표시)', run: async (p) => { await tab(p, '답변 검증'); await p.fill('#vtext', '와파린은 항응고제이며 오메프라졸 20mg과 에스오메프라졸은 ATC A02BC01입니다. 가짜약정은 혈압약입니다.'); await p.getByRole('button', { name: '검증', exact: true }).click(); await sleep(300); } },
   { id: '근거 기반 질의(질의문·예시 답변 검증)', run: async (p) => { await tab(p, '근거 기반 질의'); await p.fill('#rq', '오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘'); await p.getByRole('button', { name: '사전에서 근거 찾기' }).click(); await sleep(250); await p.getByRole('button', { name: '예시 답변 넣기(오류 포함)' }).click(); await p.getByRole('button', { name: '이 답변 검증' }).click(); await sleep(300); } },
   { id: '데이터·한계 탭', run: async (p) => { await tab(p, '데이터·한계'); await sleep(300); } },
+  { id: '국내 제품 탭(처음)', run: async (p) => { await tab(p, '국내 제품'); await sleep(300); } },
+  { id: '국내 제품 검색 "반하사심탕" + 상세', run: async (p) => { await tab(p, '국내 제품'); await p.fill('#pq', '반하사심탕'); await sleep(450); await p.locator('#panel-product section[aria-labelledby="plist-title"] > ul > li > button').first().click(); await sleep(350); } },
+  { id: '국내 제품 증상어 "감기"(묶음 안내)', run: async (p) => { await tab(p, '국내 제품'); await p.fill('#pq', '감기'); await sleep(450); } },
+  { id: '국내 제품 "숙취해소"(안내·결과 없음)', run: async (p) => { await tab(p, '국내 제품'); await p.fill('#pq', '숙취해소'); await sleep(450); } },
+  { id: '최신·임상 탭(처음)', run: async (p) => { await tab(p, '최신·임상'); await sleep(300); } },
+  { id: '최신·임상 신약 카드 펼침', run: async (p) => { await tab(p, '최신·임상'); await p.locator('#panel-new section[aria-labelledby="nlist-title"] summary').first().click(); await sleep(300); } },
+  { id: '최신·임상 임상 진행·예정(카드 펼침)', run: async (p) => { await tab(p, '최신·임상'); await p.getByRole('button', { name: '임상 진행·예정 성분' }).click(); await sleep(300); await p.locator('#panel-new section[aria-labelledby="nlist-title"] summary').first().click(); await sleep(300); } },
   { id: '상세(핵심 성분) 서랍·시트', drawerOnly: true, run: async (p, v) => { await p.fill('#q', '메트포르민'); await sleep(300); await tap(v, p.locator('#panel-search ul.feed-grid button').first()); await sleep(450); } },
   { id: '상세(확장 수록) 서랍·시트', drawerOnly: true, run: async (p, v) => { await p.fill('#q', '에페리손'); await sleep(300); await tap(v, p.locator('#panel-search ul.feed-grid button').first()); await sleep(450); } },
+  { id: '상세(신약·임상·화합물 블록) 서랍·시트', drawerOnly: true, run: async (p, v) => { await p.fill('#q', 'tiratricol'); await sleep(350); await tap(v, p.locator('#panel-search ul.feed-grid button').first()); await sleep(500); } },
+  { id: '상세(국내 제품 블록) 서랍·시트', drawerOnly: true, run: async (p, v) => { await p.fill('#q', '아세트아미노펜'); await sleep(350); await tap(v, p.locator('#panel-search ul.feed-grid button').first()); await sleep(500); } },
   { id: '분류 트리 서랍(펼침)', phoneOnly: true, run: async (p, v) => { await tap(v, p.locator('#nav-toggle')); await sleep(400); await tap(v, p.locator('#tree button[aria-expanded]').first()); await sleep(200); } },
 ];
 

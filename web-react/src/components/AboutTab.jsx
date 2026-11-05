@@ -1,4 +1,4 @@
-import { BENCH, DATA, META, XMETA, mt } from '../lib/mt.js';
+import { BENCH, DATA, META, XMETA, layers, mt } from '../lib/mt.js';
 import { Badge, Card } from './ui.jsx';
 import { nf } from './ExtParts.jsx';
 
@@ -109,6 +109,84 @@ function ExtSection() {
   );
 }
 
+const NOT_LINKED = [
+  ['의약품안전나라(nedrug.mfds.go.kr) — 의약품등 제품정보·안전사용정보', '누리집이 자동 수집을 허용하지 않아(robots.txt) 화면을 긁어 오지 않았습니다. 정식 경로는 공공데이터포털의 식약처 의약품 허가정보 OpenAPI(인증키 필요)이며, 키를 넣은 컴퓨터에서 저장소의 tools/fetch_mfds.mjs 로 받도록 준비해 두었습니다(아직 실제로 돌려 보지 않았습니다). 복약·안전사용 정보는 허가정보와 다른 서비스일 수 있어, 어떤 OpenAPI 로 받을 수 있는지는 아직 확인하지 못했습니다.'],
+  ['식품안전나라(foodsafetykorea.go.kr) — 건강기능식품·식품안전지식', '같은 이유로 화면 수집은 하지 않았습니다. 공공데이터포털에 식약처 ‘건강기능식품 품목제조 신고사항 현황’(개발·운영 단계 모두 자동승인, JSON·XML)과 ‘건강기능식품 품목제조신고(원재료)’(운영 단계는 심의승인)가 올라와 있어(2026-11-05 확인) 인증키를 받으면 연동할 수 있으나 아직 연동하지 않았습니다. 식품안전지식(누리집 글)은 자료로 받을 수 있는 공개 API 를 확인하지 못했습니다. 숙취해소 제품은 대부분 건강기능식품·일반식품이라 이 사전(허가 의약품)에는 없습니다.'],
+  ['약학정보원(health.kr)', '열람 전용 누리집이며 자료를 가져다 쓰려면 별도 이용 계약이 필요합니다. 연결하지 않았고, 제휴 문의가 필요합니다.'],
+  ['대한약사회(pharm.or.kr)', '의약품식별표시(낱알식별) 등록·조회 사이트이며 자료 제공 약관을 확인하지 못해 연결하지 않았습니다.'],
+  ['개발 중인 신약 후보(비공개 파이프라인)', '공개 등록소(ClinicalTrials.gov)에 등록된 시험만 반영합니다. 등록 전 단계·비공개 개발 정보는 알 수 없습니다.'],
+];
+
+/** 추가 자료(최신 승인·임상·화합물 연결 / 국내 제품)의 건수·출처·숫자의 뜻·한계, 그리고 연결하지 못한 자료와 이유. 두 자료 모두 없으면 그리지 않는다. */
+function LayersSection() {
+  if (!layers || (!layers.hasNew && !layers.hasProducts)) return null;
+  const nm = layers.hasNew ? layers.newMeta : null; const pm = layers.hasProducts ? layers.prodMeta : null;
+  const nc = (nm && nm.counts) || {}; const pc = (pm && pm.counts) || {};
+  const srcs = [...((nm && nm.sources) || []), ...((pm && pm.sources) || [])];
+  const stdDate = pm && pm.files && pm.files.hira_std && pm.files.hira_std.file_date;
+  const fch = (nm && nm.fetched) || {};
+  return (
+    <Section title="추가 자료: 최신 승인·임상 · 국내 제품 (공개 자료 자동 수집 · 약사 검수 전)" id="about-layers">
+      <p className="mb-2 text-small text-mut">앞의 사전(성분)에 더해, 새 약과 국내 제품을 <b className="text-ink">별도 층</b>으로 얹었습니다. 핵심·확장 사전의 내용은 바꾸지 않았고, 성분 이름이 정확히 같을 때만 이어 붙입니다.</p>
+      {nm && (
+        <>
+          <h4 className="mb-1 mt-3 text-body-bold">최신 승인·임상·화합물 연결</h4>
+          <Facts
+            rows={[
+              ['미국 FDA 신약 승인(2021년~) / 사전 성분과 연결 / 임상 요약이 있는 것', `${nf(nc.novel)} / ${nf(nc.novel_linked)} / ${nf(nc.novel_with_trials)}`],
+              ['임상시험 요약이 있는 성분 이름 (이 중 등록이 많아 1,000건까지만 센 것)', `${nf(nc.trials)} (${nf(nc.trials_capped)})`],
+              ['화합물(PubChem) 연결 이름 / 제목 정확 일치 · 후보 하나뿐', `${nf(nc.chem)} / ${nf(nc.chem_how && nc.chem_how.exact)} · ${nf(nc.chem_how && nc.chem_how.single)}`],
+              ['같은 골격 묶음 / 구조 유사 이웃이 있는 이름', `${nf(nc.skeleton_groups)} / ${nf(nc.sim)}`],
+              ['자료 받은 날: FDA · 임상 · PubChem', `${fch.fda || '-'} · ${fch.trials || '-'} · ${fch.chem || '-'}`],
+            ]}
+          />
+        </>
+      )}
+      {pm && (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">국내 제품(품목)</h4>
+          <Facts
+            rows={[
+              ['제품 수 (전문 / 일반)', `${nf(pc.products)} (${nf(pc.rx)} / ${nf(pc.otc)})`],
+              ['제약회사 / 성분 구성(일반명코드) / 영문 성분명', `${nf(pc.companies)} / ${nf(pc.codes)} / ${nf(pc.ingredient_names)}`],
+              ['성분 구성이 있는 제품 / ATC가 있는 제품', `${nf(pc.with_code)} / ${nf(pc.with_atc)}`],
+              ['한약제제로 추정한 제품(이름 규칙)', nf(pc.herbal_guess)],
+              ['담지 않은 것(한약재·구분 공란·원료의약품·의약외품)', Object.entries(pc.excluded_products || {}).map(([k, v]) => `${k} ${nf(v)}`).join(' · ')],
+              ['자료 기준(심평원 의약품표준코드 파일 기준일)', stdDate || '-'],
+            ]}
+          />
+        </>
+      )}
+
+      <h4 className="mb-1 mt-4 text-body-bold">숫자의 뜻</h4>
+      <ul className="list-disc pl-5 text-base">
+        <li className="my-1"><b>제품 1건</b> = ‘품목기준코드 + 품목명 + 업체’ 한 벌입니다. 같은 품목기준코드를 여러 업체·이름이 함께 쓰는 경우가 있어(코드는 제품을 구별하는 열쇠가 아님) 코드 단위로 센 확장 수록의 ‘품목’ 수{pc.distinct_item_codes ? `(${nf(pc.distinct_item_codes)})` : ''}보다 많습니다.</li>
+        <li className="my-1"><b>임상 건수</b>는 ClinicalTrials.gov 등록 중 성분 이름이 시험 중재(이름·다른 이름)에 그대로 들어간 것을 센 값입니다(유의어 확장 없음). 코드명(예: HSK3486)이나 다른 철자로만 등록된 시험은 빠질 수 있고, 비교약·병용약으로 쓰인 시험이 섞일 수 있으며, 효능·안전성의 근거가 아닙니다. 등록이 아주 많은 성분은 최근 시작 1,000건까지만 센 값이라 ‘+’로 표시합니다.</li>
+        <li className="my-1"><b>화합물 연결</b>은 PubChem 이름 검색에서 제목이 성분 이름과 정확히 같은 화합물(또는 후보가 하나뿐인 경우)만 이은 참고 정보입니다. 같은 골격(InChIKey 앞 14자 일치)과 구조 유사 이웃(2D 유사도 0.9 이상)은 같은 계열·같은 효과·대체 가능을 뜻하지 않습니다.</li>
+        <li className="my-1"><b>한약제제(추정)</b>는 제품 이름의 규칙으로 가려낸 표시입니다{pm && pm.herbal_rules ? ` (${Object.values(pm.herbal_rules).length}가지 규칙: 방제명+엑스, 단미·혼합엑스, 괄호 속 방제명, ○○탕 액제 등)` : ''}. 처방 구성(군신좌사)·병명·효능은 이 자료에 없어 약사 확인이 필요합니다.</li>
+        <li className="my-1"><b>묶음</b>(감기·소화제·수액 등)은 ATC 분류 앞부분으로 모은 검색 보조이며 복약·구매 추천이 아닙니다. ‘감기’ 같은 증상어는 제품 이름에 거의 없어 묶음으로 연결합니다.</li>
+        <li className="my-1"><b>대체 후보</b>는 같은 일반명코드(성분·함량·제형 큰 갈래가 같음)의 다른 제품일 뿐입니다. 약사법 제27조의 대체조제 가능 판정이 아니며, 확인은 약사가 합니다.</li>
+        <li className="my-1">FDA 승인은 미국 기준이며 국내 허가·급여를 뜻하지 않습니다. 식약처 허가 반영은 인증키 수집이 필요해 아직 연동되지 않았습니다.</li>
+      </ul>
+
+      <h4 className="mb-1 mt-4 text-body-bold">출처와 이용 조건</h4>
+      <ul className="list-disc pl-5 text-base">
+        {srcs.map((s) => (
+          <li key={s.id} className="my-1">
+            <b>{s.name}</b> — {s.use}. <Badge tone={s.license_class === 'pending' ? 'draft' : s.license_class === 'open' ? 'ok' : 'info'}>{s.license_tag || s.license}</Badge> <span className="text-mut">{s.license}</span>
+            {s.credit && <span className="block text-small text-mut">출처 표기: {s.credit}</span>}
+          </li>
+        ))}
+      </ul>
+
+      <h4 className="mb-1 mt-4 text-body-bold">연결하지 못한 자료와 이유</h4>
+      <ul className="list-disc pl-5 text-base">
+        {NOT_LINKED.map(([k, v]) => <li key={k} className="my-1"><b>{k}</b> — {v}</li>)}
+      </ul>
+    </Section>
+  );
+}
+
 const ATT = mt.attribution();
 const PS = mt.provenanceStats();
 
@@ -197,6 +275,8 @@ export function AboutTab() {
       </Section>
 
       <ExtSection />
+
+      <LayersSection />
 
       <AttributionSection />
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { META, mt } from '../lib/mt.js';
+import { META, layers, mt } from '../lib/mt.js';
 import { SEARCH_EXAMPLES } from '../lib/samples.js';
 import { buildAz } from '../lib/tree.js';
 import { ATC1_KO, ATC_GROUPS, groupsOf } from '../lib/atc1.js';
@@ -70,7 +70,23 @@ function MoreBtn({ shown, total, onMore }) {
 // 확장 수록 목록은 한글 이름이 있는 것을 가나다순으로 먼저, 한글 이름이 없는 것(영문 이름)을 그 뒤에 둔다.
 const byKoFirst = (a, b) => (a.label_ko ? 0 : 1) - (b.label_ko ? 0 : 1) || mt._cmpName(a, b);
 
-export function SearchTab({ selectedId, onSelect }) {
+/** 같은 검색어를 다른 자료(국내 제품·최신 승인)에서도 찾아 건수를 알려 주고, 눌러서 그 탭으로 넘어간다. */
+function CrossHits({ q, onJump }) {
+  const n = useMemo(() => {
+    const t = q.trim(); if (!layers || t.length < 2) return null;
+    return { prod: layers.hasProducts ? layers.searchProducts({ q: t, limit: 1 }).total : 0, novel: layers.hasNew ? layers.searchNovel(t, 50).length : 0 };
+  }, [q]);
+  if (!n || (!n.prod && !n.novel)) return null;
+  return (
+    <div id="cross-hits" className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-small text-mut">
+      <span>같은 검색어가 다른 자료에도 있습니다:</span>
+      {n.prod > 0 && <Btn variant="secondary" className="!min-h-11 !px-3 !py-1.5 !text-small" onClick={() => onJump('product', q.trim())}>국내 제품 {nf(n.prod)}건</Btn>}
+      {n.novel > 0 && <Btn variant="secondary" className="!min-h-11 !px-3 !py-1.5 !text-small" onClick={() => onJump('new', q.trim())}>최신 승인 {nf(n.novel)}건</Btn>}
+    </div>
+  );
+}
+
+export function SearchTab({ selectedId, onSelect, onJump }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState(''); // '' = 전체, 아니면 ATC 대분류 글자
   const [limit, setLimit] = useState(PAGE);
@@ -185,6 +201,8 @@ export function SearchTab({ selectedId, onSelect }) {
       </section>
 
       {/* 분류로 찾기: ATC 대분류 칩(휴대폰에서는 옆으로 밀어 보기, 넓은 화면에서는 줄바꿈) */}
+      {asked && onJump && <CrossHits q={q} onJump={onJump} />}
+
       <section aria-labelledby="cat-title" className={cx('mb-4', asked && 'lt-tree:mb-2')}>
         <h2 id="cat-title" className={cx('mb-2 text-body-bold', asked && 'lt-tree:sr-only')}>분류로 찾기 <span className="text-small font-normal text-mut">ATC 대분류 · 한글 이름은 검수 전 초안</span></h2>
         <div role="group" aria-label="ATC 대분류로 걸러 보기" className="chip-row">

@@ -11,7 +11,7 @@ const DIR = path.join(ROOT, 'dist', 'pwa');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'pwa');
 fs.mkdirSync(OUT, { recursive: true });
 const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
-const TABS = ['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+const TABS = ['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];   // v1.3.0: 국내 제품·최신·임상 탭 추가(자료 파일이 있는 빌드)
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 
 let bad = 0, total = 0;
@@ -96,7 +96,7 @@ function staticChecks() {
     await page.goto(ORIGIN + '/');
     await page.waitForSelector('#root > *');
     ck('휴대폰: 처음 열기 — 제목이 설치 문서 제목', (await page.title()).startsWith('MedTerm-KR'), await page.title());
-    ck('휴대폰: 면책 문구 원문 그대로 · 탭 5개', (await page.getByRole('note').innerText()).trim() === DISC && (await page.getByRole('tab').count()) === 5);
+    ck(`휴대폰: 면책 문구 원문 그대로 · 탭 ${TABS.length}개`, (await page.getByRole('note').innerText()).trim() === DISC && (await page.getByRole('tab').count()) === TABS.length);
 
     const ready = await page.evaluate(async () => { const reg = await navigator.serviceWorker.ready; return { scope: reg.scope, active: !!reg.active }; });
     ck('서비스 워커: 등록되고 활성화됨(범위 = 문서 폴더)', ready.active && ready.scope === ORIGIN + '/', ready);
@@ -123,7 +123,7 @@ function staticChecks() {
     ck('휴대폰: 검색하면 오메프라졸이 선택되고 주소가 #v-7646', (await page.evaluate(() => location.hash)) === '#v-7646' && (await page.locator('#panel-search').innerText()).includes('오메프라졸'));
     const flows = {};
     for (const t of TABS) { await tabTo(page, t); flows[t] = await overflow(page); }
-    ck('휴대폰: 5개 탭 모두 가로 넘침 없음', Object.values(flows).every((f) => f.doc <= 0 && f.center <= 0), flows);
+    ck(`휴대폰: ${TABS.length}개 탭 모두 가로 넘침 없음`, Object.values(flows).every((f) => f.doc <= 0 && f.center <= 0), flows);
     await tabTo(page, '근거 기반 질의');
     await page.fill('#rq', '오메프라졸과 에스오메프라졸의 ATC 코드와 단위용량을 알려줘');
     await page.getByRole('button', { name: '사전에서 근거 찾기', exact: true }).click();
@@ -137,7 +137,7 @@ function staticChecks() {
     await ctx.setOffline(true);
     await page.reload();
     await page.waitForSelector('#root > *');
-    ck('오프라인: 새로고침해도 열림 — 면책 문구 · 탭 5개', (await page.getByRole('note').innerText()).trim() === DISC && (await page.getByRole('tab').count()) === 5);
+    ck(`오프라인: 새로고침해도 열림 — 면책 문구 · 탭 ${TABS.length}개`, (await page.getByRole('note').innerText()).trim() === DISC && (await page.getByRole('tab').count()) === TABS.length);
     // 주소만 바꾼 이동이 아니라 문서를 새로 여는 이동(빈 페이지를 거쳐서)으로, 오프라인에서 성분 주소를 연다.
     // 휴대폰 폭에서는 상세가 서랍이라 화면에 보이지는 않으므로(innerText 에 안 잡힘) 문서 안(textContent)에 있는지로 본다.
     await page.goto('about:blank');
@@ -179,7 +179,7 @@ function staticChecks() {
       ck('갱신: 옛 보관함(medterm-kr-<해시>)이 지워지고 새 보관함(파일 6개)으로 교체', /^medterm-kr-[0-9a-f]{10}$/.test(before) && updated && Object.keys(after).join() === 'medterm-kr-testv2' && after['medterm-kr-testv2'] === 6, { before, after });
       await up.reload();
       await up.waitForSelector('#root > *');
-      ck('갱신 뒤에도 새로고침하면 정상으로 열림', (await up.getByRole('tab').count()) === 5);
+      ck('갱신 뒤에도 새로고침하면 정상으로 열림', (await up.getByRole('tab').count()) === TABS.length);
       await uctx.close();
     }
 

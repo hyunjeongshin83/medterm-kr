@@ -2,6 +2,7 @@ import { XMETA, mt, nameOf } from '../lib/mt.js';
 import { Badge, Btn, Chip, StatusBadge, cx } from './ui.jsx';
 import { IconChevron } from './icons.jsx';
 import { Thumb } from './Thumb.jsx';
+import { LayerBlock } from './LayerParts.jsx';
 
 /*
  * 확장 수록(공개 자료로 자동 수집·연결한 초안) 전용 화면 부품.
@@ -214,7 +215,7 @@ function AtcPath({ a }) {
 }
 
 /** 확장 성분 상세 단. d = mt.describeExt(id). onSelect(id) = 비슷한 이름 항목으로 이동. */
-export function ExtDetail({ d, onSelect }) {
+export function ExtDetail({ d, onSelect, onJump }) {
   const v = d.ext;
   const r = d.rec;
   const meta = XMETA || {};
@@ -272,6 +273,8 @@ export function ExtDetail({ d, onSelect }) {
       <ProvenanceBlock id={v.id} />
 
       <KrBlock kr={d.kr} />
+
+      <LayerBlock id={v.id} onSelect={onSelect} onJump={onJump} />
 
       <h4 className="mb-1.5 mt-5 text-body-bold">ATC 분류 경로</h4>
       {d.atc.map((a) => <AtcPath key={a.code} a={a} />)}

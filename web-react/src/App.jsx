@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { idFromHash, isNarrow, isPhone, writeHash } from './lib/mt.js';
+import { idFromHash, isNarrow, isPhone, layers, writeHash } from './lib/mt.js';
 import { useMedia } from './lib/useMedia.js';
 import { Topbar } from './components/Topbar.jsx';
 import { TreePane } from './components/Tree.jsx';
@@ -9,6 +9,8 @@ import { GraphTab } from './components/GraphTab.jsx';
 import { VerifyTab } from './components/VerifyTab.jsx';
 import { RagTab } from './components/RagTab.jsx';
 import { AboutTab } from './components/AboutTab.jsx';
+import { ProductTab } from './components/ProductTab.jsx';
+import { NewTab } from './components/NewTab.jsx';
 import { Inspector } from './components/Inspector.jsx';
 import { SourceFooter } from './components/SourceFooter.jsx';
 import { cx, inertProps } from './components/ui.jsx';
@@ -19,6 +21,8 @@ export default function App() {
 
   const [selectedId, setSelectedId] = useState(idFromHash);
   const [tab, setTab] = useState('search');
+  const [seen, setSeen] = useState({ search: true }); // 한 번 열어 본 탭만 그린다(제품·최신 탭은 자료가 크고, 데이터·한계 탭은 그 자료의 건수·출처를 읽어야 해서 처음부터 그리지 않는다)
+  const [seed, setSeed] = useState(null); //            다른 화면에서 ‘제품 탭에서 보기’로 넘어올 때의 검색어
   const [seg, setSeg] = useState('atc');
   const [filter, setFilter] = useState('');
   const [inspOpen, setInspOpen] = useState(false);
@@ -104,7 +108,15 @@ export default function App() {
 
   const changeTab = (t) => {
     setTab(t);
+    setSeen((s) => (s[t] ? s : { ...s, [t]: true }));
     if (centerRef.current) centerRef.current.scrollTop = 0;
+  };
+
+  /** 성분 상세·검색에서 제품(최신·임상) 탭으로 검색어를 들고 넘어간다. 서랍·시트는 닫는다. */
+  const jump = (t, q) => {
+    setSeed({ tab: t, q: q || '', n: Date.now() });
+    setInspOpen(false);
+    changeTab(t);
   };
 
   // 하단 출처 표기의 "자세히": 데이터·한계 탭으로 가서 "출처 표기와 이용 조건" 카드로 내려간다(탭이 그려진 다음 틱에서 이동).
@@ -163,11 +175,13 @@ export default function App() {
         <main id="center" ref={centerRef} tabIndex={-1} className={cx('center-pad min-h-0 overflow-auto focus:outline-none', phone ? 'pb-6' : 'pb-12')} {...inertProps(bgInert)}>
           {!phone && <Tabs tab={tab} onChange={changeTab} />}
           <div className="mx-auto w-full max-w-[60rem] lt-tree:pt-4">
-            <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} /></Panel>
+            <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} onJump={jump} /></Panel>
+            {layers && layers.hasProducts && <Panel id="product" active={tab === 'product'}>{seen.product && <ProductTab onSelect={selectVtm} seed={seed} />}</Panel>}
+            {layers && layers.hasNew && <Panel id="new" active={tab === 'new'}>{seen.new && <NewTab onSelect={selectVtm} seed={seed} />}</Panel>}
             <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
             <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
             <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
-            <Panel id="about" active={tab === 'about'}><AboutTab /></Panel>
+            <Panel id="about" active={tab === 'about'}>{seen.about && <AboutTab />}</Panel>
             <SourceFooter onMore={openSources} />
           </div>
         </main>
@@ -178,6 +192,7 @@ export default function App() {
           closeRef={closeRef}
           inert={navDrawer}
           onOpenGraph={openGraph}
+          onJump={jump}
           onSelect={(id) => selectVtm(id, { open: false })}
           showGraphCta={tab !== 'graph'}
         />

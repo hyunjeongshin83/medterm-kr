@@ -1,15 +1,23 @@
-import { useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { cx, inertProps } from './ui.jsx';
-import { IconChat, IconData, IconGraph, IconSearch, IconShield } from './icons.jsx';
+import { IconChat, IconData, IconFlask, IconGraph, IconPill, IconSearch, IconShield } from './icons.jsx';
+import { layers } from '../lib/mt.js';
 
 // [키, 이름(접근 가능한 이름 = 화면 읽기·시험이 쓰는 이름), 하단 막대의 짧은 글자, 아이콘]
 export const TABS = [
   ['search', '사전 검색', '검색', IconSearch],
+  ...(layers && layers.hasProducts ? [['product', '국내 제품', '제품', IconPill]] : []),
+  ...(layers && layers.hasNew ? [['new', '최신·임상', '최신', IconFlask]] : []),
   ['graph', '관계 그래프', '그래프', IconGraph],
   ['verify', '답변 검증', '검증', IconShield],
   ['rag', '근거 기반 질의', '질의', IconChat],
   ['about', '데이터·한계', '데이터', IconData],
 ];
+
+// 넓은 화면의 알약 탭 줄이 긴 이름을 한 줄에 다 담는 데 필요한 폭(rem). 실제로 재어 본 값에 여유를 조금 얹었다:
+// 탭 5개 505px · 6개 588px · 7개 671px(글자 16px 기준) → 5개 32.5rem, 탭이 하나 늘 때마다 +5rem(7개 = 42.5rem = 680px).
+// 줄 폭이 이보다 좁으면(7개일 때 3단 화면의 1100~1359px, 2단 화면의 700~939px) 하단 막대와 같은 짧은 이름으로 바꿔 끝 탭이 잘리지 않게 한다.
+const LONG_NEED_REM = 32.5 + 5 * (TABS.length - 5);
 
 /**
  * 작업 화면 탭: 방향키·Home·End로 이동(탭 하나만 Tab 순서에 들어간다).
@@ -18,7 +26,23 @@ export const TABS = [
  */
 export function Tabs({ tab, onChange, variant = 'top', inert }) {
   const refs = useRef({});
+  const listRef = useRef(null);
   const bottom = variant === 'bottom';
+  // 알약 탭 줄의 실제 폭을 재서 긴 이름이 들어가는지 정한다(글자 크기를 키운 사용자도 rem 단위라 같이 따라간다).
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (bottom || !el) return undefined;
+    const measure = () => {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      setCompact(el.clientWidth < LONG_NEED_REM * rem);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [bottom]);
   const onKeyDown = (e) => {
     const i = TABS.findIndex(([k]) => k === tab);
     let n = -1;
@@ -33,13 +57,14 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
   };
   const list = (
     <div
+      ref={listRef}
       role="tablist"
       aria-label="작업 화면"
       data-variant={variant}
       onKeyDown={onKeyDown}
       className={bottom
         ? 'flex items-stretch gap-0.5 border-t border-line bg-surface pl-[max(6px,env(safe-area-inset-left,0px))] pr-[max(6px,env(safe-area-inset-right,0px))] shadow-nav'
-        : 'center-bleed sticky top-0 z-[5] mb-3.5 flex gap-1 overflow-x-auto border-b border-line bg-bg py-2'}
+        : cx('center-bleed sticky top-0 z-[5] mb-3.5 flex overflow-x-auto border-b border-line bg-bg py-2', compact ? 'gap-0.5' : 'gap-1')}
       {...(bottom ? {} : inertProps(inert))}
     >
       {TABS.map(([k, label, short, Icon]) => {
@@ -51,21 +76,22 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
             id={`tab-${k}`}
             role="tab"
             type="button"
-            aria-label={bottom ? label : undefined}
+            aria-label={bottom || compact ? label : undefined}
+            title={!bottom && compact ? label : undefined}
             aria-selected={on}
             aria-controls={`panel-${k}`}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(k)}
             className={bottom
               ? cx('flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 pb-1.5 pt-1 text-caption', on ? 'font-bold text-pri' : 'font-semibold text-info')
-              : cx('min-h-11 whitespace-nowrap rounded-lg px-3.5 py-2 text-body', on ? 'bg-pri-soft font-bold text-pri' : 'font-semibold text-info hover:bg-info-bg')}
+              : cx('min-h-11 whitespace-nowrap rounded-lg py-2 text-body', compact ? 'px-2.5' : 'px-3', on ? 'bg-pri-soft font-bold text-pri' : 'font-semibold text-info hover:bg-info-bg')}
           >
             {bottom ? (
               <>
                 <span className={cx('flex h-8 w-14 items-center justify-center rounded-pill', on && 'bg-pri-soft')}><Icon size={22} /></span>
                 <span className="max-w-full truncate">{short}</span>
               </>
-            ) : label}
+            ) : (compact ? short : label)}
           </button>
         );
       })}
