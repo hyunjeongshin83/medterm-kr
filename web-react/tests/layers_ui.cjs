@@ -231,7 +231,7 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     const C = await calc(page, (L) => ({ n: L.newMeta.counts, p: L.prodMeta.counts }));
     ck('정보 탭 "추가 자료" 절: 신약·임상·제품 수가 자료와 같음', [C.n.novel, C.n.trials, C.n.chem, C.p.products, C.p.companies].every((n) => sec.includes(nf(n))), sec.slice(0, 200));
     ck('"숫자의 뜻": 제품 1건의 정의 · 임상 건수는 효능 근거가 아님 · 한약제제 추정 · 대체 후보는 판정이 아님', sec.includes('품목기준코드 + 품목명 + 업체') && sec.includes('효능·안전성의 근거가 아닙니다') && sec.includes('한약제제(추정)') && sec.includes('약사법 제27조'));
-    ck('"연결하지 못한 자료와 이유": 의약품안전나라 · 식품안전나라 · 약학정보원 · 대한약사회 · 비공개 파이프라인', ['의약품안전나라', '식품안전나라', '약학정보원(health.kr)', '대한약사회(pharm.or.kr)', '비공개 파이프라인'].every((s) => sec.includes(s)));
+    ck('"연결하지 못한 자료와 이유": 의약품안전나라 · 식품안전나라 · 약학정보원 · pharm.or.kr · 비공개 파이프라인', ['의약품안전나라', '식품안전나라', '약학정보원(health.kr)', '의약품 식별표시 사이트(pharm.or.kr)', '비공개 파이프라인'].every((s) => sec.includes(s)));
     ck('출처와 이용 조건: 심평원 공공누리 제1유형 · FDA · NLM(ClinicalTrials.gov·PubChem) 출처 표기', sec.includes('공공누리 제1유형') && sec.includes('U.S. Food and Drug Administration') && sec.includes('ClinicalTrials.gov') && sec.includes('National Center for Biotechnology Information'));
     noErr('정보 탭(1440)', page);
     await ctx.close();
