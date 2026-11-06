@@ -92,8 +92,10 @@ const lazyTag = (f) => {
   const [v, id] = LAZY[f]; const src = read(JS_DIR, f); const head = `window.${v}=`; const i = src.indexOf(head);
   if (i < 0) throw new Error(`${f}: ${head} 로 시작하는 자료를 찾지 못했습니다`);
   const json = src.slice(i + head.length).trim().replace(/;$/, '');
-  JSON.parse(json);
-  return `<script type="application/json" id="${id}">${json.replace(/</g, '\\u003c')}</script>`;
+  const parsed = JSON.parse(json);
+  // 첫 화면(출처 표기)이 자료를 읽지 않고도 알 수 있어야 하는 사실은 덩어리의 속성으로 미리 적어 둔다: 최신·임상 층에 MedlinePlus 링크(mp)가 있는지.
+  const flags = v === 'MEDTERM_NEW' && parsed.mp && Object.keys(parsed.mp).length ? ' data-has-mp="1"' : '';
+  return `<script type="application/json" id="${id}"${flags}>${json.replace(/</g, '\\u003c')}</script>`;
 };
 const lazyLoader = NEW_JS.length
   ? `<script>(function(){function d(n,i){try{var v;Object.defineProperty(window,n,{configurable:true,enumerable:true,get:function(){if(v===undefined){var e=document.getElementById(i);if(e)v=JSON.parse(e.textContent)}return v}})}catch(x){}}${NEW_JS.map((f) => `d('${LAZY[f][0]}','${LAZY[f][1]}');`).join('')}})()</script>`

@@ -101,6 +101,20 @@
 - **FDA 승인은 미국 기준**이며 국내 허가·급여를 뜻하지 않습니다. 사전과의 연결은 영문 이름이 정확히 같을 때만 합니다(상표·접미(-wuug 등)를 뗀 기본 이름도 함께 대조).
 - **화합물 연결**은 PubChem 이름 검색에서 제목이 이름과 정확히 같은 것(`exact`) 또는 후보가 하나뿐인 것(`single`)만 씁니다. 같은 골격·구조 유사는 **구조 정보만으로 이은 참고 정보**이며 같은 계열·같은 효과·대체 가능을 뜻하지 않습니다.
 
+### v1.5.0 에서 더한 것 (2026-11-06)
+
+| 키 | 내용 |
+|---|---|
+| `tr{이름}.kr` | 시험 장소에 대한민국(ClinicalTrials.gov API v2 의 표기 `South Korea`(예전 표기 `Korea, Republic of`도 함께 인정))이 하나라도 있는 등록 수. 요약에 쓰는 최근 1,000건이 아니라 **받은 일치 등록 전체**로 셉니다(`cap` 이면 ‘이상’). 식약처 승인·CRIS(임상연구정보서비스) 등록과는 대조하지 않았습니다. 이름 1,159개에 1건 이상 |
+| `tr{이름}.res` | 결과가 게시된 등록 수(`hasResults`). 같은 방식으로 셉니다. 이름 1,952개에 1건 이상 |
+| `meta.ct` | ClinicalTrials.gov 이용약관이 요구하는 표시의 값: `api`(API 버전 2.0.5) · `data_ts`(데이터 처리 시각 — `/api/v2/version` 의 dataTimestamp, 이번 값 2026-11-05T10:00:06) · `data_ts_end`(수집을 마칠 때의 처리 시각, 같으면 null) · `same`(수집 도중 등록소 자료가 갱신되지 않았으면 true; 이번에는 true) · `fetched`(이 앱이 받기 시작한 날 2026-11-06) · `terms`·`disclaimer`(이용약관·면책 문구 주소) · `mods`(가공 내용 5가지) |
+| `mp{이름}` | MedlinePlus(미국 NLM) 영문 약 정보: `rx` 성분 RxCUI · `n` 약 정보 쪽 수 · `t` 쪽 제목(최대 3개). **링크와 제목만** 담습니다 — 약 정보 본문 요약은 미국약제사회(ASHP) 저작물이라 받지도 저장하지도 않습니다. 화면의 링크 주소는 `rx` 로 `Layers.mplusUrl()` 이 만듭니다(MedlinePlus Connect 웹 응용 주소, 눌렀을 때만 열림). 이름 1,257개(조회한 RxCUI 2,868개 중, 전체 2,868개) |
+| `meta.sources` 의 M | MedlinePlus Connect. 출처 표기 `Source: MedlinePlus, National Library of Medicine`. NLM 이름·로고는 쓰지 않고 NLM 이 보증하는 것처럼 보이게 하지 않습니다 |
+
+- **ClinicalTrials.gov 이용약관의 4가지 의무와 화면의 대응**: ① 출처 ‘ClinicalTrials.gov’ 표시 → 임상 블록과 정보 탭 ② 데이터 처리일 표시 → `meta.ct.data_ts` ③ 최신 상태 유지 → 받은 날을 함께 적고 "최신 값은 원 누리집에서 확인"하라고 안내(다시 받는 법은 아래) ④ 가공 내용 명시 → `meta.ct.mods`(이름 대조·1,000건 요약·묶음·국내 시행 집계·입력 오류 제거). 미국 밖에서는 국제 저작권이 적용되고 일부 자료는 제3자 저작권일 수 있어 ‘퍼블릭 도메인’으로 쓰지 않으며, 연락처·시설명은 받지 않습니다. 이 앱의 가공은 미국 정부의 검토·승인을 받은 것이 아닙니다.
+- **MedlinePlus 는 ‘이름 → 링크’로만** 씁니다. 사전 항목의 RxCUI 로 Connect 서비스를 조회해 약 정보 쪽(`https://medlineplus.gov/druginfo/meds/aNNNNNN.html` 형식만 인정)의 번호·제목을 받고, 결과가 없는 RxCUI 는 링크를 만들지 않습니다(없다는 뜻이 아니라 영문 약 정보 쪽이 없거나 RxCUI 가 이어지지 않는다는 뜻). 내용은 미국 기준 영문 자료이며 복약 판단에 쓰지 않습니다.
+- API 가 없는 누리집(약학정보원 등)은 이 방식으로 받지 않습니다. 이유와 판단 기준: `docs/API없는_사이트_자료이용_조사.md`.
+
 ## 국내 제품(품목) 층 (`medterm_kr_products.json`, v1.3.0)
 
 심평원 약가마스터 **의약품표준코드**(15067462, 기준일 2026-08-31)와 **의약품주성분**(15067461, 2025-10-31)으로 만든 국내 제품 목록입니다. 공공누리 제1유형(출처표시). 허가·급여·처방 판단의 근거가 아니며 식약처 ‘허가’와 심평원 ‘등재’는 같은 뜻이 아닙니다.
@@ -152,7 +166,8 @@
 | W | Wikidata (RxCUI P3345 · ATC P267 · 한/영 이름) | ATC 대조·영문 동의어·한국어 이름 후보 | CC0 |
 | A | RxClass ATC 1~4단계 분류명 (RxNav) | ATC 분류 영문명 | ATC 는 WHO 저작물 — **재배포 범위 미결정**(핵심 사전의 SNOMED CT·ATC 와 같은 보류 항목) |
 | F | 미국 FDA CDER 신약 승인표(Novel Drug Approvals) | 2021년 이후 승인일·상표·성분·승인 용도 | 미국 FDA 누리집 공개 정보 — 출처 표시, 이용 조건은 FDA 고지를 따름 |
-| T | ClinicalTrials.gov (미국 NLM) | 이름이 중재에 든 임상시험 등록의 건수·단계·상태·시작/완료 예정월·주관 기관, 짧은 제목·등록번호 | NLM 공개 자료 — 출처 표시, 일부 등록 내용은 제출자의 저작권이 있을 수 있어 **요약 수치와 짧은 제목만** 씀 |
+| T | ClinicalTrials.gov (미국 NLM) | 이름이 중재에 든 임상시험 등록의 건수·단계·상태·시작/완료 예정월·주관 기관, 짧은 제목·등록번호, 국내 시행·결과 게시 건수 | NLM 공개 자료 — 이용약관: 출처 표시 · 데이터 처리일 표시 · 최신 상태 유지 · 가공 내용 명시(v1.5.0 부터 화면에 표시). 일부 등록 내용은 제출자의 저작권이 있을 수 있어 **요약 수치와 짧은 제목만** 씀. 연락처는 받지 않음 |
+| M | MedlinePlus Connect (미국 NLM) | 성분 RxCUI 로 찾은 영문 약 정보 쪽의 링크·제목만(v1.5.0) | **링크만 이용** — 약 정보 본문은 ASHP 저작물이라 옮기지 않음. NLM 이름·로고 미사용, NLM 보증 아님 |
 | P | PubChem (미국 NCBI/NLM) | CID · InChIKey · 분자식 · 분자량 · 2D 유사 이웃 | NLM 공개 자료 — 출처 표시, 식별자·분자식·분자량만 씀(개별 출처 자료의 조건은 PubChem 안내 확인) |
 | H(제품) | 위 H 와 같은 심평원 파일 | 제품 단위: 품목명·업체·성분 구성·ATC·허가년월·규격 | 공공누리 제1유형(출처표시) |
 | L(약사법) | 국가법령정보센터(법제처) 약사법 출력본(2026-02-07 출력) | 정의 용어·조직·약국과 조제 업무 조문의 짧은 원문 발췌 | 법령 본문(저작권법 제7조: 법령은 보호받지 못하는 저작물). 법제처 이용 안내는 확인하지 않았고 법률 검토 전 |
@@ -192,6 +207,7 @@ python -I build/new_fetch.py --raw <폴더> --only names          # 핵심·확�
 python -I build/new_fetch.py --raw <폴더> --only trials         # ClinicalTrials.gov(유의어 확장 끔 · 성분 25개씩 묶어 받음 · 분당 50회 이하, 이어받기 됨; 약 10분)
 python -I build/new_fetch.py --raw <폴더> --only chem           # PubChem 이름 → CID·InChIKey·분자식·분자량
 python -I build/new_fetch.py --raw <폴더> --only sim --limit 1000   # PubChem 2D 유사 이웃
+python -I build/new_fetch.py --raw <폴더> --only mplus          # (v1.5.0) MedlinePlus Connect: 성분 RxCUI(mplus_rx.json) → 약 정보 쪽 번호·제목(mplus.jsonl). 분당 100회 이하(스레드 4개·초당 1.25회), 이어받기 됨; 약 40분
 python -I build/new_build.py --raw <폴더>                       # data/medterm_new.json
 python -I build/prod_build.py --raw <ext_fetch.py 로 받은 폴더>   # data/medterm_kr_products.json (심평원 파일은 ext 와 같은 폴더)
 python build/make_bundle.py                                     # web/js/medterm-new-data.js · medterm-products-data.js 포함
@@ -208,6 +224,7 @@ python build/make_bundle.py                                     # web/js/medterm
 cd web-react && npm run build
 ```
 
+- (v1.5.0) `--only trials` 는 이제 국내 시행·결과 게시 건수도 함께 세고, 수집 전후로 등록소 API 버전·데이터 처리 시각을 `ct_version.json` 에 적습니다(수집 도중 갱신되면 `same: false`). `new_build.py` 는 이를 `meta.ct` 로 옮깁니다. `mplus.jsonl` 의 받은 날은 `fetch_log.json` 에서 읽으므로 `trials`·`mplus` 원자료는 같은 `--raw` 폴더에 두거나 `fetch_log.json` 을 합쳐야 합니다.
 - 수집이 이름 끝까지 가지 못했으면 `new_build.py` 가 조회하지 않은 이름을 `unq` 에 적고, 화면은 "아직 조회하지 않았다"고 표시합니다(없다는 뜻으로 보이지 않게).
 - 같은 원자료로 만들면 **항상 같은 결과**(바이트 단위)가 나옵니다(해시 시드를 바꿔 세 번 만들어 비교). 입력 파일이 같은 파일인지는 `meta.files` 의 SHA-256 으로 확인합니다.
 - 점검: `node tests/ext_check.js`(자료 정합성 74개) · `node tests/ext_api.js`(검색·그래프·검증·출처 API 63개) · `node tests/ext_benchmark.js`(확장을 켰을 때 벤치마크 변화) · `python -I tests/test_ext_pipeline.py`(이름 정규화·수집기 33개) · `python -I tests/test_review_tools.py`(판정 시트·일치도·대조 도구 52개) · `python -I tools/norm_rules_table.py --check`(규칙표가 코드와 같은지) · 화면은 `cd web-react && npm test`(화면 점검 437개 포함) · v1.3.0 두 층: `node tests/layers_check.js`(자료 정합성·세는 방식·읽기 API) · `node web-react/tests/layers_ui.cjs`(새 탭·성분 상세·검색 연결 화면 점검) · v1.4.0 약사법 층: `node tests/law_check.js`(구조·정합성 · 묶음이 JSON 과 같은지 · 검색·시행 상태 API, 50개) · `python3 build/law_build.py --pdf-text <텍스트> --check-only`(원문 일치).
@@ -226,4 +243,5 @@ cd web-react && npm run build
 - (v1.3.0) **국내 제품 층에 없는 것**: 식약처 의약품안전나라의 허가 상세·복약 정보(안전사용정보)·건강기능식품·식품안전지식, 약학정보원(health.kr) 의약품 정보, pharm.or.kr(의약품 식별표시·낱알식별 사이트) 정보. 의약품안전나라·식품안전나라는 자동 수집을 허용하지 않아(robots.txt) **공식 오픈API(공공데이터포털/식품안전나라 인증키)** 로만 받을 수 있고, health.kr·pharm.or.kr 은 데이터 이용 조건이 공개돼 있지 않아 제휴 확인이 필요합니다(pharm.or.kr 은 운영 기관이 페이지에 적혀 있지 않아 확정하지 못했고, 제목에는 ‘식품의약품안전처 & 약학정보원’이 보입니다). 식약처 허가정보용 수집 스크립트 `tools/fetch_mfds.mjs` 는 있으나 인증키가 필요해 사용자 PC에서 실행하는 것으로만 준비돼 있고 아직 돌려 보지 않았습니다.
 - (v1.3.0) 한약제제 표시·묶음·증상어 대응은 **이름·ATC 규칙으로 추정한 수기 초안**입니다. "숙취해소 링거"가 정확히 무엇을 뜻하는지(허가 수액 제품 · 병원의 수액 조합 · 건강기능식품 중 무엇인지)는 약사 확인이 필요합니다.
 - (v1.4.0) **약사법 층은 53개 항목의 초안**입니다. 출력본(2026-02-07)과의 글자 일치와, 쉬운 풀이의 항목별 대조(2026-11-06 — 뜻이 어긋난 곳 없음, 빠진 단서 11곳 보강)만 확인했고 법제처 현행본 대조 · 시행령·시행규칙 · 약사 검수는 하지 않았습니다. 2026-11-06 에 본 국가법령정보센터의 현행 표시(시행 2026. 10. 8. 법률 제21525호)는 출력본보다 나중 판인데 그 본문은 가져오지 못해 대조하지 못했습니다. 2026-11-12 시행 예정 판(3개 항목)은 시행일 이후 법제처 현행본으로 다시 확인해야 합니다. ‘약사협의회’는 약사법 본문에 없는 말입니다. 약사법은 약국·조제의 큰 틀만 정하고 세부(조제 기준·기록 보존 기간 등)는 시행령·시행규칙·고시에 있어, 이 층만으로는 실제 업무 기준을 알 수 없습니다.
+- (v1.5.0) **국내 시행·결과 게시 건수**는 ClinicalTrials.gov 의 시험 장소 국가 표기와 `hasResults` 만으로 센 것이며, 식약처 임상시험계획 승인·CRIS 등록과 대조하지 않았습니다. 이름이 일치한 등록만 세므로 코드명으로만 등록된 시험은 빠집니다. **MedlinePlus 링크가 없는 이름이 많습니다**(RxCUI 가 이어지지 않거나 영문 약 정보 쪽이 없는 경우). 링크는 미국 기준 영문 자료로, 한국의 허가·용법과 다를 수 있습니다. 약학정보원·의약품안전나라 등 API 가 없는 누리집은 가져오지 않았습니다(`docs/API없는_사이트_자료이용_조사.md`).
 - 두 심평원 파일의 `fetched`(받은 날)는 이 기록을 넣기 전에 받은 파일에 한해 파일 수정 시각으로 대신 적었습니다(`meta.fetch_note`).

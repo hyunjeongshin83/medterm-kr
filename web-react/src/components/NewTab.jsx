@@ -101,6 +101,7 @@ export function NewTab({ onSelect, seed }) {
   const list = mode === 'novel' ? novel : pipe;
   const shown = list.slice(0, limit);
   const F = M.fetched || {};
+  const ct = layers.ctInfo();
   const fetched = [F.fda && `FDA ${F.fda}`, F.trials && `임상 ${F.trials}`, F.chem && `PubChem ${F.chem}`].filter(Boolean).join(' · ');
 
   return (
@@ -110,7 +111,13 @@ export function NewTab({ onSelect, seed }) {
         <p className="mt-1 text-small text-mut">
           미국 FDA 신약 승인 {nf(C.novel)}건(2021~) · 임상시험 요약 {nf(C.trials)}개 성분 · 화합물 연결 {nf(C.chem)}개 성분. 공개 자료를 자동 수집한 초안입니다{fetched ? `(받은 날 ${fetched})` : ''}.
         </p>
-        <p className="mt-1 text-small text-mut">FDA 승인은 미국 기준이며 국내 허가·급여를 뜻하지 않습니다. 임상 수치는 등록 건수 요약일 뿐 효능·안전성 근거가 아닙니다. 식약처 허가 반영은 인증키 수집이 필요해 아직 연동되지 않았습니다.</p>
+        <p className="mt-1 text-small text-mut">FDA 승인은 미국 기준이며 국내 허가·급여를 뜻하지 않습니다. 임상 수치는 등록 기록 수 요약일 뿐 효능·안전성 근거가 아닙니다. 식약처 허가 반영은 인증키 수집이 필요해 아직 연동되지 않았습니다.</p>
+        {ct && (
+          <p className="mt-1 text-small text-mut" data-ct-note="">
+            임상 등록 출처: ClinicalTrials.gov(미국 NLM) · 데이터 처리일 {ct.data_ts ? String(ct.data_ts).slice(0, 10) : '기록 없음'} · 이 앱이 받은 날 {ct.fetched || '-'}.
+            미국 정부는 등재된 연구의 안전성·과학성을 검토·승인하지 않고, 정확성은 연구 의뢰자가 책임집니다. <ExtLink href={ct.disclaimer}>원문 면책 문구</ExtLink>
+          </p>
+        )}
       </section>
 
       <div role="group" aria-label="보기 선택" className="chip-row mb-3">

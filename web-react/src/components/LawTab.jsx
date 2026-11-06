@@ -80,6 +80,37 @@ function LawCard({ e, onPick, onJump }) {
   );
 }
 
+/** 조제 업무 길잡이: 이미 수록한 조문을 업무가 흘러가는 순서로 이은 안내(법이 정한 절차가 아님). 조문 이름을 누르면 아래 목록에서 그 항목을 찾아 준다. */
+function FlowGuide({ flow, onPick }) {
+  const chips = (ids) => ids.map((id) => layers.lawEntry(id)).filter(Boolean).map((r) => (
+    <Btn key={r.id} variant="quiet" className="!min-h-11 !px-3 !py-1.5 !text-small" onClick={() => onPick(r.t)} aria-label={`${r.t} (약사법 ${r.a}) 항목 보기`}>{r.t} <span className="text-mut">· {r.a}</span></Btn>
+  ));
+  return (
+    <details id="law-flow" className="mb-3 rounded-xl border border-line bg-surface px-3 shadow-card">
+      <summary className="min-h-11 cursor-pointer py-2.5 text-body-bold text-ink">{flow.title}</summary>
+      <div className="pb-3">
+        <p className="text-small text-mut">{flow.note}</p>
+        <ol className="mt-2 grid gap-2">
+          {flow.steps.map((s) => (
+            <li key={s.n} data-flow-step={s.n} className="rounded-lg border border-line bg-bg px-3 py-2">
+              <div className="flex items-baseline gap-2"><span aria-hidden="true" className="text-small-bold text-pri">{s.n}</span><b className="text-ink">{s.t}</b></div>
+              <p className="mt-0.5 text-small text-ink">{s.d}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">{chips(s.ids)}</div>
+            </li>
+          ))}
+        </ol>
+        {flow.base && (
+          <div className="mt-2 rounded-lg border border-line bg-bg px-3 py-2" data-flow-base="">
+            <b className="text-ink">{flow.base.t}</b>
+            <p className="mt-0.5 text-small text-ink">{flow.base.d}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">{chips(flow.base.ids)}</div>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export function LawTab({ onJump }) {
   const [q, setQ] = useState('');
   const [group, setGroup] = useState('');
@@ -92,6 +123,9 @@ export function LawTab({ onJump }) {
   const shown = list.slice(0, limit);
   const council = /협의회/.test(q);
   const pick = (term) => { setQ(term); setGroup(''); setUpc(false); };
+  const flow = layers.lawFlow();
+  // 길잡이의 조문 이름을 누르면 목록이 아래에서 바뀌므로, 바뀐 목록의 머리글로 화면을 옮겨 준다.
+  const pickAndShow = (term) => { pick(term); requestAnimationFrame(() => { const el = document.getElementById('llist-title'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' }); }); };
 
   return (
     <>
@@ -108,6 +142,8 @@ export function LawTab({ onJump }) {
           {M.source.latest_seen ? `${M.source.latest_seen}. ` : ''}법제처 현행본과의 대조는 아직 하지 않았습니다.
         </p>
       </section>
+
+      {flow && <FlowGuide flow={flow} onPick={pickAndShow} />}
 
       <div className="relative mb-3">
         <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mut"><IconSearch /></span>

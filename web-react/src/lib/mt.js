@@ -18,6 +18,8 @@ export const XMETA = mt.extMeta; // EXT 의 meta(건수·등급 설명·출처).
 const LayersLib = window.MedTermLayers;
 const hasData = (k) => { const d = Object.getOwnPropertyDescriptor(window, k); return !!d && (!!d.get || (d.value !== undefined && d.value !== null)); };
 const HAS_NEW = hasData('MEDTERM_NEW'), HAS_PROD = hasData('MEDTERM_PRODUCTS'), HAS_LAW = hasData('MEDTERM_LAW');
+/** 최신·임상 층에 MedlinePlus 링크가 있는가 — 자료를 읽지 않고(첫 화면에서도) 알 수 있도록 빌드가 덩어리 속성(data-has-mp)으로 적어 둔다. */
+export const HAS_MPLUS = (() => { try { const e = document.getElementById('medterm-new-json'); return !!(e && e.hasAttribute('data-has-mp')); } catch (x) { return false; } })();
 let realLayers = null;
 const real = () => { if (!realLayers) realLayers = new LayersLib.Layers(mt, window.MEDTERM_NEW || null, window.MEDTERM_PRODUCTS || null, window.MEDTERM_LAW || null); return realLayers; };
 export const layers = LayersLib && (HAS_NEW || HAS_PROD || HAS_LAW)

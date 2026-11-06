@@ -2,6 +2,7 @@ import { BENCH, DATA, META, XMETA, layers, mt } from '../lib/mt.js';
 import { LITE } from '../lib/edition.js';
 import { Badge, Card } from './ui.jsx';
 import { nf } from './ExtParts.jsx';
+import { ExtLink } from './LayerParts.jsx';
 
 const pct = (o) => `${o.k}/${o.n} (${Math.round((o.k / o.n) * 100)}%, 95% CI ${Math.round(o.lo * 100)}–${Math.round(o.hi * 100)}%)`;
 const sum = (d, prefix) => {
@@ -112,10 +113,12 @@ function ExtSection() {
   );
 }
 
+const dayOf = (t) => (t ? String(t).slice(0, 10) : '기록 없음');
+
 const NOT_LINKED = [
   ['의약품안전나라(nedrug.mfds.go.kr) — 의약품등 제품정보·안전사용정보', '누리집이 자동 수집을 허용하지 않아(robots.txt) 화면을 긁어 오지 않았습니다. 정식 경로는 공공데이터포털의 식약처 의약품 허가정보 OpenAPI(인증키 필요)이며, 키를 넣은 컴퓨터에서 저장소의 tools/fetch_mfds.mjs 로 받도록 준비해 두었습니다(아직 실제로 돌려 보지 않았습니다). 복약·안전사용 정보는 허가정보와 다른 서비스일 수 있어, 어떤 OpenAPI 로 받을 수 있는지는 아직 확인하지 못했습니다.'],
   ['식품안전나라(foodsafetykorea.go.kr) — 건강기능식품·식품안전지식', '같은 이유로 화면 수집은 하지 않았습니다. 공공데이터포털에 식약처 ‘건강기능식품 품목제조 신고사항 현황’(개발·운영 단계 모두 자동승인, JSON·XML)과 ‘건강기능식품 품목제조신고(원재료)’(운영 단계는 심의승인)가 올라와 있어(2026-11-05 확인) 인증키를 받으면 연동할 수 있으나 아직 연동하지 않았습니다. 식품안전지식(누리집 글)은 자료로 받을 수 있는 공개 API 를 확인하지 못했습니다. 숙취해소 제품은 대부분 건강기능식품·일반식품이라 이 사전(허가 의약품)에는 없습니다.'],
-  ['약학정보원(health.kr)', '열람 전용 누리집이며 자료를 가져다 쓰려면 별도 이용 계약이 필요합니다. 연결하지 않았고, 제휴 문의가 필요합니다.'],
+  ['약학정보원(health.kr)', '열람용 누리집이며 공개된 API나 내려받기 안내를 찾지 못했습니다. 누리집 고지가 허락 없는 복제·배포·전송·변경·게시를 금하고 있어(2026-11-03 확인) 화면을 긁어 오지 않았고, 이용 문의에 대한 답을 받기 전에는 자료를 가져오지 않습니다. robots.txt는 일반 페이지의 수집을 막지 않지만(/api/·/admin/ 제외, 2026-11-06 확인) 접근을 허락하는 장치가 아니므로 근거로 삼지 않았습니다(아래 “자료를 가져오는 원칙”). 대신 약사가 화면을 열어 놓고 ‘맞다·다르다·모르겠다’만 표시하는 검토 시트를 만들어 두었습니다(저장소 data/review/).'],
   ['의약품 식별표시 사이트(pharm.or.kr)', '의약품 식별표시(낱알식별) 제도 안내·등록·검색 사이트입니다. 운영 기관 표기와 자료 이용 조건·내려받기 안내를 확인하지 못해 연결하지 않았습니다(품목 버튼은 약학정보원으로 이어집니다).'],
   ['개발 중인 신약 후보(비공개 파이프라인)', '공개 등록소(ClinicalTrials.gov)에 등록된 시험만 반영합니다. 등록 전 단계·비공개 개발 정보는 알 수 없습니다.'],
 ];
@@ -128,6 +131,7 @@ function LayersSection() {
   const srcs = [...((nm && nm.sources) || []), ...((pm && pm.sources) || [])];
   const stdDate = pm && pm.files && pm.files.hira_std && pm.files.hira_std.file_date;
   const fch = (nm && nm.fetched) || {};
+  const ct = nm && nm.ct ? nm.ct : null;
   return (
     <Section title="추가 자료: 최신 승인·임상 · 국내 제품 (공개 자료 자동 수집 · 약사 검수 전)" id="about-layers">
       <p className="mb-2 text-small text-mut">앞의 사전(성분)에 더해, 새 약과 국내 제품을 <b className="text-ink">별도 층</b>으로 얹었습니다. 핵심·확장 사전의 내용은 바꾸지 않았고, 성분 이름이 정확히 같을 때만 이어 붙입니다.</p>
@@ -137,10 +141,13 @@ function LayersSection() {
           <Facts
             rows={[
               ['미국 FDA 신약 승인(2021년~) / 사전 성분과 연결 / 임상 요약이 있는 것', `${nf(nc.novel)} / ${nf(nc.novel_linked)} / ${nf(nc.novel_with_trials)}`],
-              ['임상시험 요약이 있는 성분 이름 (이 중 등록이 많아 1,000건까지만 센 것)', `${nf(nc.trials)} (${nf(nc.trials_capped)})`],
+              ['임상 등록 요약이 있는 성분 이름 (이 중 등록이 많아 최근 시작 1,000건 기준으로 요약한 것)', `${nf(nc.trials)} (${nf(nc.trials_capped)})`],
+              ...(nc.trials_kr != null ? [['그 중 시험 장소에 대한민국이 있는 등록이 있는 이름 / 결과가 게시된 등록이 있는 이름', `${nf(nc.trials_kr)} / ${nf(nc.trials_res)}`]] : []),
+              ...(ct ? [['ClinicalTrials.gov 데이터 처리일 (수집 시작 ~ 끝)', `${dayOf(ct.data_ts)}${ct.data_ts_end ? ` ~ ${dayOf(ct.data_ts_end)}` : ''}${ct.same === false ? ' (수집하는 동안 바뀜)' : ct.same ? ' (수집하는 동안 같음)' : ''}`]] : []),
               ['화합물(PubChem) 연결 이름 / 제목 정확 일치 · 후보 하나뿐', `${nf(nc.chem)} / ${nf(nc.chem_how && nc.chem_how.exact)} · ${nf(nc.chem_how && nc.chem_how.single)}`],
               ['같은 골격 묶음 / 구조 유사 이웃이 있는 이름', `${nf(nc.skeleton_groups)} / ${nf(nc.sim)}`],
-              ['자료 받은 날: FDA · 임상 · PubChem', `${fch.fda || '-'} · ${fch.trials || '-'} · ${fch.chem || '-'}`],
+              ...(nc.mplus != null ? [['MedlinePlus 영문 약 정보 링크가 있는 이름 / 조회한 성분 코드(RxCUI)', `${nf(nc.mplus)} / ${nf(nc.mplus_rx)}`]] : []),
+              [`자료 받은 날: FDA · 임상 · PubChem${fch.mplus ? ' · MedlinePlus' : ''}`, `${fch.fda || '-'} · ${fch.trials || '-'} · ${fch.chem || '-'}${fch.mplus ? ` · ${fch.mplus}` : ''}`],
             ]}
           />
         </>
@@ -164,7 +171,9 @@ function LayersSection() {
       <h4 className="mb-1 mt-4 text-body-bold">숫자의 뜻</h4>
       <ul className="list-disc pl-5 text-base">
         <li className="my-1"><b>제품 1건</b> = ‘품목기준코드 + 품목명 + 업체’ 한 벌입니다. 같은 품목기준코드를 여러 업체·이름이 함께 쓰는 경우가 있어(코드는 제품을 구별하는 열쇠가 아님) 코드 단위로 센 확장 수록의 ‘품목’ 수{pc.distinct_item_codes ? `(${nf(pc.distinct_item_codes)})` : ''}보다 많습니다.</li>
-        <li className="my-1"><b>임상 건수</b>는 ClinicalTrials.gov 등록 중 성분 이름이 시험 중재(이름·다른 이름)에 그대로 들어간 것을 센 값입니다(유의어 확장 없음). 코드명(예: HSK3486)이나 다른 철자로만 등록된 시험은 빠질 수 있고, 비교약·병용약으로 쓰인 시험이 섞일 수 있으며, 효능·안전성의 근거가 아닙니다. 등록이 아주 많은 성분은 최근 시작 1,000건까지만 센 값이라 ‘+’로 표시합니다.</li>
+        <li className="my-1"><b>임상 등록 기록 수</b>는 ClinicalTrials.gov 등록 중 성분 이름이 시험 중재(이름·다른 이름)에 그대로 들어간 것을 센 값입니다(유의어 확장 없음). 코드명(예: HSK3486)이나 다른 철자로만 등록된 시험은 빠질 수 있고, 비교약·병용약으로 쓰인 시험이 섞일 수 있으며, 효능·안전성의 근거가 아닙니다. 등록이 아주 많은 성분은 단계·상태 등을 시작이 가장 최근인 1,000건으로 요약하고 기록 수에 ‘+’를 붙입니다. 미국 정부는 등재된 연구의 안전성·과학성을 검토·승인하지 않습니다.</li>
+        <li className="my-1"><b>국내 시행</b>은 시험 장소의 국가가 대한민국인 등록의 수입니다. 시설 이름·연락처는 받지 않았고, 식약처의 임상시험 승인이나 국내 임상연구 등록(CRIS) 기록과는 대조하지 않았습니다. <b>결과 게시</b>는 등록 기록에 결과가 올라와 있는 건수이며, 결과 게시는 일부 연구에만 의무입니다.</li>
+        <li className="my-1"><b>MedlinePlus 영문 참고 링크</b>는 성분의 RxNorm 코드(RxCUI)로 미국 국립의학도서관의 MedlinePlus Connect 서비스에 미리 물어서 찾은 영문 약 정보 쪽 주소와 제목입니다. 본문(미국약제사회 ASHP의 저작물)은 옮기지 않았고, 링크를 눌렀을 때만 외부 누리집이 열립니다. 미국 기준 설명이라 국내 허가 사항과 다를 수 있습니다.</li>
         <li className="my-1"><b>화합물 연결</b>은 PubChem 이름 검색에서 제목이 성분 이름과 정확히 같은 화합물(또는 후보가 하나뿐인 경우)만 이은 참고 정보입니다. 같은 골격(InChIKey 앞 14자 일치)과 구조 유사 이웃(2D 유사도 0.9 이상)은 같은 계열·같은 효과·대체 가능을 뜻하지 않습니다.</li>
         <li className="my-1"><b>한약제제(추정)</b>는 제품 이름의 규칙으로 가려낸 표시입니다{pm && pm.herbal_rules ? ` (${Object.values(pm.herbal_rules).length}가지 규칙: 방제명+엑스, 단미·혼합엑스, 괄호 속 방제명, ○○탕 액제 등)` : ''}. 처방 구성(군신좌사)·병명·효능은 이 자료에 없어 약사 확인이 필요합니다.</li>
         <li className="my-1"><b>묶음</b>(감기·소화제·수액 등)은 ATC 분류 앞부분으로 모은 검색 보조이며 복약·구매 추천이 아닙니다. ‘감기’ 같은 증상어는 제품 이름에 거의 없어 묶음으로 연결합니다.</li>
@@ -181,6 +190,19 @@ function LayersSection() {
           </li>
         ))}
       </ul>
+
+      {ct && (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">ClinicalTrials.gov 표시와 가공 내용</h4>
+          <p className="mb-1 text-small text-mut" data-ct-terms="">
+            출처 ‘ClinicalTrials.gov’(미국 국립의학도서관) · 데이터 처리일 {dayOf(ct.data_ts)} · 이 앱이 받은 날 {ct.fetched || '-'}{ct.api ? ` (API ${ct.api})` : ''}.
+            이용약관은 출처 표시, 데이터 처리일 표시, 최신 상태 유지, 가공 내용 명시를 요구하므로 아래에 가공 내용을 적었고 최신 값은 원 누리집에서 확인하도록 안내합니다. <ExtLink href={ct.terms}>이용약관</ExtLink> · <ExtLink href={ct.disclaimer}>면책 문구</ExtLink>
+          </p>
+          <ul className="list-disc pl-5 text-base">
+            {(ct.mods || []).map((t) => <li key={t} className="my-1">{t}</li>)}
+          </ul>
+        </>
+      )}
 
       <h4 className="mb-1 mt-4 text-body-bold">연결하지 못한 자료와 이유</h4>
       <ul className="list-disc pl-5 text-base">
@@ -224,11 +246,20 @@ function reviewDone() {
     ...(hasLaw ? [[`약사법 쉬운 풀이 ${nf(layers.lawMeta.counts.entries)}개`, '법제처 약사법 출력본(2026-02-07 출력) 본문과 항목별로 대조해 의미가 어긋난 곳은 없었고, 빠진 단서 11곳을 보탰습니다.']] : []),
   ];
 }
+function reviewStages() {
+  const hasLaw = !!(layers && layers.hasLaw);
+  return [
+    ['1단계 · 자료 대조', '했음', 'ok', `공식 자료끼리 맞춰 본 단계입니다. 성분 한글명과 상품명은 심평원 약가마스터·위키데이터와${hasLaw ? ', 약사법 쉬운 풀이는 법제처 출력본과' : ''} 대조했습니다(2026-11-06). 약학정보원 대조는 아직입니다(이용 허락 또는 사람의 열람이 필요).`],
+    ['2단계 · 약사 확인', '아직', 'draft', '약사가 검토 시트에서 항목마다 ‘맞다·다르다·모르겠다’를 표시하는 단계입니다. 확인한 사람의 이름과 날짜가 들어갈 자리입니다.'],
+    ['3단계 · 약사 검수 완료', '아직', 'draft', '약사가 책임지고 확인했다는 표시(검수자·날짜)가 붙는 단계입니다. 붙기 전까지 모든 항목은 ‘약사 검수 전 초안’입니다.'],
+  ];
+}
 function reviewTodo() {
   const hasLaw = !!(layers && layers.hasLaw);
   const outside = ['제형 한글명(직역)', '계열명', ...(NX ? [`확장 수록 성분 ${nf(NX)}개의 자동 연결·한글 이름`] : []), ...(layers && layers.hasProducts ? ['제품 계층의 성분 연결'] : [])];
   return [
     '약사 자격자의 검수는 받지 않았습니다. 위 대조는 자료끼리 맞춰 본 것입니다.',
+    '약학정보원(health.kr)·약학정보 책과의 대조는 하지 않았습니다. 누리집이 허락 없는 복제·배포를 금하고 있어 자동으로 가져오지 않았고, 이용 문의 답을 받으면 진행합니다. 약사가 직접 화면을 열어 놓고 대조하는 검토 시트를 만들어 두었습니다(저장소 data/review/: 성분 한글명·상품명 60행' + (hasLaw ? ', 약사법 쉬운 풀이 53행' : '') + ').',
     ...(hasLaw ? ['약사법은 국가법령정보센터의 현행 시행본(2026-11-06 확인: 시행 2026-10-08, 법률 제21525호)과 아직 대조하지 못했습니다. 시행령·시행규칙도 수록하지 않았습니다.'] : []),
     '식약처(MFDS) 허가 정보와의 대조는 하지 않았습니다(공식 OpenAPI 인증키가 필요합니다).',
     `이 대조에 들어 있지 않은 것: ${outside.join(', ')}.`,
@@ -239,7 +270,15 @@ function ReviewSection() {
   const REVIEW_DONE = reviewDone(); const REVIEW_TODO = reviewTodo();
   return (
     <Section title="검수 상태 (2026-11-06 기준)" id="about-review">
-      <p className="mb-2 text-small text-mut">‘약사 검수 전’이라는 표시는 그대로입니다. 아래는 그 전에 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.</p>
+      <p className="mb-2 text-small text-mut">‘약사 검수 전’이라는 표시는 그대로입니다. 검수는 세 단계로 나누어 표시하며 지금은 1단계까지 했습니다. 아래는 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.</p>
+      <ol className="mb-3 grid gap-2" data-review-stages="">
+        {reviewStages().map(([k, b, tone, d]) => (
+          <li key={k} className="rounded-lg border border-line bg-bg px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2"><b className="text-ink">{k}</b><Badge tone={tone}>{b}</Badge></div>
+            <p className="mt-0.5 text-small text-mut">{d}</p>
+          </li>
+        ))}
+      </ol>
       <h4 className="mb-1 text-body-bold">공식 자료와 대조한 것</h4>
       <dl>
         {REVIEW_DONE.map(([k, v]) => (
@@ -253,6 +292,23 @@ function ReviewSection() {
       <ul className="list-disc pl-5 text-base">
         {REVIEW_TODO.map((t) => <li key={t} className="my-1">{t}</li>)}
       </ul>
+    </Section>
+  );
+}
+
+/** API가 없는 누리집의 자료를 어떻게 다루는지 — 이 앱이 스스로 정한 원칙(법률 자문이 아님). 근거와 출처는 저장소 docs/API없는_사이트_자료이용_조사.md. */
+function GatherSection() {
+  return (
+    <Section title="자료를 가져오는 원칙 (API가 없는 누리집은 어떻게 하나)" id="about-gather">
+      <p className="mb-2 text-small text-mut">법률 자문이 아니라 이 앱이 스스로 정해 둔 원칙입니다. 근거와 출처는 저장소의 조사 문서(docs/API없는_사이트_자료이용_조사.md)에 있습니다.</p>
+      <ol className="list-decimal pl-5 text-base">
+        <li className="my-1"><b>공식 API·내려받기 파일이 있으면 그것으로 받습니다.</b> 이용 조건을 읽고, 출처와 받은 날(자료의 처리일이 있으면 그 날)을 화면에 적습니다.</li>
+        <li className="my-1"><b>API가 없는 누리집은 화면을 긁어 오지 않습니다. 화면이 쓰는 내부 주소(검색 요청 형식)를 알아내 대량으로 호출해 데이터베이스를 파일로 내려받지도 않습니다.</b> 이용약관이 복제·배포를 금하거나(약학정보원) robots.txt가 자동 수집을 막는 곳(의약품안전나라)은 더욱 그렇습니다. robots.txt는 수집 도구에게 보내는 요청이지 접근 허락을 정하는 장치가 아니어서(RFC 9309: “These rules are not a form of access authorization.”) 막혀 있지 않다는 것이 가져가도 된다는 뜻은 아닙니다.</li>
+        <li className="my-1"><b>대신 이 순서로 생각합니다.</b> ① 운영 기관에 이용 문의 ② 같은 자료를 내는 공식 API(공공데이터포털 등) ③ 링크만 연결(본문은 옮기지 않음) ④ 사람이 화면을 열어 놓고 대조하되 내용을 복사하지 않음.</li>
+        <li className="my-1"><b>법원의 판단은 사건마다 다릅니다.</b> 대법원은 2022. 5. 12. 선고 2021도1533 판결에서, 숙박 앱이 서버와 주고받는 주소와 명령 형식을 알아내 직접 호출하는 수집 프로그램으로 업소 정보를 가져간 사람들의 정보통신망침해·저작권법(데이터베이스제작자 권리) 위반·컴퓨터등장애업무방해 혐의를 무죄로 확정했습니다. 접근을 막는 보호조치가 없었고, 약관은 정보의 이용만 제한했으며, 가져간 것이 데이터베이스의 일부로 공개된 정보였고, 검사가 낸 증거로는 서버 장애를 인정하기 어렵다는 그 사건의 사정에 기댄 판단입니다. 그래서 ‘주소를 알아내 호출하면 괜찮다’거나 ‘데이터베이스 전체를 파일로 받아도 된다’는 뜻으로 읽지 않습니다. 같은 분쟁의 민사에서는 1심과 항소심이 모두 10억 원의 손해배상을 인정했다고 보도됐습니다(확정 여부는 확인하지 못했습니다).</li>
+        <li className="my-1"><b>필요한 만큼만 저장합니다.</b> 식별자·제목·링크처럼 사실에 가까운 것만 두고, 저작물인 본문은 옮기지 않습니다(예: MedlinePlus 약 정보 본문은 링크만).</li>
+      </ol>
+      <p className="mt-2 text-small text-mut">2026-11-06에 확인한 자료에 따른 것입니다. 실제로 자료를 가져오기 전에는 해당 기관의 이용 조건을 다시 확인합니다.</p>
     </Section>
   );
 }
@@ -363,6 +419,8 @@ export function AboutTab() {
 
       <LayersSection />
       <LawSection />
+
+      <GatherSection />
 
       <AttributionSection />
 

@@ -4,8 +4,11 @@
  - 검색식(ct_term): 유의어 확장을 끄고(EXPANSION[None]) 낱말마다 AND, 불용어는 뺌
  - 이름 대조(matches): 중재 이름·다른 이름에 들어 있어야 세고, 제목만 있을 때는 질환 이름에 없을 때만 셈(cocaine dependence 같은 질환 이름이 약으로 세어지는 것을 막음)
  - 요약(summarize_trials): 시작일이 만든 날로부터 36개월을 넘는 등록은 '가장 늦은 시작 달'과 예시 정렬에서 뺌(건수·상태에는 센다)
- - 묶음 수집(fetch_trials_group): 묶음이 너무 크면 반으로 나눔 · 한 성분만 남으면 시작일 최근순으로 쪽 상한까지 · 1,000건 넘거나 잘리면 cap · 쪽 넘김"""
-import collections, json, os, sys
+ - 묶음 수집(fetch_trials_group): 묶음이 너무 크면 반으로 나눔 · 한 성분만 남으면 시작일 최근순으로 쪽 상한까지 · 1,000건 넘거나 잘리면 cap · 쪽 넘김
+ - 국내 시행·결과 게시(in_korea · make_record): 요약에 쓰는 1,000건이 아니라 받은 일치 등록 전체로 센다
+ - 데이터 처리일(note_ct_version): 처음 값을 지키고, 끝 값이 같을 때만 same=True (이용 약관: 데이터를 처리한 날짜를 밝힘)
+ - MedlinePlus(mplus_items · parse_mplus · fetch_mplus_one · run_pool_jsonl): RxCUI 목록 순서·중복 제거, 약 정보 쪽 주소만 받고 본문(summary)은 읽지 않음, 이어받기"""
+import collections, json, os, sys, threading, time, urllib.parse
 here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
 sys.path.insert(0, os.path.join(root, 'build'))
 import new_fetch as F
@@ -156,6 +159,120 @@ with tempfile.TemporaryDirectory() as tmp:
         ok('이어받기: 이미 받은 이름은 다시 받지 않음', order == [], order)
     finally:
         F.fetch_trials_group = real_group
+
+
+# ── 국내 시행·결과 게시: in_korea · make_record ──
+def with_locs(st, countries, has_results=False):
+    st = json.loads(json.dumps(st))
+    st['protocolSection']['contactsLocationsModule'] = {'locations': [{'facility': 'X', 'country': c} for c in countries]}
+    if has_results: st['hasResults'] = True
+    return st
+base = study('NCTK', ivs=[('Tirzepatide', [])])
+ok('in_korea: 장소 중 하나라도 대한민국이면 참 — 등록소 API v2 의 실제 표기 \'South Korea\'(2026-11-06 확인)와 예전 표기 \'Korea, Republic of\' 모두', F.in_korea(with_locs(base, ['United States', 'South Korea'])) and F.in_korea(with_locs(base, ['South Korea'])) and F.in_korea(with_locs(base, ['Korea, Republic of'])) and 'South Korea' in F.KOREA)
+ok('in_korea: 대한민국이 없거나 장소 목록이 없으면 거짓(오류 없음)', not F.in_korea(with_locs(base, ['United States', 'Japan'])) and not F.in_korea(base) and not F.in_korea({}) and not F.in_korea({'protocolSection': {'contactsLocationsModule': {'locations': [None, {}]}}}))
+ok('in_korea: 비슷한 이름(North Korea · Korea, Democratic People\'s Republic of · Korea)은 세지 않음', not F.in_korea(with_locs(base, ['North Korea', "Korea, Democratic People's Republic of", 'Korea'])))
+# 받은 일치 전체로 센다: 요약에 쓰는 최근 1,000건 밖의 옛 등록에 있는 국내 시행·결과도 센다
+many = []
+for i in range(1100):
+    st = study(f'NCTM{i}', ivs=[('Tirzepatide', [])], start='%04d-%02d' % (2000 + i % 25, 1 + i % 12))
+    many.append(with_locs(st, ['South Korea'] if i % 11 == 0 else ['United States'], has_results=(i % 7 == 0)))
+want_kr = sum(1 for x in many if F.in_korea(x)); want_res = sum(1 for x in many if x.get('hasResults'))
+rec = F.make_record('tirzepatide', many, False, '2026-11')
+kept = sorted(many, key=F.start_of, reverse=True)[:F.CT_KEEP]
+ok('make_record: 국내 시행·결과 게시는 받은 일치 등록 전체로 센다(요약 1,000건 밖 포함)', rec['kr'] == want_kr and rec['res'] == want_res and want_kr > sum(1 for x in kept if F.in_korea(x)) and rec['n'] == 1100, (rec['kr'], want_kr, rec['res'], want_res, rec['n']))
+ok('make_record: 1,000건을 넘으면 cap, 단계 합은 요약한 1,000건', rec['cap'] and sum(rec['ph'].values()) == F.CT_KEEP, (rec['cap'], sum(rec['ph'].values())))
+rec0 = F.make_record('tirzepatide', [with_locs(base, ['United States'])], False, '2026-11')
+ok('make_record: 국내 시행·결과가 없으면 0(자료 없음 null 과 구별되는 0)', rec0['kr'] == 0 and rec0['res'] == 0 and not rec0.get('cap'), (rec0['kr'], rec0['res']))
+rec_t = F.make_record('x', [with_locs(base, ['South Korea'], True)], True, '2026-11')
+ok('make_record: 받다가 멈췄으면(truncated) cap 을 켜고 국내·결과는 받은 만큼', rec_t['cap'] and rec_t['kr'] == 1 and rec_t['res'] == 1)
+
+# ── 데이터 처리일: note_ct_version ──
+real_ctv = F.ct_version
+try:
+    with tempfile.TemporaryDirectory() as tmp:
+        seq = iter([{'api': '2.0.5', 'ts': '2026-11-05T10:00:06', 'at': 'A1'}, {'api': '2.0.5', 'ts': '2026-11-06T10:00:00', 'at': 'A2'}, {'api': '2.0.5', 'ts': '2026-11-05T10:00:06', 'at': 'A3'}, {'api': '2.0.5', 'ts': '2026-11-05T10:00:06', 'at': 'A4'}])
+        F.ct_version = lambda: next(seq)
+        j = F.note_ct_version(tmp)
+        ok('note_ct_version: 시작 값을 기록(end 없음)', j['start']['ts'] == '2026-11-05T10:00:06' and 'end' not in j and 'same' not in j, j)
+        j = F.note_ct_version(tmp)       # 이어받아도 처음 start 를 지킨다
+        ok('note_ct_version: 이어받아도 처음 start 를 지킴', j['start']['at'] == 'A1' and j['start']['ts'] == '2026-11-05T10:00:06', j)
+        j = F.note_ct_version(tmp, end=True)   # 끝 값(A3)이 start 와 같은 처리 시각
+        ok('note_ct_version: 끝 처리 시각이 같으면 same=True', j['same'] is True and j['end']['at'] == 'A3', j)
+        saved = json.load(open(os.path.join(tmp, 'ct_version.json'), encoding='utf-8'))
+        ok('note_ct_version: ct_version.json 에 기록되고 다시 읽힘', saved == j, saved)
+    with tempfile.TemporaryDirectory() as tmp:
+        seq = iter([{'api': '2.0.5', 'ts': '2026-11-05T10:00:06', 'at': 'B1'}, {'api': '2.0.5', 'ts': '2026-11-06T10:00:00', 'at': 'B2'}])
+        F.ct_version = lambda: next(seq)
+        F.note_ct_version(tmp); j = F.note_ct_version(tmp, end=True)
+        ok('note_ct_version: 수집 도중 등록소 자료가 갱신되면(처리 시각이 다름) same=False', j['same'] is False and j['start']['ts'] != j['end']['ts'], j)
+    with tempfile.TemporaryDirectory() as tmp:
+        seq = iter([{'error': '요청 실패', 'at': 'C1'}, {'error': '요청 실패', 'at': 'C2'}])
+        F.ct_version = lambda: next(seq)
+        F.note_ct_version(tmp); j = F.note_ct_version(tmp, end=True)
+        ok('note_ct_version: 처리 시각을 못 받았으면(둘 다 오류) same=False — 같다고 말하지 않음', j['same'] is False, j)
+finally:
+    F.ct_version = real_ctv
+
+# ── MedlinePlus: mplus_items ──
+with tempfile.TemporaryDirectory() as tmp:
+    os.makedirs(os.path.join(tmp, 'data')); rawd = os.path.join(tmp, 'raw'); os.makedirs(rawd)
+    json.dump({'concepts': [{'type': 'VTM', 'rxcui': '161', 'label_en': 'Acetaminophen '}, {'type': 'VMP', 'rxcui': '999', 'label_en': 'x'}, {'type': 'VTM', 'rxcui': '', 'label_en': 'none'}, {'type': 'VTM', 'rxcui': 'abc', 'label_en': 'bad'}, {'type': 'VTM', 'rxcui': 7646, 'label_en': 'Omeprazole'}]},
+              open(os.path.join(tmp, 'data', 'medterm.json'), 'w', encoding='utf-8-sig'), ensure_ascii=False)
+    json.dump({'entities': [{'rxcui': '2', 'label_en': 'few', 'kr': {'items': 3}}, {'rxcui': '161', 'label_en': 'dup', 'kr': {'items': 999}}, {'rxcui': '3', 'label_en': 'Many', 'kr': {'items': 50}}, {'rxcui': '4', 'label_en': 'nokr'}]},
+              open(os.path.join(tmp, 'data', 'medterm_ext.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    items = F.mplus_items(tmp, rawd)
+    ok('mplus_items: 핵심 사전(VTM)이 먼저, 그다음 확장 사전은 국내 등재 품목이 많은 성분부터', [x['q'] for x in items] == ['161', '7646', '3', '2', '4'], [x['q'] for x in items])
+    ok('mplus_items: 같은 RxCUI 는 한 번만(핵심 사전 이름이 남음) · 숫자가 아닌 코드와 VTM 이 아닌 항목은 뺌 · 이름은 소문자·공백 정리', items[0] == {'q': '161', 'n': 'acetaminophen'} and all(x['q'].isdigit() for x in items) and '999' not in [x['q'] for x in items], items[:2])
+    ok('mplus_items: 목록을 raw 폴더의 mplus_rx.json 으로 저장(새 자료 만들 때 조회 대상 수로 씀)', json.load(open(os.path.join(rawd, 'mplus_rx.json'), encoding='utf-8')) == items)
+
+# ── MedlinePlus: parse_mplus · MPLUS_PAGE ──
+feed = {'feed': {'entry': [
+    {'title': {'_value': 'Acetaminophen'}, 'link': [{'href': 'https://medlineplus.gov/druginfo/meds/a681004.html'}], 'summary': {'_value': '<p>ASHP 저작물 본문</p>'}},
+    {'title': {'_value': 'Acetaminophen (again)'}, 'link': {'href': 'https://medlineplus.gov/druginfo/meds/a681004.html?utm=1'}},
+    {'title': {'_value': 'Acetaminophen Injection'}, 'link': [{'href': 'https://medlineplus.gov/druginfo/meds/a611011.html#top'}]},
+    {'title': {'_value': 'Encyclopedia'}, 'link': [{'href': 'https://medlineplus.gov/ency/article/002345.htm'}]},
+    {'title': {'_value': 'Plain http'}, 'link': [{'href': 'http://medlineplus.gov/druginfo/meds/a111111.html'}]},
+    {'title': {'_value': 'Other host'}, 'link': [{'href': 'https://medlineplus.gov.evil.example/druginfo/meds/a222222.html'}]},
+    {'title': {'_value': 'Suffix'}, 'link': [{'href': 'https://medlineplus.gov/druginfo/meds/a333333.html.exe'}]},
+    {'title': {'_value': 'T' * 200}, 'link': [{'href': 'https://medlineplus.gov/druginfo/meds/a444444.html'}]},
+]}}
+hits = F.parse_mplus(feed)
+ok('parse_mplus: 약 정보 쪽(https://medlineplus.gov/druginfo/meds/aNNN.html)만 받고 같은 쪽은 한 번만', [h['id'] for h in hits] == ['a681004', 'a611011', 'a444444'], hits)
+ok('parse_mplus: 결과에는 쪽 번호와 제목만 있고 본문 요약(summary)은 읽지도 담지도 않음(ASHP 저작물)', all(set(h) == {'id', 't'} for h in hits) and 'ASHP' not in json.dumps(hits, ensure_ascii=False), hits)
+ok('parse_mplus: 제목은 80자까지', len(hits[2]['t']) == 80 and hits[0]['t'] == 'Acetaminophen')
+ok('parse_mplus: 사전 밖 주소(백과·http·다른 호스트·확장자 뒤 붙임)는 버림', not any(h['id'] in ('a111111', 'a222222', 'a333333') for h in hits))
+ok('parse_mplus: entry 가 하나(딕셔너리)여도 · 비어도 · None 이어도 오류 없음', F.parse_mplus({'feed': {'entry': feed['feed']['entry'][0]}}) == [{'id': 'a681004', 't': 'Acetaminophen'}] and F.parse_mplus({'feed': {}}) == [] and F.parse_mplus(None) == [] and F.parse_mplus({}) == [])
+
+# ── MedlinePlus: fetch_mplus_one (요청 함수를 가짜로) ──
+asked = []
+def fake_mp(url, **kw):
+    asked.append((url, kw)); return json.dumps(feed).encode() if 'v.c=161' in url else None
+F._req = fake_mp
+try:
+    r1 = F.fetch_mplus_one('161'); r2 = F.fetch_mplus_one('999')
+    q1 = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(asked[0][0]).query))
+    ok('fetch_mplus_one: RxNorm OID(2.16.840.1.113883.6.88)와 RxCUI 로, 영문 JSON 을 요청', asked[0][0].startswith('https://connect.medlineplus.gov/service?') and q1['mainSearchCriteria.v.cs'] == '2.16.840.1.113883.6.88' and q1['mainSearchCriteria.v.c'] == '161' and q1['informationRecipient.languageCode.c'] == 'en' and q1['knowledgeResponseType'] == 'application/json', q1)
+    ok('fetch_mplus_one: 404 는 오류가 아니라 ‘쪽 없음’(hits 빈 목록)으로 기록 — 이어받기에서 다시 묻지 않도록 q 는 남김', asked[0][1].get('not_found_ok') is True and r2 == {'q': '999', 'hits': []} and r1['q'] == '161' and len(r1['hits']) == 3, (r1, r2))
+finally:
+    F._req = real_req
+
+# ── 이어받기·속도 제한: run_pool_jsonl ──
+with tempfile.TemporaryDirectory() as tmp:
+    calls, lock = [], threading.Lock()
+    def fn(x):
+        with lock: calls.append((x['q'], time.time()))
+        if x['q'] == 'bad': raise RuntimeError('일시 오류')
+        return {'q': x['q'], 'hits': []}
+    items = [{'q': str(i)} for i in range(6)] + [{'q': 'bad'}]
+    t0 = time.time(); F.run_pool_jsonl(tmp, 'mp.jsonl', items, fn, rate=50, workers=3)
+    got = [json.loads(l)['q'] for l in open(os.path.join(tmp, 'mp.jsonl'), encoding='utf-8')]
+    ok('run_pool_jsonl: 성공한 항목만 기록하고 일시 오류 항목은 건너뜀(다음 이어받기에서 다시 시도)', sorted(got) == sorted(str(i) for i in range(6)) and 'bad' not in got, got)
+    n_before = len(calls); F.run_pool_jsonl(tmp, 'mp.jsonl', items, fn, rate=50, workers=3)
+    ok('run_pool_jsonl: 이어받기 — 이미 받은 항목은 다시 묻지 않고 실패했던 것만 다시 시도', len(calls) - n_before == 1 and calls[-1][0] == 'bad', (len(calls) - n_before, calls[-1]))
+    log = json.load(open(os.path.join(tmp, 'fetch_log.json'), encoding='utf-8'))
+    ok('run_pool_jsonl: 끝나면 fetch_log.json 에 받은 날을 기록(앱의 “자료 받은 날”)', 'mp.jsonl' in log and str(log['mp.jsonl'])[:4] == time.strftime('%Y'), log)
+    ts = sorted(t for _, t in calls[:7])
+    ok('run_pool_jsonl: 초당 rate 를 넘지 않음(7건에 최소 0.1초 이상)', ts[-1] - ts[0] >= 6 / 50 * 0.8, ts[-1] - ts[0])
 
 bad = [c for c in checks if c[0] == 'FAIL']
 for c in checks: print(' | '.join(c))

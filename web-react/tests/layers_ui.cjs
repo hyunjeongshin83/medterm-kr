@@ -142,6 +142,10 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     ck('성분 상세(아세트아미노펜): 추가 블록 "이 성분이 든 국내 제품"이 보임', (await blk.count()) === 1 && (await blk.innerText()).includes('이 성분이 든 국내 제품') && (await blk.innerText()).includes('심평원 의약품표준코드'));
     const bt = await blk.innerText();
     ck('성분 상세: 제품 수는 "코드+품목명+업체" 단위라는 설명이 있음', bt.includes('품목기준코드+품목명+업체'), bt.slice(0, 200));
+    const mpA = await calc(page, (L, mt) => { const v = mt.vtms.find((x) => x.label_en === 'acetaminophen'); const i = v && L.forEntity(v.id); return i && i.mp ? { rx: i.mp.rx, t: i.mp.t, n: i.mp.n, url: L.mplusUrl(i.mp.rx) } : null; });
+    ck('MedlinePlus 영문 참고 링크(아세트아미노펜): 블록 제목 · 본문을 옮기지 않았다는 안내(ASHP) · 미국 기준 · 출처 표기가 보임', !!mpA && bt.includes('영문 참고 자료') && bt.includes('MedlinePlus') && bt.includes('옮겨 오지 않았습니다') && bt.includes('ASHP') && bt.includes('복약 판단에 쓰지 않습니다') && bt.includes('Source: MedlinePlus, National Library of Medicine'), { mpA, tail: bt.slice(-500) });
+    const mpL = mpA ? await blk.locator('a[href*="connect.medlineplus.gov"]').evaluateAll((as) => as.map((a) => ({ h: a.href, t: a.target, r: a.rel, x: a.innerText }))) : [];
+    ck('MedlinePlus 링크: RxNorm 코드(RxCUI)로 만든 Connect 주소 · 새 탭 · noopener noreferrer · 제목이 링크 글에 있음', mpA && mpL.length === 1 && mpL[0].h === mpA.url && mpL[0].t === '_blank' && mpL[0].r.includes('noopener') && mpL[0].r.includes('noreferrer') && mpA.t.every((x) => mpL[0].x.includes(x)) && mpL[0].h.includes('mainSearchCriteria.v.cs=2.16.840.1.113883.6.88') && mpL[0].h.includes('informationRecipient.languageCode.c=en'), { mpA, mpL });
     await blk.getByRole('button', { name: '국내 제품 탭에서 모두 보기' }).click(); await page.waitForTimeout(500);
     ck('상세의 "국내 제품 탭에서 모두 보기": 제품 탭으로 가서 성분 이름으로 찾음', (await page.locator('#tab-product').getAttribute('aria-selected')) === 'true' && (await page.locator('#pq').inputValue()).length > 0 && (await prodCount(page)) > 0, await page.locator('#pq').inputValue());
 
@@ -157,8 +161,12 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     ck('임상 블록: ClinicalTrials.gov 등록 기준 + 효능·안전성의 근거가 아니라는 안내', lt.includes('ClinicalTrials.gov 등록 기준') && lt.includes('효능·안전성의 근거가 아닙니다'));
     ck('화합물 블록: 같은 계열·같은 효과·대체 가능을 뜻하지 않는다는 안내', lt.includes('대체 가능을 뜻하지 않습니다'));
     ck('FDA 승인 블록: 국내 허가·급여를 뜻하지 않는다는 안내', lt.includes('국내 허가·급여를 뜻하지 않으며'));
+    const ctI = await calc(page, (L) => L.ctInfo());
+    ck('임상 블록: 출처(ClinicalTrials.gov, NLM) · 데이터 처리일 · 이 앱이 받은 날 · 가공은 이 앱에서 했다는 안내(이용약관의 표시 의무)', !!ctI && lt.includes('출처: ClinicalTrials.gov') && lt.includes('데이터 처리일 ' + String(ctI.data_ts).slice(0, 10)) && lt.includes('이 앱이 받은 날 ' + ctI.fetched) && lt.includes('가공했고'), { ctI, tail: lt.slice(0, 700) });
+    ck('임상 블록: 국내 시행 · 결과 게시 행과 "미국 정부는 연구를 검토·승인하지 않는다"는 안내', lt.includes('국내 시행') && lt.includes('결과 게시') && lt.includes('검토·승인하지 않으며'), lt.slice(0, 700));
+    ck('임상 블록: ClinicalTrials.gov 누리집 검색 링크는 유의어 확장 때문에 숫자가 다를 수 있다고 밝힘', lt.includes('ClinicalTrials.gov에서') && lt.includes('유의어 확장을 켜서 숫자가 다를 수 있음'));
     const links = await page.locator('#detail [data-layer-block] a').evaluateAll((as) => as.map((a) => ({ h: a.href, t: a.target, r: a.rel })));
-    ck('바깥 링크는 새 탭 + noopener noreferrer, 주소는 FDA·PubChem·ClinicalTrials.gov 뿐', links.length > 0 && links.every((l) => l.t === '_blank' && l.r.includes('noopener') && l.r.includes('noreferrer') && /^https:\/\/(www\.fda\.gov|pubchem\.ncbi\.nlm\.nih\.gov|clinicaltrials\.gov)\//.test(l.h)), links.slice(0, 4));
+    ck('바깥 링크는 새 탭 + noopener noreferrer, 주소는 FDA·PubChem·ClinicalTrials.gov·MedlinePlus Connect 뿐', links.length > 0 && links.every((l) => l.t === '_blank' && l.r.includes('noopener') && l.r.includes('noreferrer') && /^https:\/\/(www\.fda\.gov|pubchem\.ncbi\.nlm\.nih\.gov|clinicaltrials\.gov|connect\.medlineplus\.gov)\//.test(l.h)), links.slice(0, 4));
     noErr('교차 안내·상세(1440)', page);
     await ctx.close();
   }
@@ -233,6 +241,13 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     ck('"숫자의 뜻": 제품 1건의 정의 · 임상 건수는 효능 근거가 아님 · 한약제제 추정 · 대체 후보는 판정이 아님', sec.includes('품목기준코드 + 품목명 + 업체') && sec.includes('효능·안전성의 근거가 아닙니다') && sec.includes('한약제제(추정)') && sec.includes('약사법 제27조'));
     ck('"연결하지 못한 자료와 이유": 의약품안전나라 · 식품안전나라 · 약학정보원 · pharm.or.kr · 비공개 파이프라인', ['의약품안전나라', '식품안전나라', '약학정보원(health.kr)', '의약품 식별표시 사이트(pharm.or.kr)', '비공개 파이프라인'].every((s) => sec.includes(s)));
     ck('출처와 이용 조건: 심평원 공공누리 제1유형 · FDA · NLM(ClinicalTrials.gov·PubChem) 출처 표기', sec.includes('공공누리 제1유형') && sec.includes('U.S. Food and Drug Administration') && sec.includes('ClinicalTrials.gov') && sec.includes('National Center for Biotechnology Information'));
+    const ctA = await calc(page, (L) => ({ ct: L.ctInfo(), c: L.newMeta.counts, f: L.newMeta.fetched, srcs: L.newMeta.sources.map((x) => x.id) }));
+    ck('추가 자료 절: 임상 등록 기록 수 · 국내 시행·결과 게시 이름 수 · MedlinePlus 링크 이름 수 / 조회한 RxCUI 수 · 자료 받은 날(MedlinePlus 포함)이 자료와 같음',
+      sec.includes(nf(ctA.c.trials_kr)) && sec.includes(nf(ctA.c.trials_res)) && sec.includes(nf(ctA.c.mplus)) && sec.includes(nf(ctA.c.mplus_rx)) && sec.includes(ctA.f.mplus) && sec.includes('MedlinePlus 영문 약 정보 링크가 있는 이름'), { c: ctA.c, f: ctA.f });
+    ck('"숫자의 뜻": 임상 등록 기록 수 · 국내 시행(식약처·CRIS 와 대조하지 않음) · 결과 게시 · MedlinePlus 영문 참고 링크(본문은 ASHP 저작물이라 옮기지 않음)', ['임상 등록 기록 수', '국내 시행', 'CRIS', '결과 게시', 'MedlinePlus 영문 참고 링크', 'ASHP', '검토·승인하지 않습니다'].every((t) => sec.includes(t)));
+    ck('ClinicalTrials.gov 표시와 가공 내용: 처리일 · 받은 날 · 약관의 4가지 요구 · 가공 내용 5가지 · 이용약관·면책 링크', !!ctA.ct && sec.includes('ClinicalTrials.gov 표시와 가공 내용') && sec.includes('데이터 처리일 ' + String(ctA.ct.data_ts).slice(0, 10)) && ctA.ct.mods.length === 5 && ctA.ct.mods.every((t) => sec.includes(t.slice(0, 24))) && ['출처 표시', '데이터 처리일 표시', '최신 상태 유지', '가공 내용 명시'].every((t) => sec.includes(t)) && (await page.locator('#about-layers a[href="https://clinicaltrials.gov/about-site/terms-conditions"]').count()) === 1 && (await page.locator('#about-layers a[href="https://clinicaltrials.gov/about-site/disclaimer"]').count()) === 1, ctA.ct);
+    ck('출처와 이용 조건: MedlinePlus Connect(NLM) 줄과 출처 표기 "Source: MedlinePlus, National Library of Medicine" · 출처 식별자 F·T·P·M', sec.includes('MedlinePlus Connect') && sec.includes('Source: MedlinePlus, National Library of Medicine') && JSON.stringify(ctA.srcs) === JSON.stringify(['F', 'T', 'P', 'M']), ctA.srcs);
+    ck('연결하지 못한 자료: 약학정보원은 "허락 없는 복제·배포·전송·변경·게시 금지 고지 · 이용 문의 답 전에는 가져오지 않음 · 약사용 검토 시트(data/review/)"', sec.includes('허락 없는 복제·배포·전송·변경·게시를 금하고') && sec.includes('답을 받기 전에는 자료를 가져오지 않습니다') && sec.includes('data/review/'));
     noErr('정보 탭(1440)', page);
     await ctx.close();
   }
@@ -364,6 +379,21 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     const c0 = await cards(page).first().innerText();
     ck('약무·제도 카드: 용어 · 약사법 조문 · 시행 상태 · "초안·약사 검수 전" · 법령 원문 발췌 접기 줄', c0.includes('약사법 제') && c0.includes('현행') && c0.includes('풀이는 초안·약사 검수 전') && c0.includes('법령 원문 발췌'), c0.slice(0, 160));
 
+    // 조제 업무 길잡이: 이미 수록한 조문을 업무 흐름 순으로 이은 안내(처음에는 접힘)
+    const FL = await calc(page, (L) => L.lawFlow());
+    const fd = page.locator('#law-flow');
+    ck('조제 업무 길잡이: 처음에는 접혀 있고 접힌 줄에 제목이 보임(검색칸 위)', (await fd.count()) === 1 && (await fd.getAttribute('open')) === null && (await fd.locator('summary').innerText()).includes('조제 업무 길잡이') && (await page.evaluate(() => { const a = document.getElementById('law-flow'), b = document.getElementById('lawq'); return !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING); })));
+    await fd.locator('summary').click(); await page.waitForTimeout(100);
+    const fsteps = await fd.locator('[data-flow-step]').allInnerTexts();
+    ck('길잡이를 펴면 8단계가 차례대로 있고 단계마다 이름 · 설명 · 조문 단추가 있음', fsteps.length === 8 && FL.steps.every((st, i) => fsteps[i].includes(st.t) && fsteps[i].includes(st.d)) && (await fd.locator('[data-flow-step] button').count()) === FL.steps.reduce((a, st) => a + st.ids.length, 0), { n: fsteps.length });
+    const ftxt = await fd.innerText();
+    ck('길잡이 안내: 법이 정한 절차가 아님 · 약사 확인 전 · 시행령·시행규칙 미수록 · 대체조제 가능 판정이 아님 · "약국 운영의 바탕"', ftxt.includes('절차로 정해 놓은 것은 아니') && ftxt.includes('약사 확인 전') && ftxt.includes('시행령·시행규칙은 수록하지 않았') && ftxt.includes('대체조제 가능 판정이 아닙니다') && ftxt.includes(FL.base.t) && (await fd.locator('[data-flow-base] button').count()) === FL.base.ids.length);
+    await fd.getByRole('button', { name: /^대체조제 \(약사법 제27조\) 항목 보기$/ }).click(); await page.waitForTimeout(250);
+    const fpos = await page.evaluate(() => { const r = document.getElementById('llist-title').getBoundingClientRect(); return { top: Math.round(r.top), h: innerHeight }; });
+    ck('길잡이의 조문 단추("대체조제")를 누르면 검색어가 그 용어로 바뀌고 카드가 맨 위에 나오며 목록 머리글이 화면 안으로 옴', (await page.locator('#lawq').inputValue()) === '대체조제' && (await cards(page).first().locator('b').first().innerText()) === '대체조제' && fpos.top >= 0 && fpos.top < fpos.h, fpos);
+    await lawQ(page, ''); await fd.locator('summary').click(); await page.waitForTimeout(100);
+    ck('길잡이를 접고 검색을 지우면 처음 상태(전체 목록)로 돌아감', (await fd.getAttribute('open')) === null && (await lawCount(page)) === total);
+
     // 검색: 화면 건수·첫 결과가 API(Layers.searchLaw)와 같다
     await lawQ(page, '조제');
     const expJ = await calc(page, (L) => L.searchLaw({ q: '조제' }).map((e) => e.t));
@@ -435,6 +465,12 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     ck('데이터·한계: 약사법 절에 "쉬운 풀이 대조"(53개, 약사의 검수가 아님)와 출력본보다 나중 현행 표시(법률 제21525호) 한계가 있음', law.includes('쉬운 풀이 대조') && law.includes('약사의 검수가 아님') && law.includes('제21525호') && law.includes('2026-02-12'), law.slice(0, 200));
     const rev = await page.locator('#about-review').innerText().catch(() => '');
     ck('데이터·한계: "검수 상태" 절(#about-review)에 대조한 범위(성분 32·상품명 28·풀이 53)와 "약사 자격자의 검수는 받지 않았습니다"·현행 시행본 미대조가 있음', ['검수 상태', '핵심 성분 한글명 32개', '핵심 국내 상품명 28개', '약사법 쉬운 풀이 53개', '쿠파린', '약사 자격자의 검수는 받지 않았습니다', '제21525호'].every((t) => rev.includes(t)), rev.slice(0, 300));
+    const stg = await page.locator('#about-review [data-review-stages] > li').allInnerTexts();
+    ck('데이터·한계 "검수 상태": 3단계(1 자료 대조 · 2 약사 확인 · 3 약사 검수 완료)가 차례로 있고 1단계만 "했음", 나머지는 "아직"', stg.length === 3 && stg[0].startsWith('1단계') && stg[0].includes('했음') && stg[0].includes('약학정보원 대조는 아직입니다') && stg[1].startsWith('2단계') && stg[1].includes('아직') && stg[2].startsWith('3단계') && stg[2].includes('아직') && stg[2].includes('약사 검수 전 초안'), stg);
+    ck('데이터·한계 "검수 상태": 약학정보원·약학정보 책과의 대조는 하지 않았고 검토 시트(60행·53행)를 만들어 두었다는 안내', rev.includes('약학정보원(health.kr)·약학정보 책과의 대조는 하지 않았습니다') && rev.includes('성분 한글명·상품명 60행') && rev.includes('약사법 쉬운 풀이 53행'), rev.slice(-500));
+    const gth = await page.locator('#about-gather').innerText().catch(() => '');
+    ck('데이터·한계 "자료를 가져오는 원칙": 5개 항목 · 법률 자문이 아님 · 공식 API 먼저 · 긁어 오지 않음 · robots.txt 는 허락이 아님(RFC 9309) · 대법원 2021도1533 은 사실관계에 기댄 판단 · 본문은 옮기지 않음', (await page.locator('#about-gather ol > li').count()) === 5 && ['법률 자문이 아니라', '공식 API·내려받기 파일', '긁어 오지 않습니다', '내부 주소', '파일로 내려받지도 않습니다', 'RFC 9309', 'not a form of access authorization', '2021도1533', '사건마다 다릅니다', '데이터베이스 전체를 파일로 받아도 된다', '10억 원', '확정 여부는 확인하지 못했습니다', '본문은 옮기지 않습니다', 'docs/API없는_사이트_자료이용_조사.md'].every((t) => gth.includes(t)), gth.slice(0, 300));
+    ck('"자료를 가져오는 원칙" 절에 "확장"이라는 말이 없음(핵심만 있는 판의 문구 점검과 같은 기준)', !gth.includes('확장'));
     const foot = await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '');
     ck('하단 출처 표기의 추가 자료에 약사법(국가법령정보센터, 법제처)', foot.includes('약사법(국가법령정보센터, 법제처)'), foot.slice(0, 240));
     noErr('약무·제도(1440)', page);
@@ -445,13 +481,14 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     const { ctx, page } = await open(browser, w, h, { touch, mobile: w < 700, scheme });
     await tabTo(page, '약무·제도');
     await page.fill('#lawq', '국가필수의약품'); await page.waitForTimeout(150);
-    await page.locator('#panel-law summary').first().click(); await page.waitForTimeout(150);
+    await page.locator('#law-flow > summary').click(); await page.waitForTimeout(100);
+    await page.locator('#panel-law section[aria-labelledby="llist-title"] summary').first().click(); await page.waitForTimeout(150);
     const o1 = await overflow(page);
     await page.fill('#lawq', '협의회'); await page.waitForTimeout(150);
     const o2 = await overflow(page);
     await page.fill('#lawq', ''); await page.waitForTimeout(150);
     const o3 = await overflow(page);
-    ck(`약무·제도 폭 ${w}(${scheme}): 원문 펼침 · 협의회 안내 · 전체 목록에서 가로 넘침 없음`, [o1, o2, o3].every((o) => o.doc <= 0 && o.center <= 0), [o1, o2, o3]);
+    ck(`약무·제도 폭 ${w}(${scheme}): 조제 업무 길잡이 · 원문 펼침 · 협의회 안내 · 전체 목록에서 가로 넘침 없음`, [o1, o2, o3].every((o) => o.doc <= 0 && o.center <= 0), [o1, o2, o3]);
     if (touch) {
       const small = await page.evaluate(() => [...document.querySelectorAll('#panel-law button, #panel-law summary, #panel-law input[type=text]')].filter((e) => e.offsetParent).map((e) => { const r = e.getBoundingClientRect(); return { t: (e.innerText || e.getAttribute('aria-label') || '').trim().slice(0, 14), w: Math.round(r.width), h: Math.round(r.height) }; }).filter((b) => b.h < 44 || (b.w < 44 && b.t !== '')));
       const chk = await page.evaluate(() => { const l = document.querySelector('#panel-law label'); const r = l ? l.getBoundingClientRect() : null; return r ? { h: Math.round(r.height) } : null; });
@@ -472,6 +509,8 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     ck('추가 자료가 없으면 성분 상세에 추가 블록이 없음', (await page.locator('#detail [data-layer-block]').count()) === 0);
     await tabTo(page, '데이터·한계');
     ck('추가 자료가 없으면 정보 탭에 추가 자료 절이 없음', (await page.locator('#about-layers').count()) === 0);
+    ck('추가 자료가 없어도 "자료를 가져오는 원칙" 절은 있고, 약학정보원 이야기와 "확장"이라는 말은 없음(추가 자료와 무관한 원칙)', (await page.locator('#about-gather').count()) === 1 && !(await page.locator('#about-gather').innerText()).includes('확장'));
+    ck('추가 자료가 없으면 검수 상태에 약사법 줄이 없음(60행 시트만 안내)', await (async () => { const r = await page.locator('#about-review').innerText(); return r.includes('성분 한글명·상품명 60행') && !r.includes('약사법 쉬운 풀이 53행'); })());
     ck('추가 자료가 없으면 하단 출처 표기에 추가 자료 줄이 없음', !(await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '')).includes('추가 자료'));
     ck('추가 자료가 없으면 정보 탭에 약사법 절(#about-law)이 없고 출처 표기에 약사법 줄도 없음', (await page.locator('#about-law').count()) === 0 && !(await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '')).includes('약사법'));
     noErr('추가 자료 없음', page);

@@ -83,13 +83,20 @@
     }
     trialsFor(key) { return this.news ? (this.news.tr[key] || null) : null; }
     chemFor(key) { return this.news ? (this.news.ch[key] || null) : null; }
+    /** MedlinePlus 영문 약 정보 쪽 링크 정보({rx, n(쪽 수), t(제목 최대 3)}) — 사전 항목의 RxCUI 로 미리 찾아 둔 것만 있다(본문은 담지 않음). */
+    mplusFor(key) { return this.news && this.news.mp ? (this.news.mp[key] || null) : null; }
+    /** MedlinePlus Connect 결과 쪽 주소(RxNorm RxCUI, 영문). NLM 이 정한 웹 응용 주소 형식이며, 눌렀을 때만 열린다(화면을 열 때 외부 요청 없음). */
+    mplusUrl(rx) { return `https://connect.medlineplus.gov/application?mainSearchCriteria.v.cs=2.16.840.1.113883.6.88&mainSearchCriteria.v.c=${encodeURIComponent(String(rx))}&informationRecipient.languageCode.c=en`; }
+    /** ClinicalTrials.gov 약관이 요구하는 표시(출처·데이터 처리일·가공 내용)의 값. 자료에 없으면 null. */
+    ctInfo() { const m = this.newMeta; return m && m.ct ? m.ct : null; }
     /** 임상 요약을 화면용 값으로: 가장 앞선 단계, 상태별 건수, 단계별 건수(앞선 단계부터) */
     trialStage(tr) {
       if (!tr) return null;
       const ph = tr.ph || {}; const st = tr.st || {};
       const top = PHASE_ORDER.find((p) => ph[p]) || (ph.NA ? 'NA' : null);
       const phases = [...PHASE_ORDER, 'NA'].filter((p) => ph[p]).map((p) => ({ phase: p, n: ph[p] }));
-      return { top, phases, active: st.act || 0, planned: st.nyr || 0, done: st.done || 0, stopped: st.stop || 0, unknown: st.unk || 0, total: tr.n, capped: !!tr.cap, industry: tr.ind || 0 };
+      return { top, phases, active: st.act || 0, planned: st.nyr || 0, done: st.done || 0, stopped: st.stop || 0, unknown: st.unk || 0, total: tr.n, capped: !!tr.cap, industry: tr.ind || 0,
+               korea: tr.kr == null ? null : tr.kr, results: tr.res == null ? null : tr.res };   // 국내 시행·결과 게시: 자료에 없으면 null(0 과 구별)
     }
     phaseLabel(p) { const L = (this.newMeta && this.newMeta.phase_legend) || {}; return L[p] || (p === 'NA' ? '해당 없음' : p + '상'); }
     /** 같은 성분이 아닌, 구조가 가까운 사전 성분들: 같은 골격(입체이성질체 등)과 2D 유사 이웃 */
@@ -106,14 +113,15 @@
       const tr = this.trialsFor(key), ch = this.chemFor(key);
       const novel = keys.flatMap((k) => this.novelByKey.get(k) || []);
       const trPending = !tr && this.unq.tr.has(key);
-      if (!tr && !ch && !novel.length && !trPending) return null;
-      return { key, tr, stage: this.trialStage(tr), ch, novel, links: this.linksOf(key), trPending };
+      const mpKey = keys.find((k) => this.mplusFor(k)); const mp = mpKey ? this.mplusFor(mpKey) : null;
+      if (!tr && !ch && !novel.length && !trPending && !mp) return null;
+      return { key, tr, stage: this.trialStage(tr), ch, novel, links: this.linksOf(key), trPending, mp };
     }
     /** 새 약 이름(열쇠)로 직접 찾은 정보 — 사전에 없는 신약용 */
     forKey(key) {
       if (!this.news) return null;
       const tr = this.trialsFor(key), ch = this.chemFor(key);
-      return { key, tr, stage: this.trialStage(tr), ch, novel: this.novelByKey.get(key) || [], links: this.linksOf(key), trPending: !tr && this.unq.tr.has(key) };
+      return { key, tr, stage: this.trialStage(tr), ch, novel: this.novelByKey.get(key) || [], links: this.linksOf(key), trPending: !tr && this.unq.tr.has(key), mp: this.mplusFor(key) };
     }
 
     // ================= 약사법 용어·기구 (data/medterm_law.json) =================
@@ -127,6 +135,8 @@
     get hasLaw() { return !!this.law; }
     lawGroups() { return this.law ? (this.lawMeta.groups || []) : []; }
     lawEntry(id) { return this._lawById.get(id) || null; }
+    /** 조제 업무 길잡이({title, note, steps:[{n,t,d,ids}], base:{t,d,ids}}) — 이미 수록한 약사법 항목 id 를 업무 흐름 순으로 이은 안내. 없으면 null. */
+    lawFlow() { return this.law && this.law.flow ? this.law.flow : null; }
     /** 시행 상태를 오늘(또는 today='YYYY-MM-DD') 기준으로 풀어 준다.
      *  kind: cur(현행) · chg(현행이며 개정이 예정됨) · new(시행 예정 신설). 시행일(upcoming_effective)이 지났으면 passed=true — 그때는 법제처 현행본으로 다시 확인해야 한다. */
     lawStatus(e, today) {

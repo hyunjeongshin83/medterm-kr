@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """최신 승인·임상 등록·화합물 식별자 내려받기 — 키·로그인 없이 받을 수 있는 공개 자료만.
- 받는 곳(모두 공개): ① FDA CDER '신약 승인' 연도별 표(미국 정부 저작물) ② ClinicalTrials.gov API v2(미국 NLM) ③ PubChem PUG REST(미국 NLM)
- 쓰는 법: python build/new_fetch.py --raw <저장폴더> [--only fda,names,trials,chem,sim] [--rate 3] [--limit N]
+ 받는 곳(모두 공개): ① FDA CDER '신약 승인' 연도별 표(미국 정부 저작물) ② ClinicalTrials.gov API v2(미국 NLM) ③ PubChem PUG REST(미국 NLM) ④ MedlinePlus Connect(미국 NLM; 쪽 주소와 제목만)
+ 쓰는 법: python build/new_fetch.py --raw <저장폴더> [--only fda,names,trials,chem,sim,mplus] [--rate 3] [--limit N]
    fda    FDA 신약 승인표(2021~올해; 2020년 이전은 누리집 주소 형식이 달라 받지 않음) → fda_novel.json
    names  핵심·확장 사전과 FDA 신약의 영문 성분명 목록 → names.json (아래 두 단계의 입력)
    trials 성분별 임상시험 등록 현황 → trials.jsonl   (이어받기: 이미 받은 이름은 건너뜀)
@@ -9,16 +9,22 @@
           (확장을 켜면 chlorotrianisene 이 711건처럼 엉뚱한 시험까지 세어져 건수가 5~15배 부풀려진다.)
    chem   성분별 PubChem 화합물 식별자 → chem.jsonl  (이어받기)
    sim    chem 에서 찾은 화합물의 PubChem 2D 유사 이웃(유사도 0.9 이상) → sim.jsonl  (--limit N: 앞쪽 N개 이름만, 기본 1000; 이어받기)
+   mplus  성분 RxCUI → MedlinePlus Connect 로 '약 정보 쪽'(영문) 주소·제목만 → mplus.jsonl  (이어받기; 핵심 사전 먼저, 국내 등재 품목이 많은 성분 순.
+          본문 요약(summary)은 ASHP 저작물이라 받아도 저장하지 않는다. 호출은 분당 100회 이하 안내 → 초당 1회 안팎)
  원칙: 저장폴더는 저장소 밖에 둔다(원자료는 커밋하지 않는다). 받은 파일은 '신뢰할 수 없는 데이터'로 읽기만 한다.
  개인정보(이메일 등)는 요청에 넣지 않는다(일반 UA만). 호출 속도는 각 서비스 안내 이하로 제한한다(PubChem 초당 5회 이하, ClinicalTrials.gov 분당 50회 안팎)."""
 import argparse, collections, html, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 
-UA = 'MedTermKR-build/1.3 (open-data research; python-urllib)'
+UA = 'MedTermKR-build/1.5 (open-data research; python-urllib)'
 FDA_URL = 'https://www.fda.gov/drugs/novel-drug-approvals-fda/novel-drug-approvals-{y}'
 CT_API = 'https://clinicaltrials.gov/api/v2/studies'
+CT_VERSION = 'https://clinicaltrials.gov/api/v2/version'
+MPLUS = 'https://connect.medlineplus.gov/service'
+RXNORM_OID = '2.16.840.1.113883.6.88'
 PUBCHEM = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug'
 CT_FIELDS = 'NCTId,BriefTitle,Phase,OverallStatus,LeadSponsorName,LeadSponsorClass,StartDate,PrimaryCompletionDate,Condition'
-CT_FIELDS_X = CT_FIELDS + ',InterventionName,InterventionOtherName'   # 이름 대조용 (중재 이름·다른 이름)
+CT_FIELDS_X = CT_FIELDS + ',InterventionName,InterventionOtherName,LocationCountry,HasResults'   # 이름 대조용 (중재 이름·다른 이름) + 국내 시행(시험 장소 국가)·결과 게시 여부. 연락처·시설명은 받지 않는다(약관: 연락처 마케팅 사용 금지)
+KOREA = ('South Korea', 'Korea, Republic of')     # 시험 장소 국가 표기: ClinicalTrials.gov API v2 는 'South Korea'(2026-11-06 실제 응답으로 확인), 예전 표기 'Korea, Republic of'도 함께 인정. 정확히 일치할 때만 센다(북한 등은 다른 표기라 섞이지 않음)
 
 
 def _req(url, tries=5, timeout=90, not_found_ok=False, accept='application/json'):
@@ -213,6 +219,11 @@ def matches(tx, comps):
     return True
 
 
+def in_korea(s):
+    locs = ((s.get('protocolSection') or {}).get('contactsLocationsModule') or {}).get('locations') or []
+    return any((l or {}).get('country') in KOREA for l in locs)
+
+
 def start_of(s):
     return (s.get('protocolSection', {}).get('statusModule', {}).get('startDateStruct') or {}).get('date') or ''
 
@@ -242,6 +253,8 @@ def make_record(name, matched, truncated, today):
     matched = sorted(matched, key=start_of, reverse=True)
     kept = matched[:CT_KEEP]
     rec = summarize_trials(name, len(matched), kept, today)
+    rec['kr'] = sum(1 for s in matched if in_korea(s))       # 시험 장소에 대한민국이 하나라도 있는 등록(받은 일치 등록 전체 기준; cap 이면 '이상')
+    rec['res'] = sum(1 for s in matched if s.get('hasResults'))   # 결과가 게시된 등록
     if truncated: rec['cap'] = True
     return rec
 
@@ -274,6 +287,30 @@ def fetch_trials_one(name, today):
     out = []; fetch_trials_group([(name, components(name))], today, out.append, collections.Counter()); return out[0]
 
 
+def ct_version():
+    """API 버전과 데이터 처리 시각(dataTimestamp). 이용 약관: 데이터를 처리한 날짜를 화면에 밝혀야 한다. 실패하면 오류만 적는다."""
+    at = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    try:
+        d = json.loads(_req(CT_VERSION, tries=3, timeout=30))
+        return {'api': d.get('apiVersion'), 'ts': d.get('dataTimestamp'), 'at': at}
+    except (RuntimeError, ValueError) as e:
+        return {'error': str(e)[:80], 'at': at}
+
+
+def note_ct_version(raw, end=False):
+    """ct_version.json = {start, end, same}. 수집을 이어받아도 start 는 처음 값을 지킨다. same=False 면 수집 도중 등록소 자료가 갱신된 것이다."""
+    p = os.path.join(raw, 'ct_version.json')
+    try: j = json.load(open(p, encoding='utf-8'))
+    except (OSError, ValueError): j = {}
+    v = ct_version()
+    if not end:
+        j.setdefault('start', v)
+    else:
+        j['end'] = v; j['same'] = bool(j.get('start', {}).get('ts')) and j['start'].get('ts') == v.get('ts')
+    json.dump(j, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    return j
+
+
 def run_trials(raw, names, today, limit=0, hint=None):
     """names 를 앞에서부터 CT_BATCH 개씩 묶어 받는다. hint({이름: 이전 건수})가 있으면 건수가 CT_HEAVY 이상인 이름(흔한 약)은 묶음에서 빼
     가벼운 이름을 모두 받은 뒤 한 성분씩 받는다(묶음에 끼면 반씩 나눠 다시 묻느라 요청이 크게 늘기 때문). 이어받기: 이미 받은 이름은 건너뛴다."""
@@ -287,6 +324,7 @@ def run_trials(raw, names, today, limit=0, hint=None):
     light = [n for n in todo if hint.get(n, 0) < CT_HEAVY]; heavy = [n for n in todo if hint.get(n, 0) >= CT_HEAVY]
     print('trials.jsonl 남은', len(todo), f'(가벼운 {len(light)} · 흔한 약 {len(heavy)}) / 전체', len(names), flush=True)
     t0 = time.time(); stats = collections.Counter(); fails = 0; n_done = 0
+    v0 = note_ct_version(raw); print('ClinicalTrials.gov', v0['start'], flush=True)
     groups = [light[i:i + CT_BATCH] for i in range(0, len(light), CT_BATCH)] + [[n] for n in heavy]
     with open(path, 'a', encoding='utf-8') as f:
         for gi, chunk in enumerate(groups):
@@ -301,7 +339,8 @@ def run_trials(raw, names, today, limit=0, hint=None):
             if gi % 5 == 4 or gi == len(groups) - 1:
                 el = time.time() - t0
                 print(f"trials.jsonl {n_done}/{len(todo)} ({el:.0f}s) 요청 {stats['requests']} · 받은 등록 {stats['studies']} · 나눔 {stats['splits']} · 단독 {stats['single']} (잘림 {stats['truncated']})", flush=True)
-    note_fetch(raw, 'trials.jsonl'); print('trials.jsonl 완료', dict(stats), flush=True)
+    v1 = note_ct_version(raw, end=True)
+    note_fetch(raw, 'trials.jsonl'); print('trials.jsonl 완료', dict(stats), '· 처리 시각 같음' if v1.get('same') else '· 수집 도중 등록소 자료가 갱신됨 — 처음/끝 처리 시각을 모두 적는다', flush=True)
 
 
 # ── ③ PubChem ───────────────────────────────────────────────────────────────────────────────────────
@@ -331,6 +370,46 @@ def fetch_sim_one(rec):
     j = json.loads(b) if b else {}
     ids = (j.get('IdentifierList') or {}).get('CID')
     return {'q': rec['q'], 'cid': cid, 'nb': ids if isinstance(ids, list) else None}
+
+
+# ── ④ MedlinePlus Connect (성분 RxCUI → 영문 약 정보 쪽 주소) ───────────────────────────────────────
+def mplus_items(here_root, raw):
+    """[{'q': RxCUI, 'n': 사전 영문명}] — 핵심 사전(VTM) 먼저, 그다음 확장 사전(국내 등재 품목이 많은 성분부터). 같은 RxCUI 는 한 번만 묻는다."""
+    out = []; seen = set()
+    def add(rx, name):
+        rx = str(rx or '').strip()
+        if rx.isdigit() and rx not in seen: seen.add(rx); out.append({'q': rx, 'n': (name or '').strip().lower()})
+    core = json.load(open(os.path.join(here_root, 'data', 'medterm.json'), encoding='utf-8-sig'))
+    for c in core['concepts']:
+        if c.get('type') == 'VTM': add(c.get('rxcui'), c.get('label_en'))
+    ext = json.load(open(os.path.join(here_root, 'data', 'medterm_ext.json'), encoding='utf-8-sig'))['entities']
+    for e in sorted(ext, key=lambda e: -((e.get('kr') or {}).get('items', 0))): add(e.get('rxcui'), e.get('label_en'))
+    json.dump(out, open(os.path.join(raw, 'mplus_rx.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    print('mplus_rx.json', len(out)); return out
+
+
+MPLUS_PAGE = re.compile(r'^https://medlineplus\.gov/druginfo/meds/(a\d+)\.html(?:[?#].*)?$')
+
+def parse_mplus(j):
+    """Connect JSON → [{'id': 쪽 번호(a123456), 't': 제목}]. 본문 요약(summary)은 일부러 읽지 않는다(ASHP 저작물). 약 정보 쪽이 아닌 주소는 버린다."""
+    ent = ((j or {}).get('feed') or {}).get('entry') or []
+    if isinstance(ent, dict): ent = [ent]
+    out = []
+    for e in ent:
+        links = e.get('link') or []
+        if isinstance(links, dict): links = [links]
+        for l in links:
+            m = MPLUS_PAGE.match(str((l or {}).get('href') or ''))
+            if m and all(x['id'] != m.group(1) for x in out):
+                out.append({'id': m.group(1), 't': str(((e.get('title') or {}).get('_value')) or '')[:80]})
+    return out
+
+
+def fetch_mplus_one(rx):
+    q = urllib.parse.urlencode({'mainSearchCriteria.v.cs': RXNORM_OID, 'mainSearchCriteria.v.c': rx, 'knowledgeResponseType': 'application/json', 'informationRecipient.languageCode.c': 'en'})
+    b = _req(MPLUS + '?' + q, not_found_ok=True)
+    hits = parse_mplus(json.loads(b)) if b else []
+    return {'q': rx, 'hits': hits}
 
 
 def run_pool_jsonl(raw, fname, items, fn, rate, workers=3):
@@ -407,6 +486,9 @@ def main():
             except (ValueError, KeyError): pass
     if 'trials' in only: run_trials(a.raw, names, today, a.limit, hint)
     if 'chem' in only: run_jsonl(a.raw, 'chem.jsonl', names, fetch_chem_one, min(a.rate, 3.0), a.limit)
+    if 'mplus' in only:   # MedlinePlus Connect: 분당 100회 이하 안내 → 전체 호출 속도를 초당 1.25회 이하로 제한(응답이 느려 스레드 4개로 나누되 속도 한도는 그대로)
+        items = [{'q': x['q']} for x in mplus_items(root, a.raw)]
+        run_pool_jsonl(a.raw, 'mplus.jsonl', items[:a.limit] if a.limit else items, lambda x: fetch_mplus_one(x['q']), min(a.rate, 1.25), workers=4)
     if 'sim' in only:   # 구조 유사 이웃: 앞쪽 N개 이름(FDA 신약 → 핵심 → 국내 품목 많은 성분 순)만. --limit 로 N 을 정한다(기본 1000)
         names = json.load(open(os.path.join(a.raw, 'names.json'), encoding='utf-8'))
         chem = {}

@@ -52,6 +52,20 @@ export function StageChips({ stage }) {
   );
 }
 
+/** ClinicalTrials.gov 이용약관이 요구하는 표시: 출처 · 데이터 처리일 · 가공 내용(자세히는 데이터·한계 탭). 자료에 처리일이 없으면 없다고 밝힌다. */
+export function CtCredit({ name }) {
+  const ct = layers && layers.ctInfo();
+  const day = (t) => (t ? String(t).slice(0, 10) : null);
+  return (
+    <p className="mt-1.5 text-caption text-mut" data-ct-credit="">
+      출처: ClinicalTrials.gov(미국 국립의학도서관, NLM) · 데이터 처리일 {ct && day(ct.data_ts) ? day(ct.data_ts) : '기록 없음'}{ct && ct.data_ts_end ? ` ~ ${day(ct.data_ts_end)}` : ''} · 이 앱이 받은 날 {(ct && ct.fetched) || (layers.newMeta.fetched || {}).trials || '-'}.
+      요약·분류는 이 앱에서 가공했고(가공 내용은 ‘데이터·한계’ 탭), 최신 값은 원 누리집에서 확인하세요.
+      {ct && ct.disclaimer ? <> <ExtLink href={ct.disclaimer}>원문 면책 문구</ExtLink></> : null}
+      {name ? <> · <ExtLink href={`https://clinicaltrials.gov/search?intr=${encodeURIComponent(name)}`}>ClinicalTrials.gov에서 ‘{name}’ 검색</ExtLink> (누리집 검색은 유의어 확장을 켜서 숫자가 다를 수 있음)</> : null}
+    </p>
+  );
+}
+
 /** 임상시험 현황(ClinicalTrials.gov 등록 기준 요약) */
 export function TrialBlock({ info, title = '임상시험 현황', level = 4 }) {
   const tr = info && info.tr; const stage = info && info.stage;
@@ -64,15 +78,18 @@ export function TrialBlock({ info, title = '임상시험 현황', level = 4 }) {
         <p className="text-small text-mut">이 이름이 중재로 들어간 등록 시험을 찾지 못했습니다(코드명·다른 철자로만 등록됐거나 아직 등록 전일 수 있음). 없다는 뜻이 아니라 <b className="text-ink">확인이 필요하다</b>는 뜻입니다.</p>
       ) : (
         <>
-          <p className="mb-1.5 text-small text-mut">이름이 시험 중재에 그대로 들어간 등록 건수 요약입니다(유의어 확장 없음 · 비교약·병용약으로 쓰인 시험 포함 가능 · 코드명으로만 등록된 시험은 빠짐). 효능·안전성의 근거가 아닙니다.{tr.cap ? ' 이 성분은 등록이 많아 최근 시작 1,000건까지만 센 값입니다.' : ''}</p>
+          <p className="mb-1.5 text-small text-mut">이름이 시험 중재에 그대로 들어간 등록 기록 수 요약입니다(유의어 확장 없음 · 비교약·병용약으로 쓰인 시험 포함 가능 · 코드명으로만 등록된 시험은 빠짐). 미국 정부는 등재된 연구의 안전성·과학성을 검토·승인하지 않으며, 기록 수·단계·상태는 효능·안전성의 근거가 아닙니다.{tr.cap ? ' 이 성분은 등록이 많아 단계·상태 등은 최근 시작 1,000건 기준이고, 기록 수는 받은 일치 등록 수(그 이상일 수 있음)입니다.' : ''}</p>
           <Table>
-            <Row th="등록 건수">{nf(tr.n)}건{tr.cap ? '+' : ''}{tr.ind ? <span className="text-mut"> · 산업체 주관 {nf(tr.ind)}건</span> : null}</Row>
+            <Row th="등록 기록 수">{nf(tr.n)}건{tr.cap ? '+' : ''}{tr.ind ? <span className="text-mut"> · 산업체 주관 {nf(tr.ind)}건</span> : null}</Row>
+            {stage.korea != null && <Row th="국내 시행">시험 장소에 대한민국이 있는 등록 {nf(stage.korea)}건{tr.cap ? '+' : ''}<span className="text-small text-mut"> (식약처 승인·CRIS 등록과 대조하지 않음)</span></Row>}
+            {stage.results != null && <Row th="결과 게시">결과가 게시된 등록 {nf(stage.results)}건{tr.cap ? '+' : ''}<span className="text-small text-mut"> (결과 게시는 일부 연구에만 의무)</span></Row>}
             <Row th="단계"><span className="flex flex-wrap gap-1">{stage.phases.map((p) => <Chip key={p.phase}>{layers.phaseLabel(p.phase)} {p.n}</Chip>)}</span></Row>
             <Row th="상태"><StageChips stage={stage} /></Row>
             {tr.spi.length > 0 && <Row th="주관 기관">{tr.spi.join(', ')}<span className="text-small text-mut"> (산업체 상위)</span></Row>}
             {tr.cond.length > 0 && <Row th="대상 질환">{tr.cond.join(', ')}</Row>}
             <Row th="시기">시작(예정 포함) 가장 늦은 달 {ymText(tr.ls)} · 가장 가까운 주요 완료 예정 {ymText(tr.np)}</Row>
           </Table>
+          <CtCredit name={info.key} />
           {tr.ex.length > 0 && (
             <>
               <div className="mb-1 mt-3 text-small-bold text-mut">진행·예정 중인 2·3상 시험 예</div>
@@ -147,6 +164,20 @@ export function ChemBlock({ info, onSelect, level = 4 }) {
   );
 }
 
+/** MedlinePlus 영문 약 정보 쪽으로 가는 링크(성분 RxCUI 로 미리 찾아 둔 것). 본문은 옮기지 않는다. */
+export function MplusBlock({ info, level = 4 }) {
+  const mp = info && info.mp; if (!mp) return null;
+  const more = mp.n - mp.t.length;
+  return (
+    <>
+      <Head level={level} className="mb-1 mt-5 text-body-bold">영문 참고 자료 <span className="text-small font-normal text-mut">MedlinePlus (미국 국립의학도서관)</span></Head>
+      <p className="mb-1.5 text-small text-mut">MedlinePlus의 영문 환자용 약 정보 쪽으로 이어지는 링크입니다. 내용은 옮겨 오지 않았습니다(약 정보 본문은 미국약제사회(ASHP)의 저작물). 미국 기준 설명이라 국내 허가 사항·용법과 다를 수 있으며 복약 판단에 쓰지 않습니다.</p>
+      <ExtLink href={layers.mplusUrl(mp.rx)}>MedlinePlus 영문 약 정보: {mp.t.join(' · ')}{more > 0 ? ` 외 ${more}건` : ''}</ExtLink>
+      <p lang="en" className="mt-1 text-caption text-mut">Source: MedlinePlus, National Library of Medicine</p>
+    </>
+  );
+}
+
 /** 이 성분이 든 국내 제품 요약(코드+품목명+업체 단위) */
 export function ProductBlock({ id, onJump, level = 4 }) {
   const pe = layers && layers.hasProducts ? layers.productsOfEntity(id, 6) : null;
@@ -175,6 +206,7 @@ export function LayerBlock({ id, onSelect, onJump, level = 4 }) {
       {info && <NovelBlock novel={info.novel} level={level} />}
       {info && <TrialBlock info={info} level={level} />}
       {info && <ChemBlock info={info} onSelect={onSelect} level={level} />}
+      {info && <MplusBlock info={info} level={level} />}
       <ProductBlock id={id} onJump={onJump} level={level} />
     </div>
   );

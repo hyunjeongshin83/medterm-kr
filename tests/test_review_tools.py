@@ -1,11 +1,12 @@
 """약사 판정 시트·일치도 계산기·이름 대조 도구·규칙표 도구 점검 — python3 -I tests/test_review_tools.py
  네트워크 불필요. 저장소의 자료·문서와 임시 폴더의 가짜 파일만 쓴다(가짜 판정값은 도구 점검용이며 실제 판정이 아니다).
  ① 규칙표 문서가 코드와 같은지  ② 판정 시트: 결정적·표본 구성·가림(등급 열 없음)·저장된 시트와 같은지  ③ κ·Wilson 계산, 판정 값 읽기, 두 파일 합치기, 인코딩(CP949), 이상 입력
- ④ 식약처↔심평원 이름 대조: 단계 분류·코드 관계·JSON/CSV 읽기  ⑤ 도구 소스에 네트워크·서비스키·실행 호출이 없는지  ⑥ 자료의 hira_codes 불변식  ⑦ 저장소에 비밀값이 없는지"""
+ ④ 식약처↔심평원 이름 대조: 단계 분류·코드 관계·JSON/CSV 읽기  ⑤ 도구 소스에 네트워크·서비스키·실행 호출이 없는지  ⑥ 자료의 hira_codes 불변식  ⑦ 저장소에 비밀값이 없는지
+ ⑧ 약사 확인용 대조 시트 2종(핵심 성분·상품명 60행, 약사법 쉬운 풀이 53행): 저장본과 같음·행 구성·판정 칸이 비어 있음·--check"""
 import csv, io, json, os, re, sys, tempfile
 here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
 sys.path.insert(0, os.path.join(root, 'tools')); sys.path.insert(0, os.path.join(root, 'build'))
-import review_sheet as RS, review_agreement as RA, compare_mfds_names as CM, norm_rules_table as NR
+import review_sheet as RS, review_agreement as RA, compare_mfds_names as CM, norm_rules_table as NR, make_check_sheets as MCS
 
 checks = []
 def ok(name, cond, extra=''): checks.append(('PASS' if cond else 'FAIL', name, str(extra)[:160]))
@@ -142,7 +143,7 @@ ok('코드 관계 함수: 같음 · 앞 6자리 · 앞 4자리 · 포함 · 무�
 
 # ── ⑤ 도구 소스 점검 ──
 FORBID = re.compile(r'urllib|requests|http\.client|socket|subprocess|os\.system|\beval\(|\bexec\(|serviceKey|DATA_GO_KR_KEY|https?://')
-for t in ('review_sheet.py', 'review_agreement.py', 'compare_mfds_names.py', 'norm_rules_table.py'):
+for t in ('review_sheet.py', 'review_agreement.py', 'compare_mfds_names.py', 'norm_rules_table.py', 'make_check_sheets.py'):
     src = open(os.path.join(root, 'tools', t), encoding='utf-8').read()
     hit = FORBID.findall(src)
     ok(f'{t}: 네트워크·서비스키·실행 호출·주소 문자열이 없음', not hit, hit[:3])
@@ -166,6 +167,44 @@ for base in ('tools', 'docs', 'data', 'build', 'tests', 'web', 'bin', 'web-react
         m = SECRET.search(txt)
         if m: hits.append((os.path.relpath(f, root), m.group(0)[:12] + '…'))
 ok('저장소 소스·문서·자료에 토큰·키·개인 이메일 흔적이 없음(GitHub·Supabase·JWT 형태)', not hits, hits[:3])
+
+# ── ⑧ 약사 확인용 대조 시트 2종 ──
+core_ = json.load(open(os.path.join(root, 'data', 'medterm.json'), encoding='utf-8-sig')); law_ = json.load(open(os.path.join(root, 'data', 'medterm_law.json'), encoding='utf-8-sig'))
+sheets = MCS.build(root)
+def read_sheet(raw):
+    return list(csv.reader(io.StringIO(raw.decode('utf-8-sig'), newline='')))
+ok('대조 시트: 저장소의 두 시트가 지금 자료로 다시 만든 것과 바이트까지 같음(어긋나면 python -I tools/make_check_sheets.py)',
+   all(open(os.path.join(root, 'data', 'review', n), 'rb').read() == b for n, b in sheets.items()), list(sheets))
+nm_rows = read_sheet(sheets[MCS.NAME_NAMES]); lw_rows = read_sheet(sheets[MCS.NAME_LAW])
+vtm_ = [c for c in core_['concepts'] if c['type'] == 'VTM']
+ok('대조 시트(성분·상품명): UTF-8 BOM · 열 11개 · 성분 한글명 행 = 핵심 성분 수, 국내 상품명 행 = 핵심 상품명 수(합 60) · 번호가 1부터 이어짐',
+   sheets[MCS.NAME_NAMES][:3] == b'\xef\xbb\xbf' and all(len(r) == 11 for r in nm_rows)
+   and sum(r[1] == '성분 한글명' for r in nm_rows[1:]) == len(vtm_) == 32 and sum(r[1] == '국내 상품명' for r in nm_rows[1:]) == sum(len(c.get('brands_ko', [])) for c in vtm_) == 28
+   and [int(r[0]) for r in nm_rows[1:]] == list(range(1, 61)), (len(nm_rows) - 1, nm_rows[0]))
+ok('대조 시트(성분·상품명): 약사가 적을 칸(확인한 표기·판정·메모·확인자·확인일)이 모두 비어 있고, 도구의 판정·등급을 싣지 않음',
+   all(not r[i] for r in nm_rows[1:] for i in (6, 7, 8, 9, 10)) and not any(k in h for h in nm_rows[0] for k in ('등급', '규칙', '자동', '도구', '일치율')), nm_rows[0])
+ok('대조 시트(성분·상품명): 사전의 한글명·상품명·다른 표기가 핵심 자료 그대로(영문명 ↔ 한글명 쌍이 같음)',
+   {(r[2], r[3]) for r in nm_rows[1:] if r[1] == '성분 한글명'} == {(c['label_en'], c['label_ko']) for c in vtm_}
+   and {(r[3], r[4]) for r in nm_rows[1:] if r[1] == '국내 상품명'} == {(c['label_ko'], b) for c in vtm_ for b in c.get('brands_ko', [])})
+LE = law_['e']
+ok('대조 시트(약사법): UTF-8 BOM · 열 12개 · 행 수 = 약사법 항목 수(53) · 번호가 1부터 이어짐 · 쉬운 풀이·원문 발췌가 자료 그대로',
+   sheets[MCS.NAME_LAW][:3] == b'\xef\xbb\xbf' and all(len(r) == 12 for r in lw_rows) and len(lw_rows) - 1 == len(LE) == 53
+   and [int(r[0]) for r in lw_rows[1:]] == list(range(1, 54)) and {(r[3], r[6]) for r in lw_rows[1:]} == {(e['t'], e['pl']) for e in LE}
+   and {(r[3], r[4]) for r in lw_rows[1:]} == {(e['t'], e.get('ex', '')) for e in LE}, (len(lw_rows) - 1, lw_rows[0]))
+ok('대조 시트(약사법): 조문 순서(제2조 제1호부터)로 줄을 세움 · 시행 예정·개정 예정 행 수가 자료의 건수와 같음',
+   lw_rows[1][2] == '제2조 제1호' and [MCS.art_key(r[2]) for r in lw_rows[1:]] == sorted(MCS.art_key(r[2]) for r in lw_rows[1:])
+   and sum(r[7] != '현행' for r in lw_rows[1:]) == law_['meta']['counts']['upcoming'], [r[2] for r in lw_rows[1:4]])
+ok('대조 시트(약사법): 약사가 적을 칸(판정·수정 제안·확인자·확인일)이 모두 비어 있음',
+   all(not r[i] for r in lw_rows[1:] for i in (8, 9, 10, 11)))
+ok('조문 열쇠: 제2조의2 가 제2조 제3호 뒤·제3조 앞에 오고, 제23조의2 는 제23조 뒤에 옴',
+   MCS.art_key('제2조 제3호') < MCS.art_key('제2조의2 제1항') < MCS.art_key('제3조') and MCS.art_key('제23조') < MCS.art_key('제23조의2') < MCS.art_key('제24조'))
+with tempfile.TemporaryDirectory() as td:
+    for n, b in sheets.items(): open(os.path.join(td, n), 'wb').write(b)
+    ok('--check: 같으면 종료 코드 0', MCS.main(['--out-dir', td, '--check']) == 0)
+    open(os.path.join(td, MCS.NAME_LAW), 'ab').write(b'x')
+    ok('--check: 한 글자라도 다르면 종료 코드 1, 파일이 없어도 1', MCS.main(['--out-dir', td, '--check']) == 1 and MCS.main(['--out-dir', os.path.join(td, 'none'), '--check']) == 1)
+    MCS.main(['--out-dir', td]); ok('다시 만들면 저장본과 같아짐', MCS.main(['--out-dir', td, '--check']) == 0)
+ok('안내 문서가 두 대조 시트의 파일 이름과 만드는 명령을 설명함', all(s_ in guide for s_ in (MCS.NAME_NAMES, MCS.NAME_LAW, 'make_check_sheets.py')))
 
 bad = [c for c in checks if c[0] == 'FAIL']
 for c in checks: print(' | '.join(c))

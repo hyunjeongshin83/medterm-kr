@@ -22,10 +22,13 @@ const allIds = new Set([...core.concepts.map((c) => c.id), ...ext.entities.map((
 
 // ───────────── ① 최신 승인·임상·화합물 ─────────────
 const NM = N.meta, NC = NM.counts;
-ok(['meta', 'novel', 'tr', 'ch', 'sk', 'sim', 'ent'].every((k) => k in N), '새 자료 최상위 키(meta·novel·tr·ch·sk·sim·ent)');
+const HAS_MP = !!N.mp;   // MedlinePlus 영문 링크(mp)는 선택 층: 있으면 출처 M 이 함께 있어야 한다
+const TOP = ['meta', 'novel', 'tr', 'ch', 'sk', 'sim', 'ent'];
+ok(TOP.every((k) => k in N) && Object.keys(N).every((k) => [...TOP, 'mp', 'unq'].includes(k)), '새 자료 최상위 키(meta·novel·tr·ch·sk·sim·ent + 선택 mp·unq)', Object.keys(N));
 ok(NM.review_status === 'draft' && typeof NM.notice === 'string' && NM.notice.includes('초안'), '새 자료는 초안 표시와 안내문을 가짐');
-ok(NM.sources.length === 3 && NM.sources.every((s) => s.id && s.name && s.license && s.license_tag && s.license_class && s.credit && s.url), '출처 3곳(FDA·ClinicalTrials.gov·PubChem)에 이용 조건·출처 표기·주소가 있음');
-ok(same(NM.sources.map((s) => s.id), ['F', 'T', 'P']), '출처 식별자 F·T·P');
+ok(NM.sources.length === (HAS_MP ? 4 : 3) && NM.sources.every((s) => s.id && s.name && s.license && s.license_tag && s.license_class && s.credit && s.url), `출처 ${HAS_MP ? 4 : 3}곳(FDA·ClinicalTrials.gov·PubChem${HAS_MP ? '·MedlinePlus' : ''})에 이용 조건·출처 표기·주소가 있음`);
+ok(same(NM.sources.map((s) => s.id), HAS_MP ? ['F', 'T', 'P', 'M'] : ['F', 'T', 'P']), '출처 식별자 F·T·P' + (HAS_MP ? '·M' : ''));
+ok(NC.mplus === (HAS_MP ? Object.keys(N.mp).length : 0) && (!HAS_MP || (NC.mplus_queried >= NC.mplus && NC.mplus_rx >= NC.mplus_queried && NC.mplus_queried > 0)) && (!HAS_MP) === !('mplus' in NM.fetched), 'meta.counts 의 MedlinePlus 건수(링크 있는 이름 ≤ 조회한 RxCUI ≤ 전체 RxCUI)와 받은 날 기록이 자료와 맞음', [NC.mplus, NC.mplus_queried, NC.mplus_rx]);
 ok(NC.novel === N.novel.length && NC.trials === Object.keys(N.tr).length && NC.chem === Object.keys(N.ch).length && NC.skeleton_groups === Object.keys(N.sk).length && NC.sim === Object.keys(N.sim).length && NC.linked_names === Object.keys(N.ent).length, 'meta.counts 가 실제 건수와 같음', NC);
 ok(NC.novel_linked === N.novel.filter((x) => x.e).length && NC.novel_with_trials === N.novel.filter((x) => N.tr[x.k]).length, '신약의 사전 연결·임상 있음 건수가 같음');
 ok(NC.trials_capped === Object.values(N.tr).filter((t) => t.cap).length, '임상 상한 도달 건수가 같음');
@@ -67,6 +70,36 @@ const byIdAny = (id) => mt.anyById(id);
 const labelOk = Object.entries(N.ent).every(([k, id]) => { const v = byIdAny(id); if (!v) return false; const names = [v.label_en, ...(v.alt_en || [])].map((s) => String(s || '').toLowerCase()); return names.includes(k); });
 ok(labelOk, '이름 연결은 영문 이름·별칭이 열쇠와 정확히 같을 때만', Object.entries(N.ent).filter(([k, id]) => { const v = byIdAny(id); return !v || ![v.label_en, ...(v.alt_en || [])].map((s) => String(s || '').toLowerCase()).includes(k); }).slice(0, 5));
 ok(N.novel.filter((x) => x.e).every((x) => N.ent[x.k] === x.e || Object.values(N.ent).includes(x.e)), '신약의 사전 연결이 ent 와 어긋나지 않음');
+// ClinicalTrials.gov 이용약관: 출처 표시 · 데이터 처리일 표시 · 최신 상태 유지 · 가공 내용 명시 + 미국 정부는 연구를 검토·승인하지 않는다는 면책
+const CT = NM.ct, srcT = NM.sources.find((x) => x.id === 'T');
+ok(!!CT && /^\d+\.\d+\.\d+$/.test(CT.api) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(CT.data_ts) && /^\d{4}-\d{2}-\d{2}$/.test(CT.fetched) && typeof CT.same === 'boolean', 'meta.ct: API 버전 · 데이터 처리 시각 · 이 앱이 받은 날 · 수집 중 갱신 여부', CT);
+ok(CT.data_ts.slice(0, 10) <= CT.fetched && CT.fetched <= NM.fetched.trials && (!CT.same || CT.data_ts_end == null) && (CT.data_ts_end == null || (CT.data_ts_end > CT.data_ts && !CT.same)), 'meta.ct: 처리일 ≤ 받은 날 ≤ 임상 수집 완료일 · 수집 중 갱신이 없으면 끝 처리 시각을 따로 적지 않음 · 갱신됐다면 same=false', CT);
+ok(CT.terms === 'https://clinicaltrials.gov/about-site/terms-conditions' && CT.disclaimer === 'https://clinicaltrials.gov/about-site/disclaimer', 'meta.ct: 이용약관·면책 문구 주소가 공식 주소');
+ok(Array.isArray(CT.mods) && CT.mods.length === 5 && CT.mods.every((x) => typeof x === 'string' && x.length > 20) && CT.mods.some((x) => x.includes('유의어 확장 끔')) && CT.mods.some((x) => x.includes('1,000건')) && CT.mods.some((x) => x.includes('South Korea')) && CT.mods.some((x) => x.includes('한국어 이름은 이 앱에서 붙였')), 'meta.ct.mods: 가공 내용 5가지(이름 대조·1,000건 요약·묶음·국내 시행 집계·입력 오류 제거)를 밝힘');
+ok(['출처 ‘ClinicalTrials.gov’ 표시', '데이터 처리일 표시', '최신 상태 유지', '가공 내용 명시', '퍼블릭 도메인'].every((x) => srcT.license.includes(x)) && srcT.credit.includes('ClinicalTrials.gov') && srcT.license.includes('연락처는 받지 않음'), '출처 T 의 이용 조건: 약관 4가지 의무 · 퍼블릭 도메인으로 쓰지 않음 · 연락처는 받지 않음');
+ok(NM.notice.includes('검토·승인하지 않습니다') && NM.notice.includes('효능·안전성 근거가 아닙니다'), '새 자료 안내문: 임상 수치는 근거가 아님 · 미국 정부는 등재된 연구를 검토·승인하지 않음');
+// 국내 시행(kr)·결과 게시(res): 받은 일치 등록 전체 기준이라 기록 수(n)를 넘지 않는다
+ok(trs.every(([, t]) => Number.isInteger(t.kr) && t.kr >= 0 && t.kr <= t.n && Number.isInteger(t.res) && t.res >= 0 && t.res <= t.n), '임상 요약의 kr(국내 시행)·res(결과 게시)는 0 이상의 정수이며 기록 수 이하');
+ok(NC.trials_kr === trs.filter(([, t]) => t.kr > 0).length && NC.trials_res === trs.filter(([, t]) => t.res > 0).length, 'meta.counts 의 국내 시행·결과 게시 이름 수가 실제와 같음', [NC.trials_kr, NC.trials_res]);
+ok(trs.filter(([, t]) => t.kr > 0).length >= 100 && trs.filter(([, t]) => t.res > 0).length >= 100, `국내 시행(${NC.trials_kr})·결과 게시(${NC.trials_res}) 이름이 각각 100개 이상 — 집계가 실제로 되었음`);
+ok(trs.filter(([, t]) => t.kr > 0 && t.cap).every(([, t]) => t.kr <= t.n), '상한 도달 이름의 국내 시행은 받은 등록 수 이하(‘이상’ 표기 대상)');
+const trTop = trs.filter(([k, t]) => ['acetaminophen', 'metformin', 'omeprazole'].includes(k));
+ok(trTop.length === 3 && trTop.every(([, t]) => t.n >= 100 && t.kr > 0 && t.res > 0), '아주 흔한 성분(아세트아미노펜·메트포르민·오메프라졸)은 등록이 100건 이상이고 국내 시행·결과 게시가 모두 있음(시험 장소의 국가 표기를 잘못 세면 국내 시행이 전부 0 이 됨)', trTop.map(([k, t]) => [k, t.n, t.kr, t.res]));
+// MedlinePlus 영문 링크(mp): 열쇠는 사전 연결 이름이고, 담는 것은 RxCUI·쪽 수·제목(최대 3)뿐
+if (HAS_MP) {
+  const mps = Object.entries(N.mp);
+  ok(mps.length >= 300, `MedlinePlus 링크가 있는 이름이 충분함: ${mps.length}`);
+  ok(mps.every(([k, m]) => k === k.toLowerCase() && N.ent[k] && sameObj(Object.fromEntries(Object.keys(m).map((x) => [x, 1])), { rx: 1, n: 1, t: 1 })), 'mp: 열쇠는 소문자·사전 연결(ent)이 있는 이름, 값에는 rx·n·t 만 있음(본문 없음)');
+  ok(mps.every(([, m]) => /^\d+$/.test(m.rx) && Number.isInteger(m.n) && m.n >= 1 && Array.isArray(m.t) && m.t.length >= 1 && m.t.length <= Math.min(3, m.n) && m.t.every((x) => typeof x === 'string' && x.length > 0 && x.length <= 80)), 'mp: RxCUI 는 숫자 · 쪽 수 1 이상 · 제목은 1~3개(80자 이하)');
+  const bad = mps.filter(([k, m]) => { const v = byIdAny(N.ent[k]); return !v || String(v.rxcui || '') !== m.rx; });
+  ok(bad.length === 0, 'mp.rx 는 연결된 사전 항목의 RxCUI 와 같음(다른 항목의 RxCUI 로 링크를 만들지 않음)', bad.slice(0, 4));
+  ok(JSON.stringify(N.mp).length < 400000, `mp 크기가 작음(링크·제목만): ${JSON.stringify(N.mp).length}바이트`);
+  ok(!/summary|<p>|<\/|ASHP/i.test(JSON.stringify(N.mp)), 'mp 에는 본문 요약(HTML)·ASHP 문구가 없음(ASHP 저작물은 옮기지 않음)');
+  const srcM = NM.sources.find((x) => x.id === 'M');
+  ok(srcM.credit === 'Source: MedlinePlus, National Library of Medicine' && srcM.url === 'https://medlineplus.gov/' && srcM.license.includes('ASHP') && srcM.license.includes('보증하는 것처럼 보이게 하지 않음') && srcM.license_tag.includes('링크만'), '출처 M: 요구 출처 표기 · 링크만 이용 · ASHP 저작물이라 본문을 옮기지 않음 · NLM 보증처럼 보이지 않게 함');
+  const ac = mps.find(([k]) => k === 'acetaminophen');
+  ok(ac && ac[1].rx === '161' && ac[1].t.some((x) => /acetaminophen/i.test(x)), '아세트아미노펜(RxCUI 161)의 MedlinePlus 제목에 Acetaminophen 이 있음', ac);
+} else warn('MedlinePlus 영문 링크(mp)가 없음 — new_fetch.py --only mplus 를 돌린 뒤 다시 만드세요');
 if (N.unq) warn(`임상·화합물 조회가 끝나지 않은 이름이 있음(임상 ${N.unq.tr.length} · 화합물 ${N.unq.ch.length}) — 수집이 끝난 뒤 다시 만드세요`);
 else ok(NC.trials_queried === NC.names && NC.chem_queried === NC.names, '모든 성분 이름을 조회함(임상·화합물)', [NC.trials_queried, NC.chem_queried, NC.names]);
 if (NC.sim === 0) warn('구조 유사 이웃(sim)이 비어 있음 — new_fetch.py --only sim 을 돌린 뒤 다시 만드세요');
@@ -192,6 +225,21 @@ ok(fk.novel.length >= 1 && fk.stage.top === L.trialStage(N.tr[nv.k]).top, '이�
 ok(L.novelList({ year: 2026 }).every((x) => x.y === 2026) && L.novelList({}).length === N.novel.length && L.novelList({ linked: true }).every((x) => x.e), '신약 목록 필터(연도·사전 연결)');
 ok(L.novelYears()[0] === Math.max(...N.novel.map((x) => x.y)), '신약 연도 목록은 최신 연도부터');
 ok(L.searchNovel('ab').length === 0 && L.searchNovel(nv.b.slice(0, 5)).some((x) => x.no === nv.no), '신약 이름 검색(3글자 이상)');
+// ClinicalTrials.gov 표시 값 · 국내 시행·결과 게시 · MedlinePlus 링크
+ok(same(L.ctInfo(), NM.ct) && none.ctInfo() === null && new Layers(mt, { ...N, meta: { ...NM, ct: undefined } }, null).ctInfo() === null, 'ctInfo(): 자료의 표시 값을 그대로 · 자료가 없거나 표시 값이 없으면 null');
+const stK = L.trialStage({ n: 10, ph: { '3': 1 }, st: { act: 1 }, kr: 4, res: 0 }), stN = L.trialStage({ n: 10, ph: { '3': 1 }, st: { act: 1 } });
+ok(stK.korea === 4 && stK.results === 0 && stN.korea === null && stN.results === null, 'trialStage(): 국내 시행·결과 게시 — 0 이면 0, 자료에 아예 없으면 null(0 과 구별)', [stK.korea, stK.results, stN.korea, stN.results]);
+ok(Object.entries(N.tr).every(([k, t]) => { const s = L.trialStage(t); return s.korea === t.kr && s.results === t.res; }), '모든 이름에서 trialStage 의 국내 시행·결과 게시가 자료의 kr·res 와 같음');
+ok(L.mplusUrl('161') === 'https://connect.medlineplus.gov/application?mainSearchCriteria.v.cs=2.16.840.1.113883.6.88&mainSearchCriteria.v.c=161&informationRecipient.languageCode.c=en', 'mplusUrl(): NLM 웹 응용 주소 형식(RxNorm OID·RxCUI·영문)');
+ok(!L.mplusUrl('1 2&x=3#y').includes('&x=3') && L.mplusUrl('1 2&x=3#y').includes('v.c=1%202%26x%3D3%23y'), 'mplusUrl(): 이상한 값은 주소 안에서 안전하게 부호화됨');
+if (HAS_MP) {
+  const mk = Object.keys(N.mp)[0];
+  ok(same(L.mplusFor(mk), N.mp[mk]) && L.mplusFor('no-such-drug-name') === null && none.mplusFor(mk) === null && new Layers(mt, { ...N, mp: undefined }, null).mplusFor(mk) === null, 'mplusFor(): 자료의 값 · 없는 이름·자료 없음·mp 없음은 null');
+  ok(Object.keys(N.mp).every((k) => { const f = L.forEntity(N.ent[k]); return f && f.mp && f.mp.rx === N.mp[k].rx; }), 'MedlinePlus 링크가 있는 모든 사전 항목에서 forEntity().mp 가 나옴(임상·화합물이 없어도 null 이 아님)');
+  ok(Object.keys(N.mp).every((k) => same(L.forKey(k).mp, N.mp[k])) && L.forKey('no-such-drug-name').mp === null, 'forKey().mp 도 같은 값 · 없으면 null');
+  const accid = mt.search('acetaminophen')[0].vtm.id, fac = L.forEntity(accid);
+  ok(fac.mp && fac.mp.rx === '161' && fac.stage && fac.stage.korea > 0 && fac.stage.results > 0 && fac.stage.korea <= fac.stage.total, '아세트아미노펜: MedlinePlus 링크 · 국내 시행·결과 게시 건수가 나옴', [fac.mp, fac.stage && fac.stage.korea, fac.stage && fac.stage.results]);
+}
 // 임상 진행·예정 성분 목록(pipelineList): 독립 계산과 같은 건수·정렬, 토글 효과
 const liveKeys = Object.keys(N.tr).filter((k) => ((N.tr[k].st.act || 0) + (N.tr[k].st.nyr || 0)) > 0);
 ok(L.pipelineList({}).length === liveKeys.length, '진행·예정 전체 건수가 독립 계산과 같음', [L.pipelineList({}).length, liveKeys.length]);
