@@ -11,7 +11,7 @@ const DIR = path.join(ROOT, 'dist', 'pwa');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'pwa');
 fs.mkdirSync(OUT, { recursive: true });
 const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
-const TABS = ['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];   // v1.3.0: 국내 제품·최신·임상 탭 추가(자료 파일이 있는 빌드)
+const TABS = ['사전 검색', '국내 제품', '최신·임상', '약무·제도', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];   // v1.3.0: 국내 제품·최신·임상 탭 추가, v1.4.0: 약무·제도 탭 추가(자료 파일이 있는 빌드)
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 
 let bad = 0, total = 0;

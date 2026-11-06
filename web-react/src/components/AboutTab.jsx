@@ -187,6 +187,29 @@ function LayersSection() {
   );
 }
 
+/** 약무·제도 층(약사법)의 건수·기준·한계. 층이 없으면 그리지 않는다. */
+function LawSection() {
+  if (!layers || !layers.hasLaw) return null;
+  const m = layers.lawMeta; const c = m.counts || {};
+  return (
+    <Section title="추가 자료: 약무·제도 용어 (약사법 · 약사 검수 전 초안)" id="about-law">
+      <p className="mb-2 text-small text-mut">‘약무·제도’ 탭의 자료입니다. 약사법 본문에서 뽑은 정의 용어·조직·약국과 조제 업무를 <b className="text-ink">법령 원문(짧은 발췌)</b>과 <b className="text-ink">쉬운 풀이(초안)</b>로 나누어 담았고, 핵심·확장 사전과 다른 층의 내용은 바꾸지 않았습니다.</p>
+      <Facts
+        rows={[
+          ['수록 항목 (정의 용어 / 조직·위원회 / 약국·조제 업무 / 제도·정보시스템)', `${nf(c.entries)} (${nf(c.def)} / ${nf(c.org)} / ${nf(c.duty)} / ${nf(c.sys)})`],
+          [`시행 예정·개정 예정이 표시된 항목 (시행일 ${m.upcoming_effective})`, nf(c.upcoming)],
+          ['기준 자료', `${m.source.name} ${m.source.print}`],
+          ['원문 발췌 대조', m.verified || '대조하지 않음'],
+        ]}
+      />
+      <h4 className="mb-1 mt-3 text-body-bold">한계</h4>
+      <ul className="list-disc pl-5 text-base">
+        {(m.limits || []).map((t) => <li key={t} className="my-1">{t}</li>)}
+      </ul>
+    </Section>
+  );
+}
+
 const ATT = mt.attribution();
 const PS = mt.provenanceStats();
 
@@ -277,6 +300,7 @@ export function AboutTab() {
       <ExtSection />
 
       <LayersSection />
+      <LawSection />
 
       <AttributionSection />
 

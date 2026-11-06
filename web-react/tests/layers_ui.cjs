@@ -21,7 +21,7 @@ async function open(browser, w, h, o = {}) {
   page.errs = []; page.failedUrls = failed;
   page.on('pageerror', (e) => page.errs.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) page.errs.push(m.type() + ': ' + m.text()); });
-  if (o.noLayers) await page.addInitScript(() => { for (const k of ['MEDTERM_NEW', 'MEDTERM_PRODUCTS']) Object.defineProperty(window, k, { value: undefined, writable: false, configurable: false }); });
+  if (o.noLayers) await page.addInitScript(() => { for (const k of ['MEDTERM_NEW', 'MEDTERM_PRODUCTS', 'MEDTERM_LAW']) Object.defineProperty(window, k, { value: undefined, writable: false, configurable: false }); });
   await page.goto(URL); await page.waitForSelector('#root > *'); await page.waitForTimeout(250);
   return { ctx, page };
 }
@@ -31,7 +31,7 @@ const noErr = (label, page) => ck(label + ': 콘솔·페이지 오류 없음, �
 // 페이지 안에서 독립 계산용 Layers 를 만들어 식을 계산한다.
 const calc = (page, fn, arg) => page.evaluate(({ src, arg }) => {
   const mt = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT);
-  const L = new MedTermLayers.Layers(mt, window.MEDTERM_NEW, window.MEDTERM_PRODUCTS);
+  const L = new MedTermLayers.Layers(mt, window.MEDTERM_NEW, window.MEDTERM_PRODUCTS, window.MEDTERM_LAW);
   return (new Function('L', 'mt', 'arg', 'return (' + src + ')(L, mt, arg)'))(L, mt, arg);
 }, { src: fn.toString(), arg });
 const prodCount = async (page) => num(await page.locator('#plist-title').innerText().catch(() => '0'));
@@ -45,7 +45,7 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
   {
     const { ctx, page } = await open(browser, 1440, 1000);
     const names = await page.getByRole('tab').allInnerTexts();
-    ck('탭 7개: 사전 검색 · 국내 제품 · 최신·임상 · 관계 그래프 · 답변 검증 · 근거 기반 질의 · 데이터·한계(앞 두 줄은 분류 트리의 보기 전환 탭)', JSON.stringify(names.slice(2).map((t) => t.trim())) === JSON.stringify(['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계']), names);
+    ck('탭 8개: 사전 검색 · 국내 제품 · 최신·임상 · 약무·제도 · 관계 그래프 · 답변 검증 · 근거 기반 질의 · 데이터·한계(앞 두 줄은 분류 트리의 보기 전환 탭)', JSON.stringify(names.slice(2).map((t) => t.trim())) === JSON.stringify(['사전 검색', '국내 제품', '최신·임상', '약무·제도', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계']), names);
     const foot = await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '');
     ck('하단 출처 표기에 추가 자료(FDA·ClinicalTrials.gov·PubChem·심평원 제품) 한 줄', foot.includes('FDA') && foot.includes('ClinicalTrials.gov') && foot.includes('PubChem') && foot.includes('의약품표준코드'), foot.slice(0, 200));
 
@@ -262,8 +262,8 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
 
   /* ───── 5-2. 본문 위 알약 탭 줄: 폭마다 끝 탭이 잘리지 않음 · 좁으면 짧은 이름(접근 가능한 이름은 늘 긴 이름) ───── */
   {
-    const LONG = ['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
-    const SHORT = ['검색', '제품', '최신', '그래프', '검증', '질의', '데이터'];
+    const LONG = ['사전 검색', '국내 제품', '최신·임상', '약무·제도', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
+    const SHORT = ['검색', '제품', '최신', '제도', '그래프', '검증', '질의', '데이터'];
     const readStrip = (page) => page.evaluate(() => {
       const l = document.querySelector('#center [role="tablist"][data-variant="top"]');
       const lr = l.getBoundingClientRect(), tabs = [...l.querySelectorAll('[role="tab"]')], rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
@@ -287,11 +287,11 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
       rows.push({ w, strip: m.client, long: wantLong, fit, textOk, nameOk, minW: m.minW });
       await ctx.close();
     }
-    ck('탭 줄: 700~1920px 모든 폭에서 7개 탭이 줄 안에 모두 들어옴(옆으로 밀어야 보이는 탭 없음)', okFit, rows.filter((r) => !r.fit));
-    ck('탭 줄: 줄 폭이 넉넉하면 긴 이름 · 좁으면 하단 막대와 같은 짧은 이름(검색·제품·최신·그래프·검증·질의·데이터)', okText, rows.filter((r) => !r.textOk));
+    ck(`탭 줄: 700~1920px 모든 폭에서 ${LONG.length}개 탭이 줄 안에 모두 들어옴(옆으로 밀어야 보이는 탭 없음)`, okFit, rows.filter((r) => !r.fit));
+    ck('탭 줄: 줄 폭이 넉넉하면 긴 이름 · 좁으면 하단 막대와 같은 짧은 이름(검색·제품·최신·제도·그래프·검증·질의·데이터)', okText, rows.filter((r) => !r.textOk));
     ck('탭 줄: 어느 폭에서든 접근 가능한 이름은 긴 이름 그대로(탭마다 하나씩)', okName, rows.filter((r) => !r.nameOk));
     ck('탭 줄: 짧은 이름일 때도 탭 하나가 가로 44px · 세로 44px 이상', okSize, rows.filter((r) => r.minW < 44));
-    ck('탭 줄: 대표 폭 확인(1280=짧은 이름 · 1366·1440=긴 이름)', rows.find((r) => r.w === 1280).long === false && rows.find((r) => r.w === 1366).long === true && rows.find((r) => r.w === 1440).long === true, rows.filter((r) => [1280, 1366, 1440].includes(r.w)));
+    ck('탭 줄: 대표 폭 확인(1100·1280·1366=짧은 이름 · 1024·1440=긴 이름)', [1100, 1280, 1366].every((w) => rows.find((r) => r.w === w).long === false) && [1024, 1440].every((w) => rows.find((r) => r.w === w).long === true), rows.filter((r) => [1024, 1100, 1280, 1366, 1440].includes(r.w)));
     // 창 크기를 바꾸면 이름도 따라 바뀜(1440 → 1280 → 1440), 짧은 이름일 때 마우스를 올리면 긴 이름이 말풍선(title)으로 보임
     const { ctx, page } = await open(browser, 1440, 900);
     let m = await readStrip(page);
@@ -324,8 +324,8 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     {
       const { ctx, page } = await openLazy('off'); await page.waitForTimeout(900);
       ck('지연 읽기: 첫 화면에서는 큰 자료 층(JSON 덩어리 2개)을 해석하지 않음', (await page.evaluate(() => window.__big)) === 0);
-      ck('지연 읽기: 읽지 않고도 탭 7개(국내 제품·최신·임상 포함)와 출처 표기의 추가 자료 줄이 있음',
-        (await page.locator('[data-variant="bottom"] [role="tab"]').count()) === 7 && (await page.locator('footer, [data-source-footer]').first().innerText()).includes('ClinicalTrials.gov'));
+      ck('지연 읽기: 읽지 않고도 탭 8개(국내 제품·최신·임상·약무·제도 포함)와 출처 표기의 추가 자료 줄이 있음',
+        (await page.locator('[data-variant="bottom"] [role="tab"]').count()) === 8 && (await page.locator('footer, [data-source-footer]').first().innerText()).includes('ClinicalTrials.gov'));
       await page.fill('#q', '메트포르민'); await page.waitForTimeout(500);
       ck('지연 읽기: 검색어를 넣으면(교차 안내를 위해) 그때 읽고 교차 안내가 나옴', (await page.evaluate(() => window.__big)) === 2 && (await page.locator('#cross-hits').count()) === 1, await page.evaluate(() => window.__big));
       await tabTo(page, '국내 제품'); await page.waitForSelector('#plist-title');
@@ -343,11 +343,126 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     }
   }
 
+  /* ───── 5-4. 약무·제도 탭(약사법 용어·기구): 머리글 · 목록 · 검색 · 분류 · 시행 예정 · 원문 발췌 · ‘협의회’ 안내 · 이동 단추 · 폭별 ───── */
+  {
+    const lawCount = async (page) => num(await page.locator('#llist-title').innerText().catch(() => '0'));
+    const cards = (page) => page.locator('#panel-law section[aria-labelledby="llist-title"] > ul > li');
+    const lawQ = async (page, v) => { await page.fill('#lawq', v); await page.waitForTimeout(150); };
+    const { ctx, page } = await open(browser, 1440, 1000);
+    await tabTo(page, '약무·제도');
+    const M = await calc(page, (L) => L.lawMeta);
+    const C = M.counts;
+    const total = await calc(page, (L) => L.searchLaw({}).length);
+    const head = await page.locator('#law-title').locator('xpath=..').innerText();
+    ck('약무·제도 머리글: 정의 용어·조직·위원회·약국과 조제 업무·제도 개수가 자료와 같음', [C.def, C.org, C.duty, C.sys].every((n) => head.includes(nf(n))), head.slice(0, 200));
+    ck('약무·제도 머리글: "약사 검수 전 초안 · 법률 자문이 아님 · 법제처 현행본 대조는 아직 하지 않음"을 알림', head.includes('약사 검수 전 초안') && head.includes('법률 자문이 아닙니다') && head.includes('대조는 아직 하지 않았습니다'), head);
+    ck('약무·제도 목록: 제목에 전체 항목 수 · 처음 20건만 + "더 보기"', total === C.entries && (await lawCount(page)) === total && (await cards(page).count()) === 20 && (await page.getByRole('button', { name: /^더 보기/ }).count()) === 1, { total, entries: C.entries });
+    await page.getByRole('button', { name: /^더 보기/ }).click(); await page.waitForTimeout(100);
+    ck('약무·제도 "더 보기"를 누르면 20건이 더 보임', (await cards(page).count()) === 40);
+    await page.getByRole('button', { name: /^더 보기/ }).click(); await page.waitForTimeout(100);
+    ck('약무·제도: 끝까지 보면 전체 항목이 보이고 "더 보기"가 사라짐', (await cards(page).count()) === total && (await page.getByRole('button', { name: /^더 보기/ }).count()) === 0);
+    const c0 = await cards(page).first().innerText();
+    ck('약무·제도 카드: 용어 · 약사법 조문 · 시행 상태 · "초안·약사 검수 전" · 법령 원문 발췌 접기 줄', c0.includes('약사법 제') && c0.includes('현행') && c0.includes('풀이는 초안·약사 검수 전') && c0.includes('법령 원문 발췌'), c0.slice(0, 160));
+
+    // 검색: 화면 건수·첫 결과가 API(Layers.searchLaw)와 같다
+    await lawQ(page, '조제');
+    const expJ = await calc(page, (L) => L.searchLaw({ q: '조제' }).map((e) => e.t));
+    ck('약무·제도 검색 "조제": 건수·첫 결과가 API 와 같음(용어 이름에 맞는 항목이 위)', expJ.length >= 3 && (await lawCount(page)) === expJ.length && (await cards(page).first().locator('b').first().innerText()) === expJ[0], { n: expJ.length, first: expJ[0] });
+    ck('약무·제도: 검색어를 쓰면 "처음 20건" 제한이 다시 적용됨(건수 > 20이면 20건)', (await cards(page).count()) === Math.min(20, expJ.length));
+    await lawQ(page, '없는말xyz');
+    ck('약무·제도 결과 없음: "없다는 뜻이 아니라 이 층에 아직 수록하지 않았다는 뜻일 수 있음" 안내', (await lawCount(page)) === 0 && (await page.locator('#panel-law').innerText()).includes('이 층에 아직 수록하지 않았다'));
+    await lawQ(page, '');
+
+    // 분류 단추(눌림 상태)와 건수
+    const grp = await calc(page, (L) => L.lawGroups().map((g) => ({ id: g.id, label: g.label })));
+    const org = grp.find((g) => g.id === 'org');
+    const orgBtn = page.getByRole('button', { name: new RegExp('^' + org.label + ' ') });
+    await orgBtn.click(); await page.waitForTimeout(100);
+    ck(`약무·제도 분류 "${org.label}": 눌린 상태(aria-pressed)이고 건수가 자료(${C.org}건)와 같음`, (await orgBtn.getAttribute('aria-pressed')) === 'true' && (await lawCount(page)) === C.org && (await page.getByRole('button', { name: /^전체 / }).getAttribute('aria-pressed')) === 'false', await lawCount(page));
+    await orgBtn.click(); await page.waitForTimeout(100);
+    ck('약무·제도 분류 단추를 다시 누르면 전체로 돌아감', (await lawCount(page)) === total && (await orgBtn.getAttribute('aria-pressed')) === 'false');
+
+    // 시행 예정·개정 예정만
+    const upc = page.getByLabel(/시행 예정·개정 예정 항목만/);
+    await upc.check(); await page.waitForTimeout(100);
+    const upTxt = await cards(page).allInnerTexts();
+    ck(`약무·제도 "${M.upcoming_effective} 시행 예정·개정 예정 항목만": ${C.upcoming}건이고 카드마다 시행일이 적혀 있음`, (await lawCount(page)) === C.upcoming && upTxt.length === C.upcoming && upTxt.every((t) => t.includes(M.upcoming_effective)), { n: upTxt.length });
+
+    // 개정 항목(국가필수의약품): 현행 발췌와 시행 예정판 발췌가 함께
+    await lawQ(page, '국가필수의약품');
+    const card = cards(page).filter({ has: page.locator('b', { hasText: /^국가필수의약품$/ }) }).first();
+    await card.locator('summary').click(); await page.waitForTimeout(100);
+    const qt = await card.innerText();
+    ck('약무·제도 개정 항목(국가필수의약품): 원문 발췌에 "현행"과 시행 예정(또는 시행)판이 함께 나오고 인용 블록이 둘', qt.includes('현행') && (qt.includes(`${M.upcoming_effective} 시행 예정판`) || qt.includes(`${M.upcoming_effective} 시행판`)) && (await card.locator('blockquote').count()) === 2, qt.slice(0, 400));
+    ck('약무·제도 원문 발췌: 출처(국가법령정보센터 출력본)와 "…는 중간 생략" 설명', qt.includes('국가법령정보센터') && qt.includes('중간 생략'));
+    await upc.uncheck(); await page.waitForTimeout(100);
+
+    // ‘협의회’ 안내
+    await lawQ(page, '약사협의회');
+    const note = await page.locator('#law-council-note').innerText().catch(() => '');
+    ck('약무·제도 "약사협의회" 검색: 약사법 본문에 그 말이 없고 법정 협의회는 국가필수의약품 안정공급 협의회(정부 협의체)뿐이라는 안내', note.includes('‘약사협의회’라는 말이 없습니다') && note.includes('국가필수의약품 안정공급 협의회') && note.includes('정부 협의체'), note.slice(0, 300));
+    const picks = await page.locator('#law-council-note button').allInnerTexts();
+    ck('약무·제도 "약사협의회": 바로 볼 항목 단추(국가필수의약품 안정공급 협의회 · 약사회 · 중앙약사심의위원회 등)', ['국가필수의약품 안정공급 협의회', '약사회(대한약사회)', '중앙약사심의위원회'].every((t) => picks.some((p) => p.trim() === t)), picks);
+    await page.locator('#law-council-note').getByRole('button', { name: '약사회(대한약사회) 항목 보기' }).click(); await page.waitForTimeout(150);
+    ck('약무·제도: 안내의 항목 단추를 누르면 검색어가 그 용어로 바뀌고 카드가 맨 위에 나옴(안내 문단은 사라짐)', (await page.locator('#lawq').inputValue()) === '약사회(대한약사회)' && (await cards(page).first().locator('b').first().innerText()) === '약사회(대한약사회)' && (await page.locator('#law-council-note').count()) === 0);
+    await lawQ(page, '조제');
+    ck('약무·제도: "협의회"가 없는 검색에서는 안내 문단이 없음', (await page.locator('#law-council-note').count()) === 0);
+    await lawQ(page, '협의회');
+    ck('약무·제도 "협의회" 검색: 국가필수의약품 안정공급 협의회 카드(제83조의5 · 시행 예정)가 나옴', (await cards(page).allInnerTexts()).some((t) => t.includes('국가필수의약품 안정공급 협의회') && t.includes('제83조의5') && t.includes('시행')));
+
+    // 관련 항목 칩
+    const relP = await calc(page, (L) => { for (const e of L.searchLaw({})) { const r = (e.rel || []).map((id) => L.lawEntry(id)).filter(Boolean)[0]; if (r) return { t: e.t, r: r.t }; } return null; });
+    await lawQ(page, relP.t);
+    await page.getByRole('button', { name: `관련 항목 ${relP.r} 보기`, exact: true }).first().click(); await page.waitForTimeout(150);
+    ck(`약무·제도 관련 항목 칩 "${relP.r}"을 누르면 검색어가 그 용어로 바뀜`, (await page.locator('#lawq').inputValue()) === relP.r, relP);
+
+    // 다른 탭으로 가는 단추
+    await lawQ(page, '일반의약품');
+    const goBtn = page.getByRole('button', { name: /^국내 제품 탭 열기/ }).first();
+    ck('약무·제도 "일반의약품" 카드: 국내 제품 탭으로 가는 단추가 있음', (await goBtn.count()) === 1);
+    await goBtn.click(); await page.waitForTimeout(250);
+    ck('약무·제도 단추를 누르면 국내 제품 탭이 열림', (await page.locator('#tab-product').getAttribute('aria-selected')) === 'true' && (await page.locator('#panel-product').isVisible()));
+    await tabTo(page, '약무·제도');
+    ck('약무·제도: 다른 탭에 다녀와도 검색어가 그대로', (await page.locator('#lawq').inputValue()) === '일반의약품');
+    await lawQ(page, '임상시험');
+    await page.getByRole('button', { name: /^최신·임상 탭 열기/ }).first().click(); await page.waitForTimeout(250);
+    ck('약무·제도 "임상시험" 단추: 최신·임상 탭이 열림', (await page.locator('#tab-new').getAttribute('aria-selected')) === 'true');
+
+    // 정보 탭 · 출처 표기
+    await tabTo(page, '데이터·한계');
+    const law = await page.locator('#about-law').innerText().catch(() => '');
+    ck('데이터·한계: 약사법 절(#about-law)에 항목 수·시행 예정 개수·"원문 발췌 대조"·한계가 있음', law.includes(nf(C.entries)) && law.includes(String(C.upcoming)) && law.includes('원문 발췌') && law.includes('약사협의회'), law.slice(0, 300));
+    const foot = await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '');
+    ck('하단 출처 표기의 추가 자료에 약사법(국가법령정보센터, 법제처)', foot.includes('약사법(국가법령정보센터, 법제처)'), foot.slice(0, 240));
+    noErr('약무·제도(1440)', page);
+    await ctx.close();
+  }
+
+  for (const [w, h, touch, scheme] of [[1024, 800, false, 'light'], [768, 1024, true, 'light'], [390, 844, true, 'light'], [390, 844, true, 'dark'], [360, 740, true, 'light']]) {
+    const { ctx, page } = await open(browser, w, h, { touch, mobile: w < 700, scheme });
+    await tabTo(page, '약무·제도');
+    await page.fill('#lawq', '국가필수의약품'); await page.waitForTimeout(150);
+    await page.locator('#panel-law summary').first().click(); await page.waitForTimeout(150);
+    const o1 = await overflow(page);
+    await page.fill('#lawq', '협의회'); await page.waitForTimeout(150);
+    const o2 = await overflow(page);
+    await page.fill('#lawq', ''); await page.waitForTimeout(150);
+    const o3 = await overflow(page);
+    ck(`약무·제도 폭 ${w}(${scheme}): 원문 펼침 · 협의회 안내 · 전체 목록에서 가로 넘침 없음`, [o1, o2, o3].every((o) => o.doc <= 0 && o.center <= 0), [o1, o2, o3]);
+    if (touch) {
+      const small = await page.evaluate(() => [...document.querySelectorAll('#panel-law button, #panel-law summary, #panel-law input[type=text]')].filter((e) => e.offsetParent).map((e) => { const r = e.getBoundingClientRect(); return { t: (e.innerText || e.getAttribute('aria-label') || '').trim().slice(0, 14), w: Math.round(r.width), h: Math.round(r.height) }; }).filter((b) => b.h < 44 || (b.w < 44 && b.t !== '')));
+      const chk = await page.evaluate(() => { const l = document.querySelector('#panel-law label'); const r = l ? l.getBoundingClientRect() : null; return r ? { h: Math.round(r.height) } : null; });
+      ck(`약무·제도 폭 ${w}(${scheme}, 터치): 단추·분류 알약·펼침 줄·검색칸이 모두 44px 이상, 시행 예정 체크 줄도 44px 이상`, small.length === 0 && chk && chk.h >= 44, { small: small.slice(0, 5), chk });
+    }
+    noErr(`약무·제도 폭 ${w}(${scheme})`, page);
+    await ctx.close();
+  }
+
   /* ───── 6. 추가 자료가 없는 빌드(또는 읽기 실패): 예전처럼 5개 탭, 추가 블록·안내 없음 ───── */
   {
     const { ctx, page } = await open(browser, 1440, 1000, { noLayers: true });
     const tabs = (await page.getByRole('tab').allInnerTexts()).map((t) => t.trim()).slice(2);
-    ck('추가 자료가 없으면 탭은 5개(국내 제품·최신·임상 탭 없음)', JSON.stringify(tabs) === JSON.stringify(['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계']), tabs);
+    ck('추가 자료가 없으면 탭은 5개(국내 제품·최신·임상·약무·제도 탭 없음)', JSON.stringify(tabs) === JSON.stringify(['사전 검색', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계']), tabs);
     await page.fill('#q', '아세트아미노펜'); await page.waitForTimeout(400);
     ck('추가 자료가 없으면 교차 안내가 없음', (await page.locator('#cross-hits').count()) === 0);
     await page.locator('section[aria-labelledby="list-title"] button').first().click(); await page.waitForTimeout(400);
@@ -355,6 +470,7 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     await tabTo(page, '데이터·한계');
     ck('추가 자료가 없으면 정보 탭에 추가 자료 절이 없음', (await page.locator('#about-layers').count()) === 0);
     ck('추가 자료가 없으면 하단 출처 표기에 추가 자료 줄이 없음', !(await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '')).includes('추가 자료'));
+    ck('추가 자료가 없으면 정보 탭에 약사법 절(#about-law)이 없고 출처 표기에 약사법 줄도 없음', (await page.locator('#about-law').count()) === 0 && !(await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '')).includes('약사법'));
     noErr('추가 자료 없음', page);
     await ctx.close();
   }

@@ -47,3 +47,6 @@ export const IconPill = ({ size = 22 }) => (
 export const IconFlask = ({ size = 22 }) => (
   <svg {...svg(size)}><path d="M9.5 3.5h5M10.3 3.5v5.2L5.4 17.6A2.2 2.2 0 0 0 7.3 21h9.4a2.2 2.2 0 0 0 1.9-3.4l-4.9-8.9V3.5" /><path d="M7.6 15h8.8" /></svg>
 );
+export const IconBook = ({ size = 22 }) => (
+  <svg {...svg(size)}><path d="M12 6.6C10.4 5.4 8.2 4.9 5 4.9v12.9c3.2 0 5.4.5 7 1.7 1.6-1.2 3.8-1.7 7-1.7V4.9c-3.2 0-5.4.5-7 1.7Z" /><path d="M12 6.6v12.9" /></svg>
+);

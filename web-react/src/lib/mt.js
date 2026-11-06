@@ -10,28 +10,29 @@ export const EXT = window.MEDTERM_EXT || null;
 export const mt = new Core.MedTerm(DATA, window.MEDTERM_CLASSES, EXT);
 export const XMETA = mt.extMeta; // EXT 의 meta(건수·등급 설명·출처). EXT 가 없으면 null
 /**
- * 최신 승인·임상·화합물 연결(MEDTERM_NEW)과 국내 제품(MEDTERM_PRODUCTS) 층(layers.js). 둘 다 없으면 null — 그러면 화면은 이전과 같이 동작한다.
+ * 최신 승인·임상·화합물 연결(MEDTERM_NEW)·국내 제품(MEDTERM_PRODUCTS)·약사법 용어·기구(MEDTERM_LAW) 층(layers.js). 셋 다 없으면 null — 그러면 화면은 이전과 같이 동작한다.
  * 두 자료는 HTML 의 절반 이상이라 처음 쓰는 순간에야 읽는다(빌드가 "읽지 않는 JSON 덩어리"로 담고 window 전역은 게터다 → web-react/build.mjs).
  * 첫 화면에 필요한 것은 두 층이 있는지(탭 구성·출처 표기)뿐이라 게터를 호출하지 않고 속성 서술자로만 알아내고, 나머지는 쓰는 순간 한 번 만든다.
  * (자료를 읽는 곳이 하나뿐이라 호출하는 쪽 코드는 그대로다. 화면이 뜬 뒤 한가할 때 미리 읽어 두어 첫 검색·탭 열기가 읽느라 멈칫하지 않게 한다.)
  */
 const LayersLib = window.MedTermLayers;
 const hasData = (k) => { const d = Object.getOwnPropertyDescriptor(window, k); return !!d && (!!d.get || (d.value !== undefined && d.value !== null)); };
-const HAS_NEW = hasData('MEDTERM_NEW'), HAS_PROD = hasData('MEDTERM_PRODUCTS');
+const HAS_NEW = hasData('MEDTERM_NEW'), HAS_PROD = hasData('MEDTERM_PRODUCTS'), HAS_LAW = hasData('MEDTERM_LAW');
 let realLayers = null;
-const real = () => { if (!realLayers) realLayers = new LayersLib.Layers(mt, window.MEDTERM_NEW || null, window.MEDTERM_PRODUCTS || null); return realLayers; };
-export const layers = LayersLib && (HAS_NEW || HAS_PROD)
+const real = () => { if (!realLayers) realLayers = new LayersLib.Layers(mt, window.MEDTERM_NEW || null, window.MEDTERM_PRODUCTS || null, window.MEDTERM_LAW || null); return realLayers; };
+export const layers = LayersLib && (HAS_NEW || HAS_PROD || HAS_LAW)
   ? new Proxy({}, {
     get(_, k) {
       if (k === 'hasNew') return HAS_NEW;
       if (k === 'hasProducts') return HAS_PROD;
+      if (k === 'hasLaw') return HAS_LAW;
       const L = real(); const v = L[k];
       return typeof v === 'function' ? v.bind(L) : v;
     },
   })
   : null;
 if (layers) {
-  const warm = () => { try { if (HAS_PROD) layers.searchProducts({ q: '', limit: 1 }); else layers.novelYears(); } catch (e) { /* 미리 읽기가 실패해도 쓸 때 다시 시도되므로 무시 */ } };
+  const warm = () => { try { if (HAS_PROD) layers.searchProducts({ q: '', limit: 1 }); else if (HAS_NEW) layers.novelYears(); else layers.searchLaw({}); } catch (e) { /* 미리 읽기가 실패해도 쓸 때 다시 시도되므로 무시 */ } };
   // 첫 그림이 그려진 뒤(0.4초 쉬고) 한가할 때 실행한다.
   const later = (f) => setTimeout(() => (typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(f, { timeout: 3000 }) : f()), 400);
   window.addEventListener('load', () => later(warm));
@@ -63,9 +64,13 @@ export function idFromHash() {
   }
 }
 
-/** file:// 이나 샌드박스에서 history.replaceState가 보안 오류를 내므로 location.replace를 쓴다(기록을 쌓지 않음). */
+/** file:// 이나 샌드박스에서 history.replaceState가 보안 오류를 내므로 location.replace를 쓴다(기록을 쌓지 않음).
+    about:srcdoc 문서(웹앱+모바일 앱 나란히 보기 안의 화면)에서는 '#…' 가 바깥 문서의 주소로 풀려 그 화면 전체가 다시 열리므로 주소를 바꾸지 않는다. */
 export function writeHash(id) {
-  try { window.location.replace('#' + hashOf(id)); } catch (e) { /* 주소 갱신 실패는 무시 */ }
+  try {
+    if (window.location.protocol === 'about:') return;
+    window.location.replace('#' + hashOf(id));
+  } catch (e) { /* 주소 갱신 실패는 무시 */ }
 }
 
 export const mq = (query) => !!(window.matchMedia && window.matchMedia(query).matches);

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { cx, inertProps } from './ui.jsx';
-import { IconChat, IconData, IconFlask, IconGraph, IconPill, IconSearch, IconShield } from './icons.jsx';
+import { IconBook, IconChat, IconData, IconFlask, IconGraph, IconPill, IconSearch, IconShield } from './icons.jsx';
 import { layers } from '../lib/mt.js';
 
 // [키, 이름(접근 가능한 이름 = 화면 읽기·시험이 쓰는 이름), 하단 막대의 짧은 글자, 아이콘]
@@ -8,6 +8,7 @@ export const TABS = [
   ['search', '사전 검색', '검색', IconSearch],
   ...(layers && layers.hasProducts ? [['product', '국내 제품', '제품', IconPill]] : []),
   ...(layers && layers.hasNew ? [['new', '최신·임상', '최신', IconFlask]] : []),
+  ...(layers && layers.hasLaw ? [['law', '약무·제도', '제도', IconBook]] : []),
   ['graph', '관계 그래프', '그래프', IconGraph],
   ['verify', '답변 검증', '검증', IconShield],
   ['rag', '근거 기반 질의', '질의', IconChat],
@@ -15,8 +16,9 @@ export const TABS = [
 ];
 
 // 넓은 화면의 알약 탭 줄이 긴 이름을 한 줄에 다 담는 데 필요한 폭(rem). 실제로 재어 본 값에 여유를 조금 얹었다:
-// 탭 5개 505px · 6개 588px · 7개 671px(글자 16px 기준) → 5개 32.5rem, 탭이 하나 늘 때마다 +5rem(7개 = 42.5rem = 680px).
-// 줄 폭이 이보다 좁으면(7개일 때 3단 화면의 1100~1359px, 2단 화면의 700~939px) 하단 막대와 같은 짧은 이름으로 바꿔 끝 탭이 잘리지 않게 한다.
+// 탭 5개 505px · 6개 588px · 7개 671px · 8개 754px(줄 양쪽 안쪽 여백 40px 포함, 글자 16px 기준) → 5개 32.5rem, 탭이 하나 늘 때마다 +5rem(7개 = 42.5rem = 680px, 8개 = 47.5rem = 760px).
+// 줄 폭이 이보다 좁으면(8개일 때 3단 화면의 1100~1439px, 2단 화면의 700~1019px) 하단 막대와 같은 짧은 이름으로 바꿔 끝 탭이 잘리지 않게 한다.
+// 짧은 이름 상태에서 8개가 가장 좁은 줄(3단 화면 1100px에서 420px)에 들어가도록 탭 사이 틈을 없애고 안쪽 여백을 줄였다(탭 하나는 가로·세로 44px 이상 유지).
 const LONG_NEED_REM = 32.5 + 5 * (TABS.length - 5);
 
 /**
@@ -63,8 +65,8 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
       data-variant={variant}
       onKeyDown={onKeyDown}
       className={bottom
-        ? 'flex items-stretch gap-0.5 border-t border-line bg-surface pl-[max(6px,env(safe-area-inset-left,0px))] pr-[max(6px,env(safe-area-inset-right,0px))] shadow-nav'
-        : cx('center-bleed sticky top-0 z-[5] mb-3.5 flex overflow-x-auto border-b border-line bg-bg py-2', compact ? 'gap-0.5' : 'gap-1')}
+        ? 'flex items-stretch border-t border-line bg-surface pl-[max(2px,env(safe-area-inset-left,0px))] pr-[max(2px,env(safe-area-inset-right,0px))] shadow-nav'
+        : cx('center-bleed sticky top-0 z-[5] mb-3.5 flex overflow-x-auto border-b border-line bg-bg py-2', compact ? 'gap-0' : 'gap-1')}
       {...(bottom ? {} : inertProps(inert))}
     >
       {TABS.map(([k, label, short, Icon]) => {
@@ -84,11 +86,11 @@ export function Tabs({ tab, onChange, variant = 'top', inert }) {
             onClick={() => onChange(k)}
             className={bottom
               ? cx('flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 pb-1.5 pt-1 text-caption', on ? 'font-bold text-pri' : 'font-semibold text-info')
-              : cx('min-h-11 whitespace-nowrap rounded-lg py-2 text-body', compact ? 'px-2.5' : 'px-3', on ? 'bg-pri-soft font-bold text-pri' : 'font-semibold text-info hover:bg-info-bg')}
+              : cx('min-h-11 whitespace-nowrap rounded-lg py-2 text-body', compact ? 'min-w-11 px-2' : 'px-3', on ? 'bg-pri-soft font-bold text-pri' : 'font-semibold text-info hover:bg-info-bg')}
           >
             {bottom ? (
               <>
-                <span className={cx('flex h-8 w-14 items-center justify-center rounded-pill', on && 'bg-pri-soft')}><Icon size={22} /></span>
+                <span className={cx('flex h-8 w-14 max-w-full items-center justify-center rounded-pill', on && 'bg-pri-soft')}><Icon size={22} /></span>
                 <span className="max-w-full truncate">{short}</span>
               </>
             ) : (compact ? short : label)}

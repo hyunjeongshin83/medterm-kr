@@ -12,6 +12,8 @@ const SHOTS = path.join(ROOT, 'shots', 'ui'); fs.mkdirSync(SHOTS, { recursive: t
 let bad = 0, total = 0;
 const ck = (name, ok, extra) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); };
 const { DISC, NLM_EN, VERSION, OLD_LABEL } = require('./_copy.cjs');
+// 전체 자료가 들어 있는 빌드의 작업 탭(왼쪽부터). 개수는 이 목록에서 정한다(숫자를 여러 곳에 베껴 두지 않는다).
+const TAB_NAMES = ['사전 검색', '국내 제품', '최신·임상', '약무·제도', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
 
 async function open(browser, w, h, o = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: o.dpr || 1, colorScheme: o.scheme || 'light', hasTouch: !!o.touch, isMobile: !!o.mobile });
@@ -22,8 +24,8 @@ async function open(browser, w, h, o = {}) {
   page.on('pageerror', (e) => page.errs.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) page.errs.push(m.type() + ': ' + m.text()); });
   // noExt: 확장 수록 자료를 읽지 못하게 막아(쓰기 불가 속성) 핵심 사전만으로 화면이 예전처럼 동작하는지 본다.
-  // 확장 수록이 없는 옛 빌드를 흉내 낼 때는 그 위에 얹는 두 자료(최신·임상, 국내 제품)도 없다(그 자료는 확장 수록의 성분 이름을 열쇠로 만들었다).
-  if (o.noExt) await page.addInitScript(() => { for (const k of ['MEDTERM_EXT', 'MEDTERM_NEW', 'MEDTERM_PRODUCTS']) Object.defineProperty(window, k, { value: undefined, writable: false, configurable: false }); });
+  // 확장 수록이 없는 옛 빌드를 흉내 낼 때는 그 위에 얹는 자료(최신·임상, 국내 제품, 약사법 용어·기구)도 없다(앞의 둘은 확장 수록의 성분 이름을 열쇠로 만들었고, 약사법 층은 옛 빌드에 없던 층이다).
+  if (o.noExt) await page.addInitScript(() => { for (const k of ['MEDTERM_EXT', 'MEDTERM_NEW', 'MEDTERM_PRODUCTS', 'MEDTERM_LAW']) Object.defineProperty(window, k, { value: undefined, writable: false, configurable: false }); });
   await page.goto(URL + (o.hash ? '#' + o.hash : '')); await page.waitForSelector('#root > *'); await page.waitForTimeout(250);
   return { ctx, page };
 }
@@ -45,7 +47,7 @@ const overflow = (page) => page.evaluate(() => {
     const { ctx, page } = await open(browser, 1440, 1000);
     ck('제목', (await page.title()).includes('MedTerm-KR'), await page.title());
     ck('면책 문구 원문 그대로', (await page.getByRole('note').innerText()).trim() === DISC);
-    ck('탭 7개, 첫 탭 선택', (await page.getByRole('tab').filter({ hasText: /사전 검색|국내 제품|최신·임상|관계 그래프|답변 검증|근거 기반 질의|데이터·한계/ }).count()) === 7 && (await page.locator('#tab-search').getAttribute('aria-selected')) === 'true');
+    ck(`탭 ${TAB_NAMES.length}개, 첫 탭 선택`, (await page.getByRole('tab').filter({ hasText: new RegExp(TAB_NAMES.join('|')) }).count()) === TAB_NAMES.length && (await page.locator('#tab-search').getAttribute('aria-selected')) === 'true');
     ck('처음에는 상세가 비어 있음', (await page.locator('#detail').innerText()).includes('성분을 선택하면'));
     ck('가로 넘침 없음(문서·가운데)', JSON.stringify(await overflow(page)) === '{"doc":0,"center":0}', await overflow(page));
     ck('한 화면에 맞음(문서 세로 넘침 없음, 앱 높이 = 창 높이)', await page.evaluate(() => { const d = document.documentElement, a = document.getElementById('root').firstElementChild; return d.scrollHeight - d.clientHeight <= 0 && Math.abs(a.getBoundingClientRect().height - innerHeight) <= 1; }));
@@ -439,7 +441,6 @@ const overflow = (page) => page.evaluate(() => {
     const r = b.getBoundingClientRect();
     return { w: Math.round(r.width), inner: Math.round(inner), h: Math.round(r.height) };
   }, name);
-  const TAB_NAMES = ['사전 검색', '국내 제품', '최신·임상', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
   // 대분류 글자별 성분 수: core 는 핵심 사전, ext 는 확장 수록(분류 수준 코드만 있는 것은 그 글자로 센다), nExt 는 확장 수록 성분 수
   const expGroups = (page) => page.evaluate(() => {
     const m = new MedTermCore.MedTerm(MEDTERM_DATA, MEDTERM_CLASSES, window.MEDTERM_EXT);
@@ -458,9 +459,9 @@ const overflow = (page) => page.evaluate(() => {
     ck('휴대폰: 작업 탭이 화면 맨 아래 막대(하단 탭)로 붙고, 바깥틀 폭 전체·높이 56px 이상', (await page.locator('[role="tablist"][aria-label="작업 화면"]').getAttribute('data-variant')) === 'bottom' && bar && bar.b === 844 && bar.x === 0 && bar.w === 390 && bar.h >= 56, bar);
     ck('휴대폰: 상단(본문 안) 탭 줄은 없음', (await page.locator('#center [role="tablist"]').count()) === 0);
     const tabBoxes = await page.evaluate(() => [...document.querySelectorAll('[data-variant="bottom"] [role="tab"]')].map((e) => { const r = e.getBoundingClientRect(); return { n: e.getAttribute('aria-label'), w: Math.round(r.width), h: Math.round(r.height), t: e.innerText.trim() }; }));
-    ck('휴대폰: 하단 탭 7개 모두 44×44 이상, 접근 가능한 이름은 긴 이름 그대로(짧은 글자는 눈에 보이는 글자)', tabBoxes.length === 7 && tabBoxes.every((t) => t.w >= 44 && t.h >= 44) && JSON.stringify(tabBoxes.map((t) => t.n)) === JSON.stringify(TAB_NAMES), tabBoxes);
+    ck(`휴대폰: 하단 탭 ${TAB_NAMES.length}개 모두 44×44 이상, 접근 가능한 이름은 긴 이름 그대로(짧은 글자는 눈에 보이는 글자)`, tabBoxes.length === TAB_NAMES.length && tabBoxes.every((t) => t.w >= 44 && t.h >= 44) && JSON.stringify(tabBoxes.map((t) => t.n)) === JSON.stringify(TAB_NAMES), tabBoxes);
     let named = 0; for (const n of TAB_NAMES) named += await page.getByRole('tab', { name: n, exact: true }).count();
-    ck('휴대폰: 이름으로 탭을 찾으면 정확히 하나씩(중복 탭 없음)', named === 7, named);
+    ck('휴대폰: 이름으로 탭을 찾으면 정확히 하나씩(중복 탭 없음)', named === TAB_NAMES.length, named);
     ck('휴대폰: 검색 입력 높이 48px 이상 · 입력 칸이 히어로 안에 있음', (await rect(page, '#q')).h >= 48 && (await page.evaluate(() => !!document.getElementById('q').closest('section[aria-labelledby="hero-title"]'))));
     // 분류 칩
     const EX = await expGroups(page), exp = EX.g;
@@ -620,10 +621,10 @@ const overflow = (page) => page.evaluate(() => {
     await page.fill('#tree-filter', '없는이름zzz'); await page.waitForTimeout(150);
     ck('트리 거르기 결과 없음 안내: "이 사전에 아직 수록되지 않았다는 뜻"', (await page.locator('#tree').innerText()).includes('이 사전에 아직 수록되지 않았다는 뜻일 수 있습니다'));
     await page.fill('#tree-filter', '');
-    // 7개 탭을 모두 열어 화면 글자 어디에도 옛 표기가 없다
+    // 모든 탭을 열어 화면 글자 어디에도 옛 표기가 없다
     const leaks = [];
     for (const t of TAB_NAMES) { await tabTo(page, t); if ((await page.evaluate(() => document.body.innerText)).includes(OLD_LABEL)) leaks.push(t); }
-    ck(`실사용판: 7개 탭 어디에도 "${OLD_LABEL}" 글자가 없음`, leaks.length === 0, leaks);
+    ck(`실사용판: ${TAB_NAMES.length}개 탭 어디에도 "${OLD_LABEL}" 글자가 없음`, leaks.length === 0, leaks);
     await tabTo(page, '데이터·한계');
     const meta = await page.evaluate(() => MEDTERM_DATA.meta);
     ck('데이터·한계: 사전 설명문(notice)이 화면에 나오고 옛 표기가 없음', (await page.locator('#panel-about').innerText()).includes(meta.notice) && !meta.notice.includes(OLD_LABEL) && !/prototype/i.test(meta.name), meta);

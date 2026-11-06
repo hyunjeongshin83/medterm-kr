@@ -1,0 +1,206 @@
+<!-- 웹앱 + 모바일 앱 나란히 보기(메디노트 index.html 형식). build.mjs 가 {{…}} 자리를 채워 dist/MedTerm-KR_showcase.html · dist/showcase_artifact.html 을 만든다. -->
+<style>
+{{FONT_CSS}}
+/* 메디노트 안내 페이지와 같은 깊은 청록 바탕을 일부러 한 가지 모양으로 쓴다(밝은/어두운 전환 없음). 앱 화면은 iframe 안에서 자기 테마를 따른다. */
+:root{
+  color-scheme:dark;
+  --bg:#06413E;
+  --bg-soft:#0A5551;
+  --ink:#EEFBF8;
+  --dim:#B7D6D1;
+  --brand:#12BDB0;
+  --on-brand:#06413E;
+  --line:rgba(238,251,248,.2);
+  --frame:#0C2B2A;
+  --gl:max(16px,env(safe-area-inset-left,0px));
+  --gr:max(16px,env(safe-area-inset-right,0px));
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;font-size:15px;line-height:1.5;word-break:keep-all}
+.sc{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.sc h1,.sc h2,.sc h3,.sc p,.sc ol,.sc ul{margin:0}
+
+/* 맨 위 띠 */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:0 0 auto;padding-block:12px;padding-left:var(--gl);padding-right:var(--gr);border-bottom:1px solid var(--line)}
+.top svg{flex:none}
+.top h1{font-family:'Gaegu','Pretendard',sans-serif;font-size:26px;font-weight:700;line-height:1.1;letter-spacing:.01em}
+.top .ver{font-size:13px;color:var(--dim)}
+.top .sub{font-size:14px;color:var(--dim);min-width:0}
+.top .sp{flex:1 1 0;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;font-weight:700;min-height:44px;min-width:44px;padding:0 16px;border:0;border-left:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+.seg button:focus-visible{outline:3px solid var(--ink);outline-offset:-4px}
+.seg button[hidden]{display:none}
+
+/* 두 칸 */
+.main{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+.panes{flex:1 1 auto;display:grid;grid-template-columns:minmax(0,1fr) 440px;min-height:700px}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane+.pane{border-left:1px solid var(--line)}
+.hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;flex:0 0 auto;padding:12px var(--gr) 10px var(--gl)}
+.hd h2{font-size:14px;font-weight:700}
+.hd span{font-size:14px;color:var(--dim)}
+.hd .st{margin-left:auto;color:var(--brand)}
+.bd{flex:1 1 auto;min-height:0;padding:0 var(--gr) 20px var(--gl);display:flex;flex-direction:column}
+.web{flex:1 1 auto;width:100%;min-height:640px;border:0;border-radius:12px;background:var(--bg-soft)}
+.phone{width:392px;max-width:100%;margin:0 auto;flex:1 1 auto;min-height:640px;border:9px solid var(--frame);border-radius:34px;background:var(--bg-soft);overflow:hidden;box-shadow:0 18px 44px rgba(0,0,0,.34);display:flex}
+.phone iframe{flex:1 1 auto;width:100%;border:0}
+
+/* 휴대폰에서 열기(휴대폰 틀 아래) · 사용 안내(두 칸 아래 띠) */
+.side{flex:0 0 auto;padding:16px var(--gr) 20px var(--gl);border-top:1px solid var(--line)}
+.side h3,.guide h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.side p,.guide li{font-size:14px;line-height:1.65;color:var(--dim)}
+.guide ol,.guide ul{padding-left:20px;display:grid;gap:4px}
+.side b,.guide b{color:var(--ink)}
+.file{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--ink);overflow-wrap:anywhere}
+.guide{flex:0 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 40px;padding:18px var(--gr) 28px var(--gl);border-top:1px solid var(--line)}
+.guide>div{min-width:0}
+@media (max-width:899px){.guide{grid-template-columns:minmax(0,1fr)}}
+
+/* 보기 방식: 웹앱만(폭이 1100px 보다 좁을 때도 이 모양) → 휴대폰 틀을 숨기고 안내만 남긴다 */
+.sc[data-mode="web"] .panes{grid-template-columns:minmax(0,1fr)}
+.sc[data-mode="web"] .pane+.pane{border-left:0;border-top:1px solid var(--line)}
+.sc[data-mode="web"] .pane-app .hd,.sc[data-mode="web"] .pane-app .bd{display:none}
+/* 모바일 앱만 */
+.sc[data-mode="app"] .panes{grid-template-columns:minmax(0,1fr)}
+.sc[data-mode="app"] .pane-web{display:none}
+.sc[data-mode="app"] .pane+.pane{border-left:0}
+.sc[data-mode="app"] .pane-app .side{max-width:760px;width:100%;margin:0 auto}
+/* 휴대폰 화면 폭(760px 미만): 틀 없이 앱을 화면 가득, 안내는 그 아래 */
+/* 앱 화면 안에 이미 로고·이름이 있으므로 띠는 화면에서만 감춘다(제목 h1 은 화면 읽기 프로그램용으로 남김) */
+.sc[data-narrow="1"] .top{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.sc[data-narrow="1"] .seg{display:none}
+.sc[data-narrow="1"] .hd{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.sc[data-narrow="1"] .panes{min-height:0}
+.sc[data-narrow="1"] .bd{padding:0}
+.sc[data-narrow="1"] .phone{width:100%;border:0;border-radius:0;box-shadow:none;height:max(560px,82vh);height:max(560px,82dvh);min-height:0;flex:none}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="sc" id="sc" data-mode="split" data-narrow="0">
+  <header class="top">
+    <svg aria-hidden="true" width="34" height="34" viewBox="0 0 108 108"><rect width="108" height="108" rx="28" fill="#0A7168"/><g transform="translate(54 54) scale(1.3) translate(-54 -54) rotate(-45 54 54)"><path fill="#FFFFFF" d="M41,41H67A13,13 0 0 1 67,67H41A13,13 0 0 1 41,41Z"/><path fill="#AEEAE2" d="M54,41H67A13,13 0 0 1 67,67H54Z"/></g></svg>
+    <h1>MedTerm-KR</h1>
+    <span class="ver">v{{VERSION}}</span>
+    <span class="sub">약무용어 전자사전 · 웹앱과 모바일 앱을 나란히 보여 드립니다</span>
+    <span class="sp"></span>
+    <div class="seg" role="group" aria-label="보기 방식">
+      <button type="button" data-m="split" aria-pressed="true">나란히</button>
+      <button type="button" data-m="web" aria-pressed="false">웹앱</button>
+      <button type="button" data-m="app" aria-pressed="false">모바일 앱</button>
+    </div>
+  </header>
+
+  <main class="main">
+  <div class="panes">
+    <section class="pane pane-web" aria-labelledby="h-web">
+      <div class="hd"><h2 id="h-web">웹앱</h2><span>브라우저에서 그대로 사용합니다</span><span class="st" id="st-web" role="status">불러오는 중…</span></div>
+      <div class="bd"><iframe class="web" id="fweb" title="MedTerm-KR 웹앱" allow="clipboard-write"></iframe></div>
+    </section>
+    <section class="pane pane-app" aria-labelledby="h-app">
+      <div class="hd"><h2 id="h-app">모바일 앱</h2><span>휴대폰에서 보이는 화면</span><span class="st" id="st-app" role="status">불러오는 중…</span></div>
+      <div class="bd"><div class="phone"><iframe id="fmob" title="MedTerm-KR 모바일 앱 미리보기" allow="clipboard-write"></iframe></div></div>
+      <div class="side" id="open-phone">
+        <h3>휴대폰에서 열기</h3>
+        <p>안드로이드 휴대폰에는 설치 파일 <span class="file">MedTerm-KR-{{VERSION}}.apk</span> 로 설치합니다. 휴대폰 브라우저에서 이 페이지를 열면 모바일 앱 화면이 바로 보입니다.</p>
+      </div>
+    </section>
+  </div>
+  <section class="guide" id="guide" aria-label="사용 안내">
+    <div>
+      <h3>처음 쓰는 방법</h3>
+      <ol>
+        <li><b>사전 검색</b> 탭에 성분이나 상품명을 입력합니다. 예: 오메프라졸, 메카인</li>
+        <li><b>국내 제품</b> · <b>최신·임상</b> · <b>약무·제도</b> 탭에서 제품, 최근 승인·임상, 약사법 용어를 봅니다.</li>
+        <li><b>답변 검증</b> 탭에 LLM 답변을 붙여 넣으면 사전과 맞지 않는 부분을 표시합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>확인해 주세요</h3>
+      <ul>
+        <li>한글명, 상품명, 약사법 쉬운 풀이는 약사 검수 전 초안입니다.</li>
+        <li>진단, 처방, 개인별 복용량을 판단하지 않습니다.</li>
+        <li>검색과 답변 검증은 이 화면 안에서만 계산하며 외부 서버로 보내지 않습니다. ‘근거 기반 질의’는 리서치용입니다.</li>
+      </ul>
+    </div>
+  </section>
+  </main>
+</div>
+
+<!-- 앱 문서 전체(읽지 않는 텍스트 덩어리). 스크립트 끝 표시와 주석 시작 표시는 <@@ 로 가려 두었다가 아래 스크립트가 되돌린다. data-sha256 은 되돌린 글의 해시(시험용). -->
+<script type="text/plain" id="app-src" data-sha256="{{APP_SHA}}">{{APP_SRC}}</script>
+<script>
+(function () {
+  'use strict';
+  var root = document.getElementById('sc');
+  var srcEl = document.getElementById('app-src');
+  var html = (srcEl.textContent || '').replace(/<@@/g, '<');
+  srcEl.textContent = '';                       // 원본 덩어리는 비워 메모리를 아낀다
+  var fw = document.getElementById('fweb'), fm = document.getElementById('fmob');
+  var stW = document.getElementById('st-web'), stA = document.getElementById('st-app');
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.seg button'));
+  var btnSplit = btns[0];
+  var mqNarrow = window.matchMedia('(max-width: 759px)');
+  var mqWide = window.matchMedia('(min-width: 1100px)');
+  var userMode = null;                          // 단추 · 주소(#split · #web · #app)로 고른 보기 방식
+
+  function fromHash() { var h = (location.hash || '').replace(/^#/, ''); return (h === 'split' || h === 'web' || h === 'app') ? h : null; }
+  function mode() {
+    if (mqNarrow.matches) return 'app';         // 휴대폰 폭: 앱만(메디노트도 휴대폰에서는 앱으로 바로 넘어간다)
+    var m = userMode || fromHash();
+    if (m === 'split' && !mqWide.matches) m = null;   // 폭이 좁으면 나란히 놓을 자리가 없다
+    return m || (mqWide.matches ? 'split' : 'web');
+  }
+
+  // 두 칸을 한꺼번에 해석하면 첫 화면이 늦으므로 눈에 보이는 칸부터, 나머지는 그 칸이 뜬 뒤에 붙인다.
+  function attach(f) { if (f.getAttribute('data-on')) return; f.setAttribute('data-on', '1'); f.srcdoc = html; }
+  function done(f) {
+    if (f === fw) { stW.hidden = true; fw.setAttribute('data-ready', '1'); } else stA.hidden = true;
+    sync(f);
+    if (f === fw && mode() === 'split') setTimeout(function () { attach(fm); }, 150);
+  }
+  // 공유 페이지의 밝은/어두운 전환(data-theme)을 두 앱 화면에도 그대로 전한다(같은 출처라 접근 가능, 안 되면 건너뜀).
+  function sync(f) {
+    try {
+      var d = f.contentDocument; if (!d || !d.documentElement) return;
+      var t = document.documentElement.getAttribute('data-theme');
+      if (t) d.documentElement.setAttribute('data-theme', t); else d.documentElement.removeAttribute('data-theme');
+    } catch (e) { /* 건너뜀 */ }
+  }
+  fw.addEventListener('load', function () { if (fw.getAttribute('data-on')) done(fw); });
+  fm.addEventListener('load', function () { if (fm.getAttribute('data-on')) done(fm); });
+  try { new MutationObserver(function () { sync(fw); sync(fm); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* 건너뜀 */ }
+
+  function apply() {
+    var m = mode();
+    root.setAttribute('data-mode', m);
+    root.setAttribute('data-narrow', mqNarrow.matches ? '1' : '0');
+    btnSplit.hidden = !mqWide.matches;
+    btns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-m') === m ? 'true' : 'false'); });
+    if (m === 'app') attach(fm);
+    else { attach(fw); if (m === 'split' && fw.getAttribute('data-ready')) attach(fm); }   // 나란히: 웹앱 칸이 뜬 뒤 done() 에서 휴대폰 칸을 붙인다
+  }
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      userMode = b.getAttribute('data-m');
+      try { location.hash = userMode; } catch (e) { /* 건너뜀 */ }
+      apply();
+    });
+  });
+  window.addEventListener('hashchange', function () { var h = fromHash(); if (h) { userMode = h; apply(); } });
+  // 15초가 지나도 뜨지 않은 칸은 안내를 바꿔 둔다(조용히 비어 보이지 않게).
+  setTimeout(function () {
+    [[fw, stW], [fm, stA]].forEach(function (p) {
+      if (p[0].getAttribute('data-on') && !p[1].hidden) p[1].textContent = '불러오지 못했습니다. 페이지를 새로 고쳐 주세요';
+    });
+  }, 15000);
+  var rz = function () { apply(); };
+  if (mqNarrow.addEventListener) { mqNarrow.addEventListener('change', rz); mqWide.addEventListener('change', rz); }
+  else if (mqNarrow.addListener) { mqNarrow.addListener(rz); mqWide.addListener(rz); }
+  apply();
+})();
+</script>

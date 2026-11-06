@@ -8,7 +8,7 @@ import { Badge, Btn, Card, INPUT_CLS, cx } from './ui.jsx';
 /* 빌드 때 정해지는 값: 공유용(Artifact) 화면과 설치형 앱은 외부 호출이 막혀 있어 서버 프록시 입력을 숨긴다. */
 /* global __ENABLE_PROXY__, __SURFACE__ */
 const PROXY_ON = typeof __ENABLE_PROXY__ !== 'undefined' ? __ENABLE_PROXY__ : true;
-// __SURFACE__ ('web' 독립 실행 · 'share' 공유 페이지 · 'app' 설치형 앱)는 빌드 때 상수로 바뀌어, 쓰지 않는 쪽 문구는 번들에서 빠진다.
+// __SURFACE__ ('web' 독립 실행 · 'share' 공유 페이지 · 'app' 설치형 앱 · 'showcase' 웹앱+모바일 앱 나란히 보기 안의 화면)는 빌드 때 상수로 바뀌어, 쓰지 않는 쪽 문구는 번들에서 빠진다.
 
 export function RagTab({ onSelect }) {
   const [question, setQuestion] = useState('');
@@ -146,7 +146,9 @@ export function RagTab({ onSelect }) {
             <p className="mb-2.5 text-small text-mut">
               {typeof __SURFACE__ !== 'undefined' && __SURFACE__ === 'app'
                 ? '이 앱에서는 외부 서버 호출이 막혀 있어 LLM 호출 기능을 숨겼습니다. LLM 답변을 아래 칸에 붙여넣어 검증하세요.'
-                : '이 공유 화면에서는 외부 서버 호출이 막혀 있어 LLM 호출 기능을 숨겼습니다. LLM 답변을 아래 칸에 붙여넣어 검증하세요.'}
+                : typeof __SURFACE__ !== 'undefined' && __SURFACE__ === 'showcase'
+                  ? '이 화면에서는 외부 서버 호출이 막혀 있어 LLM 호출 기능을 숨겼습니다. LLM 답변을 아래 칸에 붙여넣어 검증하세요.'
+                  : '이 공유 화면에서는 외부 서버 호출이 막혀 있어 LLM 호출 기능을 숨겼습니다. LLM 답변을 아래 칸에 붙여넣어 검증하세요.'}
             </p>
           )}
           <div className="mt-2.5 flex flex-wrap items-center gap-2.5">

@@ -2,6 +2,7 @@
 //   dist/MedTerm-KR_react.html   독립 실행용(문서 전체, 글꼴 포함, 외부 요청 없음, 서버 프록시 입력 포함)
 //   dist/artifact.html           공유 페이지용 조각(doctype/html/head/body 없음, 글꼴은 안에 담음, 외부 요청 없음, 프록시 입력 숨김)
 //   dist/MedTerm-KR_app.html     설치형 앱용(문서 전체, 외부 요청 없음, 프록시 입력 숨김) → android-app 의 assets/index.html
+//   dist/MedTerm-KR_showcase.html  웹앱 + 모바일 앱 나란히 보기 한 페이지(메디노트 형식, 독립 실행) · dist/showcase_artifact.html 은 공유 페이지용 조각
 //   dist/pwa/                    설치형 웹앱(PWA) 폴더: index.html + manifest + sw.js + icons/ → HTTPS 정적 호스팅에 폴더째 올린다
 // 사용: node build.mjs            (MEDTERM_JS=<core.js·medterm-data.js·bench.js가 있는 폴더>, 기본은 ../web/js)
 import { createHash } from 'node:crypto';
@@ -25,8 +26,8 @@ for (const f of ['medterm-data.js', 'bench.js', 'core.js']) {
 }
 // 확장 수록 자료(medterm-ext-data.js)는 있으면 핵심 자료 바로 뒤에 함께 담는다. 없으면 핵심 사전만으로 이전과 같이 동작한다.
 const EXT_JS = existsSync(path.join(JS_DIR, 'medterm-ext-data.js')) ? ['medterm-ext-data.js'] : [];
-// 최신 승인·임상·화합물 연결(medterm-new-data.js)과 국내 제품(medterm-products-data.js), 이를 읽는 layers.js 도 있으면 담는다(없으면 핵심·확장만으로 이전과 같이 동작).
-const NEW_JS = ['medterm-new-data.js', 'medterm-products-data.js'].filter((f) => existsSync(path.join(JS_DIR, f)));
+// 최신 승인·임상·화합물 연결(medterm-new-data.js)·국내 제품(medterm-products-data.js)·약사법 용어·기구(medterm-law-data.js), 이를 읽는 layers.js 도 있으면 담는다(없으면 핵심·확장만으로 이전과 같이 동작).
+const NEW_JS = ['medterm-new-data.js', 'medterm-products-data.js', 'medterm-law-data.js'].filter((f) => existsSync(path.join(JS_DIR, f)));
 const LAYERS_JS = existsSync(path.join(JS_DIR, 'layers.js')) ? ['layers.js'] : [];
 
 /* 1) 토큰 → CSS 변수 (라이트 기본, 다크는 시스템 설정 또는 data-theme="dark") */
@@ -79,10 +80,10 @@ async function bundle(enableProxy, surface) {
 
 /* 4) HTML 조립 */
 const esc = (s) => s.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
-// 큰 두 자료 층(MEDTERM_NEW · MEDTERM_PRODUCTS, HTML 의 절반 이상)은 실행하는 스크립트가 아니라 "읽지 않는 JSON 덩어리"로 담는다.
+// 큰 자료 층(MEDTERM_NEW · MEDTERM_PRODUCTS, HTML 의 절반 이상; 작은 MEDTERM_LAW 도 같은 방식)은 실행하는 스크립트가 아니라 "읽지 않는 JSON 덩어리"로 담는다.
 // 브라우저는 덩어리를 훑기만 하고 해석하지 않으므로 첫 화면이 더 빨리 뜨고, window.MEDTERM_NEW · window.MEDTERM_PRODUCTS 는 처음 꺼내 쓰는 순간 한 번만 읽어 돌려주는 게터가 된다(src/lib/mt.js 가 쓸 때 읽음).
 // 해석 가능한 JSON 인지는 여기서 빌드할 때 확인한다. '<' 는 \u003c 로 바꿔 덩어리 안에 </script·<!-- 가 있어도 HTML 이 끊기지 않게 한다(JSON 문자열 안의 \u003c 는 같은 글자).
-const LAZY = { 'medterm-new-data.js': ['MEDTERM_NEW', 'medterm-new-json'], 'medterm-products-data.js': ['MEDTERM_PRODUCTS', 'medterm-products-json'] };
+const LAZY = { 'medterm-new-data.js': ['MEDTERM_NEW', 'medterm-new-json'], 'medterm-products-data.js': ['MEDTERM_PRODUCTS', 'medterm-products-json'], 'medterm-law-data.js': ['MEDTERM_LAW', 'medterm-law-json'] };
 const lazyTag = (f) => {
   const [v, id] = LAZY[f]; const src = read(JS_DIR, f); const head = `window.${v}=`; const i = src.indexOf(head);
   if (i < 0) throw new Error(`${f}: ${head} 로 시작하는 자료를 찾지 못했습니다`);
@@ -132,7 +133,7 @@ ${classic}
 writeFileSync(path.join(DIST, 'artifact.html'), artifact);
 
 // 설치형 앱(안드로이드 WebView)용: 문서 전체, 외부 요청 없음(글꼴은 안에 담음), 서버 프록시 입력 숨김. android-app/app/src/main/assets/index.html 로 복사해 쓴다.
-const appHtml = `<!doctype html>
+const appDoc = async (surface) => `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -145,11 +146,56 @@ ${css}</style>
 <body>
 <div id="root"></div>
 ${classic}
-<script>\n${esc(await bundle(false, 'app'))}\n</script>
+<script>\n${esc(await bundle(false, surface))}\n</script>
 </body>
 </html>
 `;
+const appHtml = await appDoc('app');
 writeFileSync(path.join(DIST, 'MedTerm-KR_app.html'), appHtml);
+
+/* 4-2) 웹앱 + 모바일 앱 나란히 보기(메디노트 index.html 형식) → dist/MedTerm-KR_showcase.html(독립 실행) · dist/showcase_artifact.html(공유 페이지 조각)
+      화면 코드는 한 번만 담는다: 앱 문서 전체(표면 'showcase')를 읽지 않는 텍스트 덩어리로 넣고, 실행할 때 두 iframe(웹앱 칸 · 휴대폰 틀 칸)의 srcdoc 으로 붙인다.
+      옆 파일을 부르지 않아(fetch 없음) 메일 첨부·공유 페이지 모두 이 파일 하나로 동작한다. 틀(showcase/showcase.html)에는 글꼴·버전·앱 문서 자리표시자만 있다. */
+// 핵심 코드(core.js)는 줄바꿈이 CRLF 다. 브라우저는 HTML 을 읽을 때 CRLF 를 LF 로 바꾸므로(입력 전처리) 여기서 먼저 같게 바꿔 두면 동작은 같고, 덩어리를 되돌린 글과 해시가 정확히 맞는다.
+const showcaseApp = (await appDoc('showcase')).replace(/\r\n?/g, '\n');
+if (showcaseApp.includes('<@@')) throw new Error('showcase: 앱 문서에 덩어리 안 표시(<@@)가 이미 있어 원문 그대로 되살릴 수 없습니다');
+// 텍스트 덩어리 안에서 HTML 이 끊기지 않게 </script 와 <!-- 를 <@@ 로 가려 두고, 실행할 때 <@@ → < 로 되돌린다(되돌린 글이 원문과 같음은 sha256 으로 시험한다).
+const showcaseEsc = showcaseApp.replace(/<(\/script)/gi, '<@@$1').replace(/<!--/g, '<@@!--');
+const showcaseSha = createHash('sha256').update(showcaseApp).digest('hex');
+// 틀 쪽 글꼴: 본문 400 · 굵게 700 · 로고 글씨 Gaegu 만(중간 600 은 틀에서 쓰지 않는다)
+const showcaseFontCss = FONTS.filter(([family, weight]) => family === 'Gaegu' || weight !== 600).map(([family, weight, file]) => {
+  const b64 = readFileSync(path.join(ROOT, 'fonts', file)).toString('base64');
+  return `@font-face{font-family:'${family}';font-weight:${weight};font-style:normal;font-display:swap;src:url(data:font/woff2;base64,${b64}) format("woff2")}`;
+}).join('\n');
+const showcaseBody = read(ROOT, 'showcase', 'showcase.html')
+  .replace('{{FONT_CSS}}', () => showcaseFontCss)
+  .replace(/\{\{VERSION\}\}/g, VERSION)
+  .replace('{{APP_SHA}}', showcaseSha)
+  .replace('{{APP_SRC}}', () => showcaseEsc);
+if (/\{\{[A-Z_]+\}\}/.test(showcaseBody.replace(showcaseEsc, ''))) throw new Error('showcase: 틀의 자리표시자가 남아 있습니다');
+const showcaseStandalone = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MedTerm-KR · 웹앱과 모바일 앱</title>
+${NOTICE}
+<style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+${showcaseBody}
+</body>
+</html>
+`;
+writeFileSync(path.join(DIST, 'MedTerm-KR_showcase.html'), showcaseStandalone);
+// 공유 페이지(Artifact) 조각: 제목은 고정("MedTerm-KR"), 바깥틀이 html 위아래에 안전 여백을 주므로 위 style 은 넣지 않는다. 한 페이지는 16 MB 이하여야 한다.
+const showcaseArtifact = `<title>MedTerm-KR</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+${NOTICE}
+${showcaseBody}
+`;
+if (Buffer.byteLength(showcaseArtifact) > 15.5 * 1024 * 1024) throw new Error('showcase_artifact.html 이 15.5 MB 를 넘습니다(공유 페이지 한도 16 MB)');
+writeFileSync(path.join(DIST, 'showcase_artifact.html'), showcaseArtifact);
 
 /* 5) 설치형 웹앱(PWA) → dist/pwa/
       이 폴더 전체를 HTTPS 정적 호스팅(GitHub Pages·Netlify 등)에 올리면 휴대폰·PC 에 앱처럼 설치된다. 주소는 모두 상대 경로라 하위 폴더에 올려도 된다.
@@ -209,4 +255,4 @@ writeFileSync(path.join(PWA, 'sw.js'), read(ROOT, 'pwa', 'sw.template.js').repla
 writeFileSync(path.join(PWA, '.nojekyll'), '');
 
 const kb = (f) => (readFileSync(path.join(DIST, f)).length / 1024).toFixed(0) + ' KB';
-console.log('MedTerm-KR_react.html', kb('MedTerm-KR_react.html'), '· artifact.html', kb('artifact.html'), '· MedTerm-KR_app.html', kb('MedTerm-KR_app.html'), '· pwa/index.html', kb('pwa/index.html'), '· 서비스 워커 버전', swVersion, '· css', (css.length / 1024).toFixed(0) + ' KB');
+console.log('MedTerm-KR_react.html', kb('MedTerm-KR_react.html'), '· artifact.html', kb('artifact.html'), '· MedTerm-KR_app.html', kb('MedTerm-KR_app.html'), '· pwa/index.html', kb('pwa/index.html'), '· showcase.html', kb('MedTerm-KR_showcase.html'), '· 서비스 워커 버전', swVersion, '· css', (css.length / 1024).toFixed(0) + ' KB');

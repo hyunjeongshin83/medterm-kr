@@ -1,6 +1,7 @@
-/* MedTerm layers — 최신 승인·임상·화합물 연결(data/medterm_new.json) 과 국내 제품(품목) 계층(data/medterm_kr_products.json)
+/* MedTerm layers — 최신 승인·임상·화합물 연결(data/medterm_new.json) · 국내 제품(품목) 계층(data/medterm_kr_products.json) · 약사법 용어·기구 층(data/medterm_law.json)
  * core.js(MedTerm) 위에 얹는 읽기 전용 층이다. 핵심·확장 사전 자체는 바꾸지 않는다. 브라우저/Node 공용, 의존성 없음.
- * 주의: 임상시험 수치는 등록 건수 요약이고, 제품 묶음·한약 표시는 규칙 기반 추정이며, 대체 후보는 같은 일반명코드일 뿐 대체조제 판정이 아니다. */
+ * 주의: 임상시험 수치는 등록 건수 요약이고, 제품 묶음·한약 표시는 규칙 기반 추정이며, 대체 후보는 같은 일반명코드일 뿐 대체조제 판정이 아니다.
+ *       약사법 층은 법령 원문의 짧은 발췌와 쉬운 풀이(초안)이며 법률 자문이 아니다(약사 검수 전, 법제처 현행본 대조 전). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.MedTermLayers = factory();
@@ -13,10 +14,11 @@
   const lc = (s) => String(s == null ? '' : s).toLowerCase();
 
   class Layers {
-    constructor(mt, news, prods) {
+    constructor(mt, news, prods, law) {
       this.mt = mt;
       this._initNew(news);
       this._initProducts(prods);
+      this._initLaw(law);
     }
 
     // ================= 최신 승인 · 임상 · 화합물 =================
@@ -112,6 +114,64 @@
       if (!this.news) return null;
       const tr = this.trialsFor(key), ch = this.chemFor(key);
       return { key, tr, stage: this.trialStage(tr), ch, novel: this.novelByKey.get(key) || [], links: this.linksOf(key), trPending: !tr && this.unq.tr.has(key) };
+    }
+
+    // ================= 약사법 용어·기구 (data/medterm_law.json) =================
+    _initLaw(law) {
+      this.law = law && Array.isArray(law.e) ? law : null;
+      this.lawMeta = this.law ? (this.law.meta || {}) : null;
+      this._lawById = new Map(); this._lawHay = null;
+      if (!this.law) return;
+      for (const e of this.law.e) this._lawById.set(e.id, e);
+    }
+    get hasLaw() { return !!this.law; }
+    lawGroups() { return this.law ? (this.lawMeta.groups || []) : []; }
+    lawEntry(id) { return this._lawById.get(id) || null; }
+    /** 시행 상태를 오늘(또는 today='YYYY-MM-DD') 기준으로 풀어 준다.
+     *  kind: cur(현행) · chg(현행이며 개정이 예정됨) · new(시행 예정 신설). 시행일(upcoming_effective)이 지났으면 passed=true — 그때는 법제처 현행본으로 다시 확인해야 한다. */
+    lawStatus(e, today) {
+      const eff = (this.lawMeta && this.lawMeta.upcoming_effective) || '';
+      if (!today) { const d = new Date(); today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+      const passed = !!eff && today >= eff;
+      if (e.st === 'chg') return { kind: 'chg', passed, eff, tone: passed ? 'draft' : 'info', label: passed ? `${eff} 개정 시행(현행본 확인 필요)` : `현행 · ${eff} 개정 예정` };
+      if (e.st === 'new') return { kind: 'new', passed, eff, tone: passed ? 'draft' : 'info', label: passed ? `${eff} 시행(현행본 확인 필요)` : `${eff} 시행 예정` };
+      return { kind: 'cur', passed: false, eff: '', tone: 'ok', label: e.effn ? `현행 · ${e.effn}` : '현행' };
+    }
+    _ensureLawHay() {
+      if (this._lawHay) return;
+      this._lawHay = this.law.e.map((e) => ({
+        key: lc([e.t, e.a, e.ti].join(' ')),
+        kw: (e.kw || []).map(lc),
+        body: lc([e.pl, e.ex || '', e.exn || ''].join(' ')),
+      }));
+    }
+    /** 약사법 항목 찾기. opts: {q, group(id), upcoming(true 이면 시행 예정·개정 예정만)}. 질의 낱말(공백으로 나눔)은 모두 맞아야 한다.
+     *  용어·조문 이름이 맞으면 높은 점수, 별칭, 풀이·원문 순. 질의가 없으면 법 조문 순서(자료 순서) 그대로. */
+    searchLaw(opts = {}) {
+      if (!this.law) return [];
+      this._ensureLawHay();
+      const toks = lc(opts.q).trim().split(/\s+/).filter(Boolean);
+      const out = [];
+      this.law.e.forEach((e, i) => {
+        if (opts.group && e.g !== opts.group) return;
+        if (opts.upcoming && e.st === 'cur') return;
+        const h = this._lawHay[i];
+        let s = 0;
+        if (toks.length) {
+          let all = true; let sum = 0;
+          for (const t of toks) {
+            const tn = lc(e.t);
+            const sc = tn === t ? 100 : tn.startsWith(t) ? 80 : h.key.includes(t) ? 60 : h.kw.some((k) => k === t) ? 58 : h.kw.some((k) => k.includes(t)) ? 50 : h.body.includes(t) ? 20 : 0;
+            if (!sc) { all = false; break; }
+            sum += sc;
+          }
+          if (!all) return;
+          s = sum;
+        }
+        out.push([e, s, i]);
+      });
+      if (toks.length) out.sort((a, b) => b[1] - a[1] || a[2] - b[2]);
+      return out.map((o) => o[0]);
     }
 
     // ================= 국내 제품(품목) =================

@@ -11,6 +11,7 @@ import { RagTab } from './components/RagTab.jsx';
 import { AboutTab } from './components/AboutTab.jsx';
 import { ProductTab } from './components/ProductTab.jsx';
 import { NewTab } from './components/NewTab.jsx';
+import { LawTab } from './components/LawTab.jsx';
 import { Inspector } from './components/Inspector.jsx';
 import { SourceFooter } from './components/SourceFooter.jsx';
 import { cx, inertProps } from './components/ui.jsx';
@@ -21,7 +22,7 @@ export default function App() {
 
   const [selectedId, setSelectedId] = useState(idFromHash);
   const [tab, setTab] = useState('search');
-  const [seen, setSeen] = useState({ search: true }); // 한 번 열어 본 탭만 그린다(제품·최신 탭은 자료가 크고, 데이터·한계 탭은 그 자료의 건수·출처를 읽어야 해서 처음부터 그리지 않는다)
+  const [seen, setSeen] = useState({ search: true }); // 한 번 열어 본 탭만 그린다(제품·최신·약무 제도 탭은 자료를 읽어야 하고, 데이터·한계 탭은 그 자료의 건수·출처를 읽어야 해서 처음부터 그리지 않는다)
   const [seed, setSeed] = useState(null); //            다른 화면에서 ‘제품 탭에서 보기’로 넘어올 때의 검색어
   const [seg, setSeg] = useState('atc');
   const [filter, setFilter] = useState('');
@@ -178,6 +179,7 @@ export default function App() {
             <Panel id="search" active={tab === 'search'}><SearchTab selectedId={selectedId} onSelect={selectVtm} onJump={jump} /></Panel>
             {layers && layers.hasProducts && <Panel id="product" active={tab === 'product'}>{seen.product && <ProductTab onSelect={selectVtm} seed={seed} />}</Panel>}
             {layers && layers.hasNew && <Panel id="new" active={tab === 'new'}>{seen.new && <NewTab onSelect={selectVtm} seed={seed} />}</Panel>}
+            {layers && layers.hasLaw && <Panel id="law" active={tab === 'law'}>{seen.law && <LawTab onJump={jump} />}</Panel>}
             <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
             <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
             <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
