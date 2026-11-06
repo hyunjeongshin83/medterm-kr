@@ -14,7 +14,11 @@ import * as esbuild from 'esbuild';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const JS_DIR = path.resolve(process.env.MEDTERM_JS || path.join(ROOT, '..', 'web', 'js'));
-const DIST = path.join(ROOT, 'dist');
+// 공개판(lite): MEDTERM_EDITION=lite 이면 SNOMED CT ID·ATC 영문 분류명을 뺀 자료(build/make_lite.py)로 만들고, 검색 로봇이 색인하지 않도록 noindex 를 넣는다.
+// MEDTERM_DIST 로 결과 폴더를 바꿀 수 있다(기본 dist/). 정하지 않으면 이전과 같다.
+const EDITION = process.env.MEDTERM_EDITION === 'lite' ? 'lite' : 'full';
+const ROBOTS = EDITION === 'lite' ? '\n<meta name="robots" content="noindex, nofollow">' : '';
+const DIST = path.resolve(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'));
 mkdirSync(DIST, { recursive: true });
 
 const read = (...p) => readFileSync(path.join(...p), 'utf8');
@@ -73,7 +77,7 @@ async function bundle(enableProxy, surface) {
     entryPoints: [path.join(ROOT, 'src', 'main.jsx')],
     bundle: true, minify: true, format: 'iife', platform: 'browser', target: ['chrome100', 'safari15', 'firefox100'],
     jsx: 'automatic', write: false, legalComments: 'eof', logLevel: 'warning',
-    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface), __APP_VERSION__: JSON.stringify(VERSION) },
+    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface), __APP_VERSION__: JSON.stringify(VERSION), __EDITION__: JSON.stringify(EDITION) },
   });
   return r.outputFiles[0].text;
 }
@@ -106,7 +110,7 @@ const standalone = `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${ROBOTS}
 <title>MedTerm-KR · 약무용어 사전 · 답변 검증</title>
 ${NOTICE}
 <style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -137,7 +141,7 @@ const appDoc = async (surface) => `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${ROBOTS}
 <title>MedTerm-KR</title>
 ${NOTICE}
 <style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -177,7 +181,7 @@ const showcaseStandalone = `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">${ROBOTS}
 <title>MedTerm-KR · 웹앱과 모바일 앱</title>
 ${NOTICE}
 <style>html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>

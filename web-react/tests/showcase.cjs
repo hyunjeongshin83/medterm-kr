@@ -12,9 +12,9 @@ const ROOT = path.resolve(__dirname, '..');
 const { rgb } = require('./_tokens.cjs');
 const { VERSION } = require('./_copy.cjs');
 const AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-const STAND = path.join(ROOT, 'dist', 'MedTerm-KR_showcase.html');
-const FRAG = path.join(ROOT, 'dist', 'showcase_artifact.html');
-const WRAPPED = path.join(ROOT, 'dist', '_wrapped_showcase_test.html');
+const STAND = path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), 'MedTerm-KR_showcase.html');
+const FRAG = path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), 'showcase_artifact.html');
+const WRAPPED = path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), '_wrapped_showcase_test.html');
 const TAB_NAMES = ['사전 검색', '국내 제품', '최신·임상', '약무·제도', '관계 그래프', '답변 검증', '근거 기반 질의', '데이터·한계'];
 
 let bad = 0, total = 0;

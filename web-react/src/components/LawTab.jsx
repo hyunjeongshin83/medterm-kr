@@ -101,7 +101,11 @@ export function LawTab({ onJump }) {
           약사법 본문에서 뽑은 정의 용어 {nf(C.def)}개 · 조직·위원회 {nf(C.org)}개 · 약국·조제 업무 {nf(C.duty)}개 · 제도·정보시스템 {nf(C.sys)}개. 법령 원문(짧은 발췌)과 쉬운 풀이(초안)를 나누어 보여 드립니다.
         </p>
         <p className="mt-1 text-small text-mut">
-          쉬운 풀이는 약사 검수 전 초안이며 법률 자문이 아닙니다. 기준은 국가법령정보센터(법제처) 약사법 출력본({M.source.print.match(/출력일 [\d-]+/)?.[0] || '출력일 미상'})이고, 현행 판과 {M.upcoming_effective} 시행 예정 판이 함께 실려 있어 항목마다 시행 상태를 적었습니다. 법제처 현행본과의 대조는 아직 하지 않았습니다.
+          쉬운 풀이는 약사 검수 전 초안이며 법률 자문이 아닙니다. 기준은 국가법령정보센터(법제처) 약사법 출력본({M.source.print.match(/출력일 [\d-]+/)?.[0] || '출력일 미상'})입니다.
+          {M.pl_checked ? ` ${M.pl_checked}.` : ''} 출력본에는 시행일이 서로 다른 규정이 함께 실려 있어 항목마다 시행 상태를 적었고, {M.upcoming_effective} 시행 예정 항목은 {nf(C.upcoming)}건입니다.
+        </p>
+        <p className="mt-1 text-small text-mut">
+          {M.source.latest_seen ? `${M.source.latest_seen}. ` : ''}법제처 현행본과의 대조는 아직 하지 않았습니다.
         </p>
       </section>
 

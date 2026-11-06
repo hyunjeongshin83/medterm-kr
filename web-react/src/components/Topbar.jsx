@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { inertProps } from './ui.jsx';
 import { IconMenu } from './icons.jsx';
 import { APP_VERSION } from '../lib/version.js';
+import { LITE } from '../lib/edition.js';
 
 /** 로고 타일: 틸 바탕 위의 알약(앱 아이콘과 같은 그림). 장식이라 화면 읽기 프로그램에는 숨긴다. */
 function Logo() {
@@ -27,7 +28,7 @@ export const Topbar = forwardRef(function Topbar({ navOpen, onToggleNav, inert }
         <Logo />
         <div className="min-w-0 flex-1">
           <h1 className="font-hand text-title-brand text-ink">
-            MedTerm-KR <small className="font-sans text-caption font-normal text-mut">v{APP_VERSION}</small>
+            MedTerm-KR <small className="font-sans text-caption font-normal text-mut">v{APP_VERSION}{LITE ? ' · 공개 미리보기(초안)' : ''}</small>
           </h1>
           <p className="mt-0.5 text-caption text-mut lt-tree:hidden">약무용어 전자사전 · 온톨로지(VTM→VMP→AMP) · LLM 답변 근거 검증</p>
         </div>

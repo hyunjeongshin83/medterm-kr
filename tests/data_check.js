@@ -34,7 +34,7 @@ ok((d.meta.sources || []).some(s => /제형 한글명/.test(s)), 'meta.sources �
 // VTM
 ok(by.VTM.every(t => t.label_ko && t.label_en), 'VTM 한글명·영문명 모두 있음');
 ok(by.VTM.every(t => t.review_status === 'draft'), 'VTM review_status 가 모두 draft(약사 검수 전)', [...new Set(by.VTM.map(t => t.review_status))]);
-ok(by.VTM.every(t => /unreviewed/.test(t.provenance?.ko_label || '')), 'VTM 한글명 출처가 manual(unreviewed)로 표시됨');
+ok(by.VTM.every(t => /^manual/.test(t.provenance?.ko_label || '') && /약사 검수 전/.test(t.provenance?.ko_label || '') && /약사 검수 전/.test(t.provenance?.brands_ko || '')), 'VTM 한글명·상품명 출처가 수기(manual)이고 "약사 검수 전"으로 표시됨(2026-11-06 심평원 자료 대조 사실 포함)');
 ok(by.VMP.concat(by.AMP).every(c => c.review_status === 'auto'), 'VMP·AMP review_status 가 auto');
 const koDup = {}; by.VTM.forEach(t => [t.label_ko, ...(t.alt_ko || [])].forEach(n => { (koDup[n] ??= []).push(t.rxcui); }));
 const koAmbiguous = Object.entries(koDup).filter(([n, a]) => new Set(a).size > 1); ok(koAmbiguous.length === 0, '한글 이름(대표명·별칭)이 서로 다른 성분 2개 이상을 가리키지 않음', koAmbiguous);

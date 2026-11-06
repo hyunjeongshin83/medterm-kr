@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
 const FILE = process.argv[2] || 'MedTerm-KR_react.html';
-const URL = 'file://' + path.join(ROOT, 'dist', FILE);
+const URL = 'file://' + path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), FILE);
 const AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 let bad = 0, total = 0;

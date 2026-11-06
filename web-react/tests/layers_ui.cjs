@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const FILE = process.argv[2] || 'MedTerm-KR_react.html';
-const URL = 'file://' + path.join(ROOT, 'dist', FILE);
+const URL = 'file://' + path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), FILE);
 
 let bad = 0, total = 0;
 const ck = (name, ok, extra) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); };
@@ -432,6 +432,9 @@ const setQ = async (page, sel, v) => { await page.fill(sel, v); await page.waitF
     await tabTo(page, '데이터·한계');
     const law = await page.locator('#about-law').innerText().catch(() => '');
     ck('데이터·한계: 약사법 절(#about-law)에 항목 수·시행 예정 개수·"원문 발췌 대조"·한계가 있음', law.includes(nf(C.entries)) && law.includes(String(C.upcoming)) && law.includes('원문 발췌') && law.includes('약사협의회'), law.slice(0, 300));
+    ck('데이터·한계: 약사법 절에 "쉬운 풀이 대조"(53개, 약사의 검수가 아님)와 출력본보다 나중 현행 표시(법률 제21525호) 한계가 있음', law.includes('쉬운 풀이 대조') && law.includes('약사의 검수가 아님') && law.includes('제21525호') && law.includes('2026-02-12'), law.slice(0, 200));
+    const rev = await page.locator('#about-review').innerText().catch(() => '');
+    ck('데이터·한계: "검수 상태" 절(#about-review)에 대조한 범위(성분 32·상품명 28·풀이 53)와 "약사 자격자의 검수는 받지 않았습니다"·현행 시행본 미대조가 있음', ['검수 상태', '핵심 성분 한글명 32개', '핵심 국내 상품명 28개', '약사법 쉬운 풀이 53개', '쿠파린', '약사 자격자의 검수는 받지 않았습니다', '제21525호'].every((t) => rev.includes(t)), rev.slice(0, 300));
     const foot = await page.locator('footer, [data-source-footer]').first().innerText().catch(() => '');
     ck('하단 출처 표기의 추가 자료에 약사법(국가법령정보센터, 법제처)', foot.includes('약사법(국가법령정보센터, 법제처)'), foot.slice(0, 240));
     noErr('약무·제도(1440)', page);

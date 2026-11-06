@@ -310,7 +310,7 @@
       const fill = (t, o) => String(t).replace(/\{(\w+)\}/g, (m, k) => encodeURIComponent(o[k] == null ? '' : o[k]));
       const ymd = (t) => { const m = /_(\d{4})(\d{2})(\d{2})$/.exec(t || ''); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
       const letters = new Set(String(r.src || ''));
-      if ((r.atc && r.atc.length) || (r.atc_class && r.atc_class.length)) letters.add('A');   // ATC 분류 이름은 RxClass(WHO ATC)에서 온다
+      if (srcById.has('A') && ((r.atc && r.atc.length) || (r.atc_class && r.atc_class.length))) letters.add('A');   // ATC 분류 이름은 RxClass(WHO ATC)에서 온다
       const sources = [], missing = [];
       for (const L of ['R', 'H', 'W', 'A']) {
         if (!letters.has(L)) continue;

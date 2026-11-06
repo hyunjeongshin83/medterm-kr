@@ -8,12 +8,12 @@ const ROOT = path.resolve(__dirname, '..');
 const { rgb, FACES } = require('./_tokens.cjs');
 const { VERSION, OLD_LABEL } = require('./_copy.cjs');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'artifact'); fs.mkdirSync(OUT, { recursive: true });
-const frag = fs.readFileSync(path.join(ROOT, 'dist', 'artifact.html'), 'utf8');
+const frag = fs.readFileSync(path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), 'artifact.html'), 'utf8');
 const wrapped = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 ${frag}
 </body></html>`;
-const FILE = path.join(ROOT, 'dist', '_wrapped_artifact_test.html'); fs.writeFileSync(FILE, wrapped);
+const FILE = path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), '_wrapped_artifact_test.html'); fs.writeFileSync(FILE, wrapped);
 
 let bad = 0, total = 0;
 const ck = (n, ok, x) => { total++; if (!ok) bad++; console.log((ok ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  → ' + JSON.stringify(x) : '')); };

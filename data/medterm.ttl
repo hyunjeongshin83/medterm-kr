@@ -8546,7 +8546,7 @@ mt:MT_VTM_11289 a mt:VTM ;
     skos:prefLabel "warfarin"@en,
         "와파린"@ko ;
     mt:hasATC mt:ATC_B01AA03 ;
-    mt:koBrand "쿠마딘"@ko ;
+    mt:koBrand "쿠파린"@ko ;
     mt:reviewStatus "draft" ;
     mt:rxcui "11289" ;
     mt:snomedCtId "372756006",
@@ -8629,7 +8629,6 @@ mt:MT_VTM_7646 a mt:VTM ;
     skos:prefLabel "omeprazole"@en,
         "오메프라졸"@ko ;
     mt:hasATC mt:ATC_A02BC01 ;
-    mt:koBrand "로섹"@ko ;
     mt:reviewStatus "draft" ;
     mt:rxcui "7646" ;
     mt:snomedCtId "25673006",

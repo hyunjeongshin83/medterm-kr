@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const DIR = path.join(ROOT, 'dist', 'pwa');
+const DIR = path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), 'pwa');
 const OUT = process.argv[2] || path.join(ROOT, 'shots', 'pwa');
 fs.mkdirSync(OUT, { recursive: true });
 const { DISC, VERSION, OLD_LABEL } = require('./_copy.cjs');
@@ -50,7 +50,7 @@ function staticChecks() {
   ck('문서: 서비스 워커 등록 코드(http·https 에서만)', /navigator\.serviceWorker\.register\('sw\.js'\)/.test(html) && /\^https\?:\$/.test(html));
   ck(`설치 정보·문서: 옛 표기("${OLD_LABEL}") 없음 · 설명에 "정보 제공용"과 "리서치용"`, !JSON.stringify(m).includes(OLD_LABEL) && !html.includes(OLD_LABEL) && m.description.includes('정보 제공용') && m.description.includes('리서치용'), m.description);
   ck('문서: 외부 글꼴·스타일·스크립트 링크 없음', !/<link\b[^>]*\bhref="https?:/i.test(html) && !/<script[^>]+\bsrc=/i.test(html) && !/@import/i.test(html) && !/fonts\.(googleapis|gstatic)\.com/.test(html));
-  const base = fs.readFileSync(path.join(ROOT, 'dist', 'MedTerm-KR_react.html'), 'utf8');
+  const base = fs.readFileSync(path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), 'MedTerm-KR_react.html'), 'utf8');
   const stripped = html
     .replace(/\n<link rel="manifest"[\s\S]*?<link rel="apple-touch-icon"[^\n]*/, '')
     .replace(/<script>\nif \('serviceWorker'[\s\S]*?<\/script>\n/, '');

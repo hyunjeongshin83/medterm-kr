@@ -27,6 +27,10 @@ ok(M.source && M.source.name && M.source.print && /^https:\/\//.test(M.source.ur
 ok(Array.isArray(M.limits) && M.limits.length >= 4 && M.limits.every((s) => typeof s === 'string' && s.length > 10), '한계 안내 4개 이상');
 ok(M.limits.some((s) => /현행본/.test(s) && /아직 하지 않았/.test(s)) && M.limits.some((s) => /약사 검수 전/.test(s)), '한계 안내에 "법제처 현행본 대조 안 함"과 "약사 검수 전"이 있음');
 ok(M.limits.some((s) => /약사협의회/.test(s) && /0건/.test(s)), '한계 안내에 "약사협의회는 약사법 본문에 없음(0건)"이 있음');
+// 2026-11-06 대조에서 알게 된 점: 출력본의 시행일은 여러 개이고, 국가법령정보센터의 현행 표시는 출력본보다 나중 판이다
+ok(M.limits.some((s) => /2026-02-12/.test(s) && /2026-04-12/.test(s) && /2026-06-21/.test(s) && /2026-11-12/.test(s)), '한계 안내에 출력본의 시행일이 여러 개(02-12·04-12·06-21·11-12)임을 적음');
+ok(M.limits.some((s) => /제21525호/.test(s) && /2026-11-06/.test(s) && /대조하지 못/.test(s)) && /제21525호/.test(M.source.latest_seen || ''), '한계 안내와 source.latest_seen 에 국가법령정보센터의 더 나중 현행 표시(법률 제21525호)와 "대조하지 못함"을 적음');
+ok(typeof M.pl_checked === 'string' && /2026-11-06/.test(M.pl_checked) && /약사의 검수가 아님/.test(M.pl_checked) && /53개/.test(M.pl_checked) && M.limits.some((s) => /원문 대조이며 약사의 검수가 아닙니다/.test(s)), '쉬운 풀이 대조 기록(pl_checked)과 "약사의 검수가 아님" 안내가 있음');
 const GROUP_IDS = ['def', 'org', 'duty', 'sys'];
 ok(same((M.groups || []).map((g) => g.id), GROUP_IDS) && M.groups.every((g) => g.label && g.hint), '분류 4개(def · org · duty · sys)에 이름과 설명');
 const byGroup = (g) => E.filter((e) => e.g === g).length;

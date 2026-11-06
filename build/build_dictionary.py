@@ -20,7 +20,7 @@ SEED = [
  ("aspirin","아스피린",["아세틸살리실산"],["바이엘 아스피린"],["acetylsalicylic acid"]),
  ("diclofenac","디클로페낙",[],["볼타렌"],[]),
  ("tramadol","트라마돌",[],[],[]),
- ("omeprazole","오메프라졸",[],["로섹"],[]),
+ ("omeprazole","오메프라졸",[],[],[]),   # 로섹: 심평원 약가마스터에 없어 뺌(2026-11-06 대조)
  ("esomeprazole","에스오메프라졸",[],["넥시움"],[]),
  ("pantoprazole","판토프라졸",[],["판토록"],[]),
  ("famotidine","파모티딘",[],["가스터"],[]),
@@ -33,7 +33,7 @@ SEED = [
  ("atorvastatin","아토르바스타틴",[],["리피토"],[]),
  ("rosuvastatin","로수바스타틴",[],["크레스토"],[]),
  ("simvastatin","심바스타틴",[],["조코"],[]),
- ("warfarin","와파린",[],["쿠마딘"],[]),
+ ("warfarin","와파린",[],["쿠파린"],[]),   # 쿠마딘 → 쿠파린(심평원 등재, 2026-11-06 대조)
  ("clopidogrel","클로피도그렐",[],["플라빅스"],[]),
  ("levothyroxine","레보티록신",[],["씬지로이드"],["thyroxine"]),
  ("amoxicillin","아목시실린",[],[],[]),
@@ -78,7 +78,7 @@ def main(out):
         vtm = f"MT:VTM:{rx}"
         concepts.append(dict(id=vtm, type="VTM", rxcui=rx, label_en=q, label_ko=ko, alt_ko=alt_ko, alt_en=alt_en, brands_ko=brands_ko,
             atc_codes=atcs, atc_paths=paths, atc_source=atc_src, snomed_ct=pd.get("SNOMEDCT", []), review_status="draft",
-            provenance=dict(rxnorm_retrieved=today, ko_label="manual(unreviewed)", brands_ko="manual(unverified vs MFDS)")))
+            provenance=dict(rxnorm_retrieved=today, ko_label="manual; 2026-11-06 심평원 약가마스터·위키데이터 한글명과 대조(약사 검수 전)", brands_ko="manual; 2026-11-06 심평원 약가마스터 품목명과 대조(식약처 대조·약사 검수 전)")))
         rel = get(f"/rxcui/{rx}/related.json?tty=SCD+SBD")["relatedGroup"]["conceptGroup"]
         scd = {p["name"]: p["rxcui"] for g in rel if g["tty"] == "SCD" for p in g.get("conceptProperties", [])}
         sbd = [(p["name"], p["rxcui"]) for g in rel if g["tty"] == "SBD" for p in g.get("conceptProperties", [])]

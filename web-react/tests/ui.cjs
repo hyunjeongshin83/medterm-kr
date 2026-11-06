@@ -6,7 +6,7 @@ const fs = require('fs');
 const ROOT = path.resolve(__dirname, '..');
 const { rgb, FACES } = require('./_tokens.cjs');
 const FILE = process.argv[2] || 'MedTerm-KR_react.html';
-const URL = 'file://' + path.join(ROOT, 'dist', FILE);
+const URL = 'file://' + path.join(process.env.MEDTERM_DIST || path.join(ROOT, 'dist'), FILE);
 const SHOTS = path.join(ROOT, 'shots', 'ui'); fs.mkdirSync(SHOTS, { recursive: true });
 
 let bad = 0, total = 0;
@@ -78,9 +78,9 @@ const overflow = (page) => page.evaluate(() => {
     ck('트리: 처음에는 접힘', (await first.getAttribute('aria-expanded')) === 'false');
     await first.click();
     ck('트리: 눌러서 펼침', (await first.getAttribute('aria-expanded')) === 'true');
-    await page.fill('#tree-filter', '로섹');
+    await page.fill('#tree-filter', '넥시움');
     await page.waitForTimeout(150);
-    ck('트리 거르기: 상품명(로섹)으로 오메프라졸을 찾고 분류를 펼침', (await page.locator('#tree [data-id="' + OME + '"]').count()) === 1 && (await page.locator('#tree [data-id]').count()) === 1, await page.locator('#tree [data-id]').count());
+    ck('트리 거르기: 상품명(넥시움)으로 에스오메프라졸을 찾고 분류를 펼침', (await page.locator('#tree [data-id="MT:VTM:283742"]').count()) === 1 && (await page.locator('#tree [data-id]').count()) === 1, await page.locator('#tree [data-id]').count());
     await page.fill('#tree-filter', 'a02bc');
     await page.waitForTimeout(150);
     ck('트리 거르기: 코드(A02BC) → 그 분류 아래 성분 3개', (await page.locator('#tree [data-id]').count()) === 3, await page.locator('#tree [data-id]').count());

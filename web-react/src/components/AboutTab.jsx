@@ -1,4 +1,5 @@
 import { BENCH, DATA, META, XMETA, layers, mt } from '../lib/mt.js';
+import { LITE } from '../lib/edition.js';
 import { Badge, Card } from './ui.jsx';
 import { nf } from './ExtParts.jsx';
 
@@ -42,7 +43,9 @@ const LIMITS = [
   ...(NX ? ['확장 수록의 한글 이름·상품명·국내 등재 현황은 공개 자료에서 자동으로 뽑은 후보로, 약사 검수 전입니다(아래 “확장 수록” 참고).'] : []),
   '상호작용, 금기, 병용, 용법 같은 임상 내용은 다루지 않습니다(MFDS DUR 등 별도 근거 필요).',
   'ATC 코드는 성분당 여러 개일 수 있어 일치 여부를 “어느 하나와 일치”로 판단합니다.',
-  'SNOMED CT ID와 ATC 분류명이 들어 있습니다. 외부에 공개하기 전에 재배포 조건을 확인해야 합니다.',
+  LITE
+    ? 'SNOMED CT ID와 ATC 영문 분류명은 이 공개판에서 뺐습니다. ATC 코드 값은 심평원 약가마스터·Wikidata 자료에서 온 것만 남겼으며, 코드 값의 공개 범위는 아직 결정하지 않았습니다.'
+    : 'SNOMED CT ID와 ATC 분류명이 들어 있습니다. 외부에 공개하기 전에 재배포 조건을 확인해야 합니다.',
 ];
 
 /** 확장 수록(공개 자료 자동 수집 초안)의 건수·등급·출처·한계. 확장 자료가 없으면 그리지 않는다. */
@@ -200,11 +203,55 @@ function LawSection() {
           [`시행 예정·개정 예정이 표시된 항목 (시행일 ${m.upcoming_effective})`, nf(c.upcoming)],
           ['기준 자료', `${m.source.name} ${m.source.print}`],
           ['원문 발췌 대조', m.verified || '대조하지 않음'],
+          ['쉬운 풀이 대조', m.pl_checked || '대조하지 않음'],
         ]}
       />
       <h4 className="mb-1 mt-3 text-body-bold">한계</h4>
       <ul className="list-disc pl-5 text-base">
         {(m.limits || []).map((t) => <li key={t} className="my-1">{t}</li>)}
+      </ul>
+    </Section>
+  );
+}
+
+/** 무엇을 어디까지 대조했는지. 자료와 자료를 맞춰 본 것이며, 약사 자격자의 검수가 아니다(날짜는 대조한 날). */
+/* 층이 없는 판(핵심만 등)에서는 그 층에 관한 줄을 그리지 않는다. 약사법·확장·제품 줄은 해당 자료가 있을 때만 나온다. */
+function reviewDone() {
+  const hasLaw = !!(layers && layers.hasLaw);
+  return [
+    ['핵심 성분 한글명 32개', '심평원 성분명·위키데이터의 한글 이름과 대조: 30개는 같은 이름, 2개(메트포르민·아토르바스타틴)는 심평원이 염 이름(…염산염·…칼슘수화물)으로 적은 차이입니다.'],
+    ['핵심 국내 상품명 28개', '심평원 약가마스터 품목명(허가 취소 제외)과 대조해 28개 모두 확인했습니다. 로섹은 목록에 없어 뺐고, 쿠마딘은 등재된 쿠파린으로 바꿨습니다.'],
+    ...(hasLaw ? [[`약사법 쉬운 풀이 ${nf(layers.lawMeta.counts.entries)}개`, '법제처 약사법 출력본(2026-02-07 출력) 본문과 항목별로 대조해 의미가 어긋난 곳은 없었고, 빠진 단서 11곳을 보탰습니다.']] : []),
+  ];
+}
+function reviewTodo() {
+  const hasLaw = !!(layers && layers.hasLaw);
+  const outside = ['제형 한글명(직역)', '계열명', ...(NX ? [`확장 수록 성분 ${nf(NX)}개의 자동 연결·한글 이름`] : []), ...(layers && layers.hasProducts ? ['제품 계층의 성분 연결'] : [])];
+  return [
+    '약사 자격자의 검수는 받지 않았습니다. 위 대조는 자료끼리 맞춰 본 것입니다.',
+    ...(hasLaw ? ['약사법은 국가법령정보센터의 현행 시행본(2026-11-06 확인: 시행 2026-10-08, 법률 제21525호)과 아직 대조하지 못했습니다. 시행령·시행규칙도 수록하지 않았습니다.'] : []),
+    '식약처(MFDS) 허가 정보와의 대조는 하지 않았습니다(공식 OpenAPI 인증키가 필요합니다).',
+    `이 대조에 들어 있지 않은 것: ${outside.join(', ')}.`,
+  ];
+}
+
+function ReviewSection() {
+  const REVIEW_DONE = reviewDone(); const REVIEW_TODO = reviewTodo();
+  return (
+    <Section title="검수 상태 (2026-11-06 기준)" id="about-review">
+      <p className="mb-2 text-small text-mut">‘약사 검수 전’이라는 표시는 그대로입니다. 아래는 그 전에 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.</p>
+      <h4 className="mb-1 text-body-bold">공식 자료와 대조한 것</h4>
+      <dl>
+        {REVIEW_DONE.map(([k, v]) => (
+          <div key={k} className="border-b border-line py-1.5 last:border-b-0">
+            <dt className="text-base font-bold">{k}</dt>
+            <dd className="text-base text-mut">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <h4 className="mb-1 mt-3 text-body-bold">아직 하지 못한 것</h4>
+      <ul className="list-disc pl-5 text-base">
+        {REVIEW_TODO.map((t) => <li key={t} className="my-1">{t}</li>)}
       </ul>
     </Section>
   );
@@ -240,11 +287,24 @@ function AttributionSection() {
         </>
       )}
 
-      <h4 className="mb-1 mt-4 text-body-bold">재배포 조건이 정해지지 않은 자료</h4>
-      <p className="text-base">
-        ATC 분류(WHO)와 핵심 사전의 SNOMED CT 코드는 재배포 조건을 확인하지 못했습니다. 이 사전을 외부에 공개하기 전에 결정해야 합니다.
-        {PS ? ` 확장 수록에서는 ${nf(PS.pending)}개 항목(${pct}%)이 ATC 코드 또는 분류 이름을 가지고 있습니다.` : ''}
-      </p>
+      {LITE ? (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">이 공개판에서 뺀 자료</h4>
+          <p className="text-base">
+            SNOMED CT ID(핵심 사전 32개 성분)와 ATC 영문 분류 이름(WHO ATC)은 재배포 조건을 확인하지 못해 뺐습니다. 전체 자료판은 따로 보관하고 있습니다.
+            남긴 ATC 코드 값은 심평원 약가마스터(공공누리 제1유형)와 Wikidata(CC0)에서 온 것이며, 코드 값 자체를 공개해도 되는지는 아직 정하지 않았습니다.
+            한글명·상품명·약사법 쉬운 풀이는 공식 자료와 대조했으나(범위는 ‘검수 상태’ 참고) 약사 자격자의 검수는 받기 전입니다.
+          </p>
+        </>
+      ) : (
+        <>
+          <h4 className="mb-1 mt-4 text-body-bold">재배포 조건이 정해지지 않은 자료</h4>
+          <p className="text-base">
+            ATC 분류(WHO)와 핵심 사전의 SNOMED CT 코드는 재배포 조건을 확인하지 못했습니다. 이 사전을 외부에 공개하기 전에 결정해야 합니다.
+            {PS ? ` 확장 수록에서는 ${nf(PS.pending)}개 항목(${pct}%)이 ATC 코드 또는 분류 이름을 가지고 있습니다.` : ''}
+          </p>
+        </>
+      )}
 
       {PS && (
         <>
@@ -254,7 +314,7 @@ function AttributionSection() {
               ['RxNorm(NLM)에서 온 항목', nf(PS.bySource.R)],
               ['심평원 약가마스터에서 온 항목 (이 중 단일성분 일반명코드가 기록된 항목)', `${nf(PS.bySource.H)} (${nf(PS.withHiraCodes)})`],
               ['Wikidata에서 온 항목', nf(PS.bySource.W)],
-              ['ATC 코드·분류 이름을 가진 항목 (재배포 조건 미결정)', nf(PS.bySource.A)],
+              ...(LITE ? [] : [['ATC 코드·분류 이름을 가진 항목 (재배포 조건 미결정)', nf(PS.bySource.A)]]),
               ['출처 식별자·이용 조건 표시가 빠진 항목 (자동 점검)', nf(PS.missing)],
             ]}
           />
@@ -296,6 +356,8 @@ export function AboutTab() {
         </ul>
         <p className="mt-2 text-small text-mut">{m.notice}</p>
       </Section>
+
+      <ReviewSection />
 
       <ExtSection />
 
