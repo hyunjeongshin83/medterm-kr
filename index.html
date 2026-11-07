@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MedTerm-KR · 약무용어 사전</title>
+<meta name="description" content="약무 용어를 성분 → 제형·함량 → 제품 순서로 찾는 전자사전(공개 미리보기·초안). 약사 면허가 있는 분의 검수 참여를 기다립니다.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F2F6F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1B1E" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="app/icons/icon-192.png">
+<link rel="apple-touch-icon" href="app/icons/apple-touch-icon.png">
+<style>
+:root{color-scheme:light;--bg:#F2F6F7;--surface:#FFFFFF;--surface-2:#EEFBF8;--ink:#0F2327;--mut:#547075;--line:#D8E5E7;--pri:#0A7168;--pri-fill:#0A7168;--on-pri:#FFFFFF;--pri-chip:#D8F5EF;--pri-chip-ink:#06413E;--edge:#6F8B8F;--notice-bg:#FBF3E2;--notice-line:#EBD9A6;--notice-ink:#6B4500}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0B1B1E;--surface:#10282C;--surface-2:#0D2226;--ink:#EAF4F4;--mut:#9FB6B9;--line:#274549;--pri:#5FD6CE;--pri-fill:#0A7168;--on-pri:#FFFFFF;--pri-chip:#0B4F4A;--pri-chip-ink:#AEEAE2;--edge:#6E9096;--notice-bg:#2B2410;--notice-line:#5A4A17;--notice-ink:#F0D78A}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0B1B1E;--surface:#10282C;--surface-2:#0D2226;--ink:#EAF4F4;--mut:#9FB6B9;--line:#274549;--pri:#5FD6CE;--pri-fill:#0A7168;--on-pri:#FFFFFF;--pri-chip:#0B4F4A;--pri-chip-ink:#AEEAE2;--edge:#6E9096;--notice-bg:#2B2410;--notice-line:#5A4A17;--notice-ink:#F0D78A}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 Pretendard,Inter,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+.wrap{width:100%;max-width:880px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--pri);text-underline-offset:3px}
+a:focus-visible,.btn:focus-visible{outline:3px solid var(--pri);outline-offset:3px;border-radius:8px}
+.skip{position:absolute;left:16px;top:-64px;background:var(--surface);color:var(--ink);padding:10px 14px;border-radius:10px;border:2px solid var(--pri);z-index:5}
+.skip:focus{top:12px}
+
+header.top{padding-block:16px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:40px;height:40px;border-radius:10px;display:block}
+.brand strong{display:block;font-size:1.05rem;line-height:1.3}
+.brand span{display:block;color:var(--mut);font-size:.875rem;line-height:1.3}
+
+.hero{padding-block:20px 8px}
+.chip{display:inline-block;background:var(--pri-chip);color:var(--pri-chip-ink);font-size:.875rem;font-weight:700;padding:4px 12px;border-radius:999px}
+h1{margin:14px 0 12px;font-size:clamp(1.65rem,5.4vw,2.5rem);line-height:1.28;text-wrap:balance;letter-spacing:-.01em}
+.lead{margin:0 0 20px;font-size:1.0625rem;max-width:40em}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:12px;border:1.5px solid transparent;font-weight:700;font-size:1rem;line-height:1.3;text-decoration:none;text-align:center}
+.btn-pri{background:var(--pri-fill);color:var(--on-pri)}
+.btn-sec{background:var(--surface);color:var(--ink);border-color:var(--edge)}
+.small{margin:14px 0 0;color:var(--mut);font-size:.9375rem}
+
+section.block{padding-block:20px 4px}
+h2{margin:0 0 10px;font-size:1.3rem;line-height:1.35;text-wrap:balance}
+p{margin:0 0 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card.accent{background:var(--surface-2);border-left:5px solid var(--pri)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
+.grid .card{padding:16px 18px}
+.grid h3{margin:0 0 4px;font-size:1rem;line-height:1.4}
+.grid p{margin:0;color:var(--mut);font-size:.9375rem;line-height:1.6}
+
+ol.steps{list-style:none;margin:14px 0 16px;padding:0;display:grid;gap:12px;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--pri-fill);color:var(--on-pri);display:grid;place-items:center;font-weight:700;font-size:.9375rem}
+ul.plain{margin:0 0 16px;padding-left:1.2em}
+ul.plain li{margin-bottom:6px}
+.mut{color:var(--mut)}
+
+.notice{background:var(--notice-bg);border:1px solid var(--notice-line);color:var(--notice-ink);border-radius:16px;padding:20px}
+.notice ul{margin:0;padding-left:1.2em}
+.notice li{margin-bottom:6px}
+.notice li:last-child{margin-bottom:0}
+.notice a{color:inherit;font-weight:700}
+
+footer{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));color:var(--mut);font-size:.875rem;line-height:1.6}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <img src="app/icons/icon-192.png" width="40" height="40" alt="">
+      <div><strong>MedTerm-KR</strong><span>약무용어 사전 · MedIT</span></div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="wrap hero" aria-labelledby="h-top">
+    <span class="chip">공개 미리보기 · 초안 v1.6.0</span>
+    <h1 id="h-top">성분에서 제품까지, 약무 용어를 한곳에서</h1>
+    <p class="lead">MedTerm-KR 은 약무 용어를 성분 → 제형·함량 → 제품 순서로 이어서 찾고, LLM 이 말한 약물명이 사전에 실제로 있는지 근거를 확인하는 전자사전입니다.</p>
+    <div class="actions">
+      <a class="btn btn-pri" href="app/">사전 열어 보기</a>
+      <a class="btn btn-sec" href="showcase/">웹·휴대폰 화면 나란히 보기</a>
+    </div>
+    <p class="small">설치 없이 브라우저에서 열립니다. 휴대폰·PC 홈 화면에 추가하면 앱처럼 쓸 수 있습니다.</p>
+  </section>
+
+  <section class="wrap block" aria-labelledby="h-what">
+    <h2 id="h-what">들어 있는 것</h2>
+    <div class="grid">
+      <div class="card"><h3>성분 → 제품</h3><p>성분 한글명에서 제형·함량, 국내 제품까지 이어서 찾습니다.</p></div>
+      <div class="card"><h3>답변 근거 확인</h3><p>LLM 이 말한 약물명이 사전에 있는지 확인합니다. 리서치용입니다.</p></div>
+      <div class="card"><h3>약무·제도</h3><p>약사법 항목의 쉬운 풀이와 조제 업무 길잡이를 볼 수 있습니다.</p></div>
+      <div class="card"><h3>최신·임상</h3><p>FDA 신약 승인과 ClinicalTrials.gov 등록을 요약합니다. 효능·안전성 근거는 아닙니다.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap block" id="pharmacist" aria-labelledby="h-ph">
+    <div class="card accent">
+      <h2 id="h-ph">약사님께 부탁드립니다</h2>
+      <p>한글 성분명·국내 상품명 60개와 약사법 쉬운 풀이 53개는 공식 자료와 대조했지만, 아직 약사의 검수를 받지 않은 <strong>초안</strong>입니다. 약사 면허가 있는 분이 항목마다 ‘맞다·다르다·모르겠다’만 눌러 주시면 됩니다. 한 번에 다 하지 않으셔도 이어서 할 수 있습니다.</p>
+      <ol class="steps">
+        <li><span>‘검수에 참여하기’를 눌러 이름을 적고, 약사 면허를 가지고 있음에 표시합니다.</span></li>
+        <li><span>항목마다 판정합니다. 약학정보원이나 약학정보 책은 약사님께서 열어 보며 대조해 주세요.</span></li>
+        <li><span>‘파일로 저장’ 또는 ‘복사하기’로 확인서를 만들어, 이 주소를 알려 드린 MedIT 담당자에게 보내 주세요.</span></li>
+      </ol>
+      <ul class="plain mut">
+        <li>입력한 내용은 서버로 보내지 않고 이 기기의 브라우저에만 저장됩니다.</li>
+        <li>면허번호·연락처는 받지 않습니다. 면허는 MedIT 가 따로 확인합니다.</li>
+        <li>이름·소속은 공개에 동의한 경우에만 앱의 ‘검수 상태’에 나옵니다.</li>
+      </ul>
+      <a class="btn btn-pri" href="app/#review">약사 검수 참여 열기</a>
+    </div>
+  </section>
+
+  <section class="wrap block" id="contact" aria-labelledby="h-ct">
+    <div class="card">
+      <h2 id="h-ct">사람에게 문의하세요</h2>
+      <p style="margin:0">빠졌거나 맞지 않는 용어·조직·약사법 풀이, 검수 참여 문의는 이 주소를 알려 드린 MedIT 담당자에게 알려 주세요. 확인한 뒤 새 판으로 올립니다.</p>
+    </div>
+  </section>
+
+  <section class="wrap block" id="notes" aria-labelledby="h-nt">
+    <div class="notice">
+      <h2 id="h-nt">알아 둘 점</h2>
+      <ul>
+        <li>한글명·상품명·약사법 쉬운 풀이는 <strong>약사 검수 전 초안</strong>입니다. 진단·처방·복용량 판단에 쓰지 않습니다. 법률 자문이 아닙니다.</li>
+        <li>임상시험 수치는 미국 ClinicalTrials.gov 등록을 요약한 것으로 효능·안전성 근거가 아닙니다.</li>
+        <li>‘근거 기반 질의’ 탭의 질의문과 LLM 답변은 리서치용입니다.</li>
+        <li>이 공개판에서는 SNOMED CT ID, ATC 영문 분류 이름을 뺐습니다. 재배포 조건을 확인하지 못했기 때문입니다.</li>
+        <li>출처와 이용 조건은 앱의 ‘데이터·한계’ 탭과 맨 아래 ‘자료 출처’에 있습니다.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  MedIT · MedTerm-KR v1.6.0 공개판(초안). 주소를 아는 사람은 누구나 열 수 있고, 검색 로봇이 색인하지 않도록 표시했습니다.
+</footer>
+</body>
+</html>
