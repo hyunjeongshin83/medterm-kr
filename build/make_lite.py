@@ -71,6 +71,11 @@ if any(s["id"] == "A" for s in em["sources"]) or "A" in em["src_legend"]: raise 
 save("medterm.json", core); save("medterm_ext.json", ext)
 for n in ("medterm_kr_products.json", "medterm_new.json", "medterm_law.json", "class_lexicon.json", "product_lexicon.json"):
     shutil.copyfile(os.path.join(root, "data", n), os.path.join(ddir, n))
+# 약사 검수 참여 현황(병합된 약사 확인 기록): 공개판에도 같은 현황이 나오도록 함께 둔다(비공개 약사의 이름은 이 자료에 애초에 없다).
+rvs = os.path.join(root, "data", "review", "pharmacist_reviews.json")
+if os.path.exists(rvs):
+    os.makedirs(os.path.join(ddir, "review"), exist_ok=True)
+    shutil.copyfile(rvs, os.path.join(ddir, "review", "pharmacist_reviews.json"))
 
 # ---- 점검: 뺀 자료가 공개판 자료 어디에도 남지 않았는지 ----
 texts = {n: open(os.path.join(ddir, n), encoding="utf-8").read() for n in os.listdir(ddir) if n.endswith(".json")}

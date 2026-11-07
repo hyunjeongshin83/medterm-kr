@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { idFromHash, isNarrow, isPhone, layers, writeHash } from './lib/mt.js';
 import { useMedia } from './lib/useMedia.js';
+import { scrollToCard } from './lib/scroll.js';
 import { Topbar } from './components/Topbar.jsx';
 import { TreePane } from './components/Tree.jsx';
 import { Panel, Tabs } from './components/Tabs.jsx';
@@ -16,13 +17,17 @@ import { Inspector } from './components/Inspector.jsx';
 import { SourceFooter } from './components/SourceFooter.jsx';
 import { cx, inertProps } from './components/ui.jsx';
 
+/** 주소가 #review 이면 ‘데이터·한계’ 탭의 약사 검수 참여 카드로 바로 간다(약사에게 보내는 링크). */
+const isReviewHash = () => { try { return decodeURIComponent(window.location.hash.slice(1)) === 'review'; } catch (e) { return false; } };
+
 export default function App() {
   const narrow = useMedia('(max-width: 1099px)'); // 상세가 서랍으로
   const phone = useMedia('(max-width: 699px)'); //   분류 트리도 서랍으로
 
   const [selectedId, setSelectedId] = useState(idFromHash);
-  const [tab, setTab] = useState('search');
-  const [seen, setSeen] = useState({ search: true }); // 한 번 열어 본 탭만 그린다(제품·최신·약무 제도 탭은 자료를 읽어야 하고, 데이터·한계 탭은 그 자료의 건수·출처를 읽어야 해서 처음부터 그리지 않는다)
+  const [tab, setTab] = useState(() => (isReviewHash() ? 'about' : 'search'));
+  const [seen, setSeen] = useState(() => (isReviewHash() ? { search: true, about: true } : { search: true })); // 한 번 열어 본 탭만 그린다(제품·최신·약무 제도 탭은 자료를 읽어야 하고, 데이터·한계 탭은 그 자료의 건수·출처를 읽어야 해서 처음부터 그리지 않는다)
+  const [reviewReq, setReviewReq] = useState(() => (isReviewHash() ? 1 : 0)); // #review 로 들어온 횟수 — 데이터·한계 탭이 약사 검수 참여 카드를 펼치고 내려가는 신호
   const [seed, setSeed] = useState(null); //            다른 화면에서 ‘제품 탭에서 보기’로 넘어올 때의 검색어
   const [seg, setSeg] = useState('atc');
   const [filter, setFilter] = useState('');
@@ -120,20 +125,17 @@ export default function App() {
     changeTab(t);
   };
 
+  // 주소를 #review 로 바꾸면(약사에게 보낸 링크를 열어 둔 채 다시 누르는 경우 포함) 약사 검수 참여 카드로 간다.
+  useEffect(() => {
+    const onReview = () => { if (isReviewHash()) { changeTab('about'); setReviewReq((n) => n + 1); } };
+    window.addEventListener('hashchange', onReview);
+    return () => window.removeEventListener('hashchange', onReview);
+  }, []);
+
   // 하단 출처 표기의 "자세히": 데이터·한계 탭으로 가서 "출처 표기와 이용 조건" 카드로 내려간다(탭이 그려진 다음 틱에서 이동).
   const openSources = () => {
     changeTab('about');
-    setTimeout(() => {
-      const el = document.getElementById('about-sources');
-      if (el) {
-        // 데스크톱·태블릿의 작업 탭 줄은 화면 위에 붙어 있으므로(sticky) 카드 제목이 그 밑에 가려지지 않게 그만큼 비켜서 멈춘다. 휴대폰은 탭 줄이 아래에 있어 0.
-        const bar = document.querySelector('[role="tablist"][aria-label="작업 화면"]');
-        const cover = bar && getComputedStyle(bar).position === 'sticky' ? bar.offsetHeight + 8 : 0;
-        el.style.scrollMarginTop = `${cover}px`;
-        el.scrollIntoView({ block: 'start' });
-        el.focus({ preventScroll: true });
-      }
-    }, 0);
+    setTimeout(() => scrollToCard('about-sources'), 0);
   };
 
   // 상세의 주된 버튼: 같은 성분의 관계 그래프로 넘어간다. 서랍·시트는 닫고, 포커스는 "관계 그래프" 탭으로 옮긴다.
@@ -183,7 +185,7 @@ export default function App() {
             <Panel id="graph" active={tab === 'graph'}>{tab === 'graph' && <GraphTab id={selectedId} onAction={onGraphAction} focusRequest={graphFocus} />}</Panel>
             <Panel id="verify" active={tab === 'verify'}><VerifyTab /></Panel>
             <Panel id="rag" active={tab === 'rag'}><RagTab onSelect={selectVtm} /></Panel>
-            <Panel id="about" active={tab === 'about'}>{seen.about && <AboutTab />}</Panel>
+            <Panel id="about" active={tab === 'about'}>{seen.about && <AboutTab reviewReq={reviewReq} />}</Panel>
             <SourceFooter onMore={openSources} />
           </div>
         </main>

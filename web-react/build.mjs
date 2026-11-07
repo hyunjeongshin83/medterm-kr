@@ -30,8 +30,8 @@ for (const f of ['medterm-data.js', 'bench.js', 'core.js']) {
 }
 // 확장 수록 자료(medterm-ext-data.js)는 있으면 핵심 자료 바로 뒤에 함께 담는다. 없으면 핵심 사전만으로 이전과 같이 동작한다.
 const EXT_JS = existsSync(path.join(JS_DIR, 'medterm-ext-data.js')) ? ['medterm-ext-data.js'] : [];
-// 최신 승인·임상·화합물 연결(medterm-new-data.js)·국내 제품(medterm-products-data.js)·약사법 용어·기구(medterm-law-data.js), 이를 읽는 layers.js 도 있으면 담는다(없으면 핵심·확장만으로 이전과 같이 동작).
-const NEW_JS = ['medterm-new-data.js', 'medterm-products-data.js', 'medterm-law-data.js'].filter((f) => existsSync(path.join(JS_DIR, f)));
+// 최신 승인·임상·화합물 연결(medterm-new-data.js)·국내 제품(medterm-products-data.js)·약사법 용어·기구(medterm-law-data.js)·약사 검수 참여(medterm-review-data.js: 검수 항목과 병합된 약사 확인 현황), 이를 읽는 layers.js 도 있으면 담는다(없으면 핵심·확장만으로 이전과 같이 동작).
+const NEW_JS = ['medterm-new-data.js', 'medterm-products-data.js', 'medterm-law-data.js', 'medterm-review-data.js'].filter((f) => existsSync(path.join(JS_DIR, f)));
 const LAYERS_JS = existsSync(path.join(JS_DIR, 'layers.js')) ? ['layers.js'] : [];
 
 /* 1) 토큰 → CSS 변수 (라이트 기본, 다크는 시스템 설정 또는 data-theme="dark") */
@@ -84,10 +84,10 @@ async function bundle(enableProxy, surface) {
 
 /* 4) HTML 조립 */
 const esc = (s) => s.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
-// 큰 자료 층(MEDTERM_NEW · MEDTERM_PRODUCTS, HTML 의 절반 이상; 작은 MEDTERM_LAW 도 같은 방식)은 실행하는 스크립트가 아니라 "읽지 않는 JSON 덩어리"로 담는다.
+// 큰 자료 층(MEDTERM_NEW · MEDTERM_PRODUCTS, HTML 의 절반 이상; 작은 MEDTERM_LAW · 약사 검수 참여 MEDTERM_REVIEW 도 같은 방식)은 실행하는 스크립트가 아니라 "읽지 않는 JSON 덩어리"로 담는다.
 // 브라우저는 덩어리를 훑기만 하고 해석하지 않으므로 첫 화면이 더 빨리 뜨고, window.MEDTERM_NEW · window.MEDTERM_PRODUCTS 는 처음 꺼내 쓰는 순간 한 번만 읽어 돌려주는 게터가 된다(src/lib/mt.js 가 쓸 때 읽음).
 // 해석 가능한 JSON 인지는 여기서 빌드할 때 확인한다. '<' 는 \u003c 로 바꿔 덩어리 안에 </script·<!-- 가 있어도 HTML 이 끊기지 않게 한다(JSON 문자열 안의 \u003c 는 같은 글자).
-const LAZY = { 'medterm-new-data.js': ['MEDTERM_NEW', 'medterm-new-json'], 'medterm-products-data.js': ['MEDTERM_PRODUCTS', 'medterm-products-json'], 'medterm-law-data.js': ['MEDTERM_LAW', 'medterm-law-json'] };
+const LAZY = { 'medterm-new-data.js': ['MEDTERM_NEW', 'medterm-new-json'], 'medterm-products-data.js': ['MEDTERM_PRODUCTS', 'medterm-products-json'], 'medterm-law-data.js': ['MEDTERM_LAW', 'medterm-law-json'], 'medterm-review-data.js': ['MEDTERM_REVIEW', 'medterm-review-json'] };
 const lazyTag = (f) => {
   const [v, id] = LAZY[f]; const src = read(JS_DIR, f); const head = `window.${v}=`; const i = src.indexOf(head);
   if (i < 0) throw new Error(`${f}: ${head} 로 시작하는 자료를 찾지 못했습니다`);

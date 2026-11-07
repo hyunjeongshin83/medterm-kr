@@ -15,9 +15,10 @@
 | `medterm_kr_products.json` | **국내 제품(품목)**(v1.3.0): 심평원 의약품표준코드 기준 제품 58,178건(전문·일반 구분, 업체, 성분 구성, ATC, 허가년월, 한약제제 추정 표시). 열(columnar) 구조로 압축 | `build/prod_build.py` |
 | `product_lexicon.json` | 국내 제품 탭의 **묶음(ATC 앞부분 기준) · 증상어 대응표 · 한약제제 이름 규칙 · 안내문**. 수기 초안(미검수) | 수기 |
 | `medterm_law.json` | **약사법 용어·기구**(v1.4.0, 초안 0.1.1): 약사법 본문에서 뽑은 53개 항목(정의 용어 20 · 조직·위원회 11 · 약국·조제 업무 16 · 제도·정보시스템 6; 2026-11-12 시행 예정·개정 예정 3). 짧은 원문 발췌 + 쉬운 풀이(초안) + 시행 상태. 다른 자료와 이어지지 않는 독립 층 | `build/law_build.py` |
+| `review/pharmacist_reviews.json` | **약사 검수 기록**(v1.6.0): 약사가 앱에서 낸 확인서를 운영자가 면허 확인 후 합친 기록(판정·날짜·참고 자료 종류만, 메모·면허번호·연락처 없음). 지금은 비어 있음 | `tools/merge_pharmacist_reviews.py` |
 | `medterm_ext_review_shared_cd.tsv` | 심평원 일반명코드 **앞 4자리**가 둘 이상의 항목에 걸린 60건 — 사람이 보는 단서이며 합치는 열쇠가 아님 | `tools/review_sheet.py --shared` |
 
-화면·검증기가 읽는 JS 묶음(`web/js/medterm-data.js`, `web/js/medterm-ext-data.js`, v1.3.0 의 `web/js/medterm-new-data.js` · `web/js/medterm-products-data.js`, v1.4.0 의 `web/js/medterm-law-data.js`)은 `python build/make_bundle.py` 가 위 JSON 에서 만듭니다(직접 고치지 않습니다). 새 묶음 세 개는 JSON 파일이 있을 때만 만들어지고, 화면은 묶음이 없으면 이전과 똑같이(그 탭 없이) 동작합니다. 새 층들을 읽는 코드는 `web/js/layers.js`(읽기 전용, `core.js` 는 건드리지 않음)입니다.
+화면·검증기가 읽는 JS 묶음(`web/js/medterm-data.js`, `web/js/medterm-ext-data.js`, v1.3.0 의 `web/js/medterm-new-data.js` · `web/js/medterm-products-data.js`, v1.4.0 의 `web/js/medterm-law-data.js`, v1.6.0 의 `web/js/medterm-review-data.js`)은 `python build/make_bundle.py` 가 위 JSON 에서 만듭니다(직접 고치지 않습니다). 새 묶음 세 개는 JSON 파일이 있을 때만 만들어지고, 화면은 묶음이 없으면 이전과 똑같이(그 탭 없이) 동작합니다. 새 층들을 읽는 코드는 `web/js/layers.js`(읽기 전용, `core.js` 는 건드리지 않음)입니다.
 
 연결이 맞는지 재고 확인하는 도구는 `tools/` 에, 설명서는 `docs/` 에 있습니다: 판정 시트 만들기(`review_sheet.py`) · 두 약사의 일치도와 κ 계산(`review_agreement.py`) · 식약처 성분명과 심평원 일반명 대조(`compare_mfds_names.py`, 파일을 직접 주어야 하며 인터넷·서비스키를 쓰지 않음) · 염 정규화 규칙표(`norm_rules_table.py`) / `docs/약사검수_판정시트_안내.md` · `docs/염_정규화_규칙표.md`.
 
@@ -156,6 +157,15 @@
 - **약사법 쉬운 풀이 53개**: 출력본 본문과 항목마다 대조했습니다. 뜻이 어긋난 곳은 없었고 빠진 단서 11곳(예: 제2조 제9호의 고시 기준, 제23조의 약학 전공 대학생 예외, 제34조 제2항의 승인 면제)을 보강했습니다. 같은 확인에서 출력본에 시행일이 서로 다른 규정이 함께 실려 있음(2026-02-12 · 04-12 · 06-21 · 11-12)을 바로잡았습니다(이전 설명은 11-12 하나만 적었음).
 - **현행본**: 2026-11-06 국가법령정보센터 약사법 첫 화면의 현행 표시는 ‘시행 2026. 10. 8. 법률 제21525호(2026. 4. 7. 타법개정)’로 출력본(2026-02-07 출력)보다 나중 판입니다. 본문은 자바스크립트로 그려지는 화면이라 가져오지 못해 **대조하지 못했습니다**. 법제처 Open API(인증키 OC)를 신청하면 자동 대조가 가능합니다(신청은 이용자 몫).
 - **약사 검수에서 남은 것**: 성분 한글명·상품명이 약사 실무의 표기·통용 이름에 맞는지, 약사법 풀이가 업무 현실에 맞는지. 제형 한글명(수기 직역) · 계열명 · 확장 수록 3,526개의 한글 이름 · 제품-성분 연결은 이 대조의 범위가 아니며, 식약처 허가 정보와의 대조도 하지 않았습니다.
+
+## 약사 검수 기록 (`review/pharmacist_reviews.json`, v1.6.0, 2026-11-07)
+
+약사가 앱의 ‘약사 검수 참여’에서 낸 확인서를, **운영자가 약사 면허를 따로 확인한 뒤** `tools/merge_pharmacist_reviews.py` 로 합쳐 쌓는 기록입니다(절차: `docs/약사검수_참여_안내.md`). 지금은 **비어 있습니다**(아무도 판정하지 않음 — 모든 항목이 ‘약사 검수 전 초안’).
+
+- 구조: `meta`(형식 번호) · `reviewers`(검수자 번호 `P1`… → 공개에 동의한 경우에만 `name`·`affiliation`, 아니면 `{"public": false}` 만) · `reviews`(검수자 × 범위마다 `answers` — 항목 번호 → 판정 `v`(`ok`·`diff`·`unsure`)·항목 내용 표시 `h`·확인서 여부 `a`, 그리고 `refs`(참고한 자료 종류) · `updated` · `verified_on`(운영자가 면허를 확인한 날)).
+- 담지 않는 것: 약사의 **메모**(운영자 보고서에만 있음) · 면허번호 · 연락처 · 비공개 검수자의 이름·소속. `verified_on` 이 없는 기록은 현황에 세지 않습니다. 이 규칙은 `--check`(`python -I tools/merge_pharmacist_reviews.py --check`)와 `tests/test_review_merge.py` 가 지킵니다.
+- 검수 범위 둘: `names`(성분 한글명 32 + 국내 상품명 28 = 60개) · `law`(약사법 쉬운 풀이 53개). 항목의 ‘내용 표시’(`h`)는 항목 내용에서 만든 값이라, 사전 내용을 고치면 이전 판정이 ‘다시 확인 필요’로 빠집니다.
+- 현황(2단계·3단계 도달 여부)은 `build/review_lib.py` 가 이 기록과 지금 자료로 계산해, `python3 build/make_bundle.py` 가 `web/js/medterm-review-data.js`(`window.MEDTERM_REVIEW`)로 만듭니다. 직접 고치지 않습니다. 공개용 축소판(`build/make_lite.py`)도 이 기록을 그대로 복사해 같은 현황을 담습니다.
 
 ## 출처와 이용 조건
 

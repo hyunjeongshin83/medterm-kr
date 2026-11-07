@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { BENCH, DATA, META, XMETA, layers, mt } from '../lib/mt.js';
 import { LITE } from '../lib/edition.js';
-import { Badge, Card } from './ui.jsx';
+import { reviewSummary } from '../lib/review.js';
+import { Badge, Btn, Card } from './ui.jsx';
 import { nf } from './ExtParts.jsx';
 import { ExtLink } from './LayerParts.jsx';
+import { PharmacistSection } from './ReviewMode.jsx';
 
 const pct = (o) => `${o.k}/${o.n} (${Math.round((o.k / o.n) * 100)}%, 95% CI ${Math.round(o.lo * 100)}–${Math.round(o.hi * 100)}%)`;
 const sum = (d, prefix) => {
@@ -246,19 +249,36 @@ function reviewDone() {
     ...(hasLaw ? [[`약사법 쉬운 풀이 ${nf(layers.lawMeta.counts.entries)}개`, '법제처 약사법 출력본(2026-02-07 출력) 본문과 항목별로 대조해 의미가 어긋난 곳은 없었고, 빠진 단서 11곳을 보탰습니다.']] : []),
   ];
 }
-function reviewStages() {
+/* 2·3단계의 표시는 빌드가 계산해 담은 현황(window.MEDTERM_REVIEW.status; 운영자가 약사 면허를 확인해 합친 확인서만 센다)을 보여 줄 뿐, 이 화면이 스스로 정하지 않는다.
+   아무도 참여하지 않았으면(또는 검수 자료가 없으면) 예전과 같은 문구와 ‘아직’ 표시다. */
+const sNum = (r) => `${nf(r.answered)}/${nf(r.n)}`;
+function stageLines(S, stage) {
+  if (!S) return [];
+  return S.rows.map((r) => (stage === 2
+    ? `${r.label}: 판정 ${sNum(r)}개 · 맞다 ${nf(r.confirmed)} · 다르다 ${nf(r.issue)} · 모르겠다만 ${nf(r.unsure)}${r.need_recheck ? ` · 내용이 바뀌어 다시 확인할 것 ${nf(r.need_recheck)}` : ''}${r.stage2 ? ' → 모두 판정됨' : ''}`
+    : `${r.label}: 확인서로 ‘맞다’ ${nf(r.attested_confirmed)}/${nf(r.n)}개${r.stage3 ? ' → 완료' : ''}`));
+}
+function reviewStages(S) {
   const hasLaw = !!(layers && layers.hasLaw);
+  const live = !!(S && S.any2);
+  const b2 = live ? (S.all2 ? ['했음', 'ok'] : ['진행 중', 'info']) : ['아직', 'draft'];
+  const b3 = live && S.any3 ? (S.all3 ? ['완료', 'ok'] : ['진행 중', 'info']) : ['아직', 'draft'];
   return [
-    ['1단계 · 자료 대조', '했음', 'ok', `공식 자료끼리 맞춰 본 단계입니다. 성분 한글명과 상품명은 심평원 약가마스터·위키데이터와${hasLaw ? ', 약사법 쉬운 풀이는 법제처 출력본과' : ''} 대조했습니다(2026-11-06). 약학정보원 대조는 아직입니다(이용 허락 또는 사람의 열람이 필요).`],
-    ['2단계 · 약사 확인', '아직', 'draft', '약사가 검토 시트에서 항목마다 ‘맞다·다르다·모르겠다’를 표시하는 단계입니다. 확인한 사람의 이름과 날짜가 들어갈 자리입니다.'],
-    ['3단계 · 약사 검수 완료', '아직', 'draft', '약사가 책임지고 확인했다는 표시(검수자·날짜)가 붙는 단계입니다. 붙기 전까지 모든 항목은 ‘약사 검수 전 초안’입니다.'],
+    ['1단계 · 자료 대조', '했음', 'ok', `공식 자료끼리 맞춰 본 단계입니다. 성분 한글명과 상품명은 심평원 약가마스터·위키데이터와${hasLaw ? ', 약사법 쉬운 풀이는 법제처 출력본과' : ''} 대조했습니다(2026-11-06). 약학정보원 대조는 아직입니다(이용 허락 또는 사람의 열람이 필요).`, []],
+    ['2단계 · 약사 확인', b2[0], b2[1], '약사가 항목마다 ‘맞다·다르다·모르겠다’를 표시하는 단계입니다(검토 시트 또는 아래 ‘약사 검수 참여’ 화면). 운영자가 약사 면허를 확인한 표시만 셉니다. 확인한 사람의 이름은 본인이 공개에 동의한 경우에만 이 화면에 나옵니다.', live ? stageLines(S, 2) : []],
+    ['3단계 · 약사 검수 완료', b3[0], b3[1], live && S.all3
+      ? '면허를 확인한 약사가 모든 항목을 확인서로 ‘맞다’고 확인했습니다. 이후 내용을 고친 항목은 다시 확인받아야 합니다.'
+      : '모든 항목에 대해 면허를 확인한 약사가 확인서로 ‘맞다’고 표시하면 붙는 단계입니다(‘다르다’가 있는 항목은 고친 뒤 다시 확인받아야 합니다). 붙기 전까지 해당 항목은 ‘약사 검수 전 초안’입니다.', live && S.any3 ? stageLines(S, 3) : []],
   ];
 }
-function reviewTodo() {
+function reviewTodo(S) {
   const hasLaw = !!(layers && layers.hasLaw);
   const outside = ['제형 한글명(직역)', '계열명', ...(NX ? [`확장 수록 성분 ${nf(NX)}개의 자동 연결·한글 이름`] : []), ...(layers && layers.hasProducts ? ['제품 계층의 성분 연결'] : [])];
+  const live = !!(S && S.any2);
   return [
-    '약사 자격자의 검수는 받지 않았습니다. 위 대조는 자료끼리 맞춰 본 것입니다.',
+    ...(!live ? ['약사 자격자의 검수는 받지 않았습니다. 위 대조는 자료끼리 맞춰 본 것입니다.']
+      : S.all3 ? []
+        : ['약사 검수는 일부만 이루어졌습니다(위 2·3단계 현황). 판정이 없거나 ‘다르다’·‘모르겠다’인 항목과 약사가 확인하지 않은 범위는 아직 ‘약사 검수 전 초안’입니다.']),
     '약학정보원(health.kr)·약학정보 책과의 대조는 하지 않았습니다. 누리집이 허락 없는 복제·배포를 금하고 있어 자동으로 가져오지 않았고, 이용 문의 답을 받으면 진행합니다. 약사가 직접 화면을 열어 놓고 대조하는 검토 시트를 만들어 두었습니다(저장소 data/review/: 성분 한글명·상품명 60행' + (hasLaw ? ', 약사법 쉬운 풀이 53행' : '') + ').',
     ...(hasLaw ? ['약사법은 국가법령정보센터의 현행 시행본(2026-11-06 확인: 시행 2026-10-08, 법률 제21525호)과 아직 대조하지 못했습니다. 시행령·시행규칙도 수록하지 않았습니다.'] : []),
     '식약처(MFDS) 허가 정보와의 대조는 하지 않았습니다(공식 OpenAPI 인증키가 필요합니다).',
@@ -266,19 +286,28 @@ function reviewTodo() {
   ];
 }
 
-function ReviewSection() {
-  const REVIEW_DONE = reviewDone(); const REVIEW_TODO = reviewTodo();
+function ReviewSection({ onParticipate }) {
+  const S = reviewSummary(); const live = !!(S && S.any2);
+  const REVIEW_DONE = reviewDone(); const REVIEW_TODO = reviewTodo(S);
+  const who = live ? [...S.people.map((p) => `${p.name}${p.org ? `(${p.org})` : ''}`), ...(S.hidden ? [`비공개 약사 ${S.hidden}명`] : [])] : [];
   return (
-    <Section title="검수 상태 (2026-11-06 기준)" id="about-review">
-      <p className="mb-2 text-small text-mut">‘약사 검수 전’이라는 표시는 그대로입니다. 검수는 세 단계로 나누어 표시하며 지금은 1단계까지 했습니다. 아래는 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.</p>
+    <Section title={`검수 상태 (${live && S.asof ? S.asof : '2026-11-06'} 기준)`} id="about-review">
+      <p className="mb-2 text-small text-mut">
+        {live
+          ? '검수는 세 단계로 나누어 표시합니다. 1단계(자료 대조)는 끝났고, 2·3단계는 약사가 낸 확인서를 운영자가 면허를 확인해 합친 만큼만 채워집니다. 아래는 현황과, 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.'
+          : '‘약사 검수 전’이라는 표시는 그대로입니다. 검수는 세 단계로 나누어 표시하며 지금은 1단계까지 했습니다. 아래는 공식 자료와 맞춰 본 범위와 아직 하지 못한 일입니다.'}
+      </p>
       <ol className="mb-3 grid gap-2" data-review-stages="">
-        {reviewStages().map(([k, b, tone, d]) => (
+        {reviewStages(S).map(([k, b, tone, d, lines]) => (
           <li key={k} className="rounded-lg border border-line bg-bg px-3 py-2">
             <div className="flex flex-wrap items-center gap-2"><b className="text-ink">{k}</b><Badge tone={tone}>{b}</Badge></div>
             <p className="mt-0.5 text-small text-mut">{d}</p>
+            {lines.length > 0 && <ul data-review-progress="" className="mt-1 list-disc pl-5 text-small text-ink">{lines.map((t) => <li key={t}>{t}</li>)}</ul>}
           </li>
         ))}
       </ol>
+      {who.length > 0 && <p data-review-people="" className="mb-3 text-small text-ink">확인한 약사: {who.join(', ')}{S.asof ? ` · 마지막 면허 확인일 ${S.asof}` : ''}. 이름은 본인이 공개에 동의한 경우에만 나옵니다.</p>}
+      {S && onParticipate && <div className="mb-3"><Btn variant="secondary" onClick={onParticipate} data-review-cta="">약사이신가요? 검수에 참여하기</Btn></div>}
       <h4 className="mb-1 text-body-bold">공식 자료와 대조한 것</h4>
       <dl>
         {REVIEW_DONE.map(([k, v]) => (
@@ -381,7 +410,8 @@ function AttributionSection() {
   );
 }
 
-export function AboutTab() {
+export function AboutTab({ reviewReq = 0 }) {
+  const [pick, setPick] = useState(0); //  ‘검수 상태’의 안내 버튼을 누른 횟수. 주소 #review 로 들어온 횟수(reviewReq)와 합쳐 참여 카드에 알린다.
   const m = META;
   const neg = sum(BENCH.dev, 'N_');
   const pos = sum(BENCH.dev, 'E_');
@@ -413,7 +443,8 @@ export function AboutTab() {
         <p className="mt-2 text-small text-mut">{m.notice}</p>
       </Section>
 
-      <ReviewSection />
+      <ReviewSection onParticipate={() => setPick((n) => n + 1)} />
+      <PharmacistSection req={reviewReq + pick} />
 
       <ExtSection />
 
