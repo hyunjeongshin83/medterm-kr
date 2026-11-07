@@ -25,7 +25,7 @@ here = os.path.dirname(os.path.abspath(__file__)); root = os.path.dirname(here)
 sys.path.insert(0, os.path.join(root, 'build'))
 import review_lib as RL  # noqa: E402
 
-VERSION = '1.1'   # 1.1: 구글 시트 스크립트에 앱 접수(웹 앱) 추가 — 분석 논리는 그대로(두 도구의 판 번호는 같게 둔다)
+VERSION = '1.2'   # 1.2: 구글 시트 스크립트에 연구자 페이지(연구자가 메일 인증 뒤 요약 메일 받을 주소를 직접 등록) 추가 — 분석 논리는 그대로(두 도구의 판 번호는 같게 둔다)
 V_KEYS = ('ok', 'diff', 'unsure')
 V_LABEL = {'ok': '맞다', 'diff': '다르다', 'unsure': '모르겠다'}
 REF_LABEL = {'health.kr': '약학정보원', 'mfds': '식약처', 'book': '교재·서적', 'law': '법령', 'other': '기타'}

@@ -11,7 +11,10 @@
  *  ② ‘연구 이용 동의’ 와 ‘면허확인(운영자 기입)’ 이 모두 있는 응답만 분석에 씁니다. 약사는 R01, R02… 가명으로만 나옵니다.
  *  ③ 가명으로 만든 분석은 따로 만든 새 시트 파일(‘MedTerm-KR 약사 검수 분석(가명…)’)에 적습니다 — 연구자와 나눌 때는 이 파일만 나눕니다.
  *     이름·소속이 든 ‘가명표(운영자만)’ 와 메모가 든 ‘메모(운영자만)’ 는 이 응답 시트 안에만 있습니다(나만 편집 가능으로 보호; 시트 파일 자체를 남에게 나누면 보입니다).
- *  ④ 매주 월요일 아침 요약 메일을 한 주소로 보냅니다: 접수 현황 · 판정 분포 · S-CVI · 일치도 · ‘다르다’ 많은 항목. 이름·소속·메모·원본 글은 담지 않으며, 보내기 전에 한 번 더 검사해 섞였으면 보내지 않습니다.
+ *  ④ 매주 월요일 아침 요약 메일을 보냅니다: 접수 현황 · 판정 분포 · S-CVI · 일치도 · ‘다르다’ 많은 항목. 이름·소속·메모·원본 글은 담지 않으며, 보내기 전에 한 번 더 검사해 섞였으면 보내지 않습니다.
+ *     받는 곳 = 운영자 주소(SUMMARY_TO) + 연구자가 연구자 페이지에서 직접 등록한 주소(최대 5개). 주소마다 한 통씩 따로 보냅니다(받는 사람끼리 주소가 안 보임).
+ *  ⑤ (연구자 페이지) 웹 앱 주소 끝에 ?page=researcher 를 붙여 열면, 운영자가 메뉴로 지정한 연구자가 메일 인증 번호로 로그인해 요약 메일 받을 주소를 직접 넣고 뺄 수 있습니다.
+ *     다른 사람 주소는 그 주소로 간 인증 번호까지 입력해야 등록됩니다. 이 페이지는 확인서·분석 내용을 보여 주지 않습니다.
  *
  * 하지 않는 일: 인터넷 다른 곳에 접속(UrlFetchApp 등)하지 않습니다 · 약사 면허를 확인하지 않습니다(운영자가 직접) · 판정을 만들어 내지 않습니다 · 확인서를 약사 DB 에 합치지 않습니다(합치기는 tools/merge_pharmacist_reviews.py).
  * 받을 주소는 코드에 적지 않고 ‘스크립트 속성’ SUMMARY_TO 에 둡니다(메뉴 MedTerm-KR → 처음 설정).
@@ -19,7 +22,7 @@
  * 같은 계산을 tools/review_research_report.py(파이썬)도 합니다. 두 결과가 같은지 tests/test_review_inbox.py 가 가짜 응답으로 대조합니다.
  * 이 줄 아래 MANIFEST 는 tools/make_review_inbox_script.py 가 data/ 의 검수 항목으로 만듭니다(자료가 바뀌면 다시 만들어 붙여 넣기).
  */
-var SCRIPT_VERSION = '1.1';
+var SCRIPT_VERSION = '1.2';
 var MANIFEST = /*MANIFEST*/{"scopes":{
 "names":{"label":"성분 한글명·국내 상품명","hash":"a42f57e6f1b0","items":[
 {"id":"N-161","no":1,"h":"0579f93d78","label":"1. 아세트아미노펜"},
@@ -580,23 +583,33 @@ var RI = (function () {
 
 // ═════════════ 구글 서비스 연결 — 시트·메일·트리거 ═════════════
 var PROP = { TO: 'SUMMARY_TO', RESP: 'RESPONSE_SHEET', ANALYSIS: 'ANALYSIS_SSID', LAST_MAIL: 'LAST_MAIL', DEMO: 'DEMO_MODE',
-  OPEN: 'INTAKE_OPEN', VERSION: 'CONSENT_VERSION', SS: 'SS_ID', DIRTY: 'INTAKE_DIRTY', MAX_ROWS: 'INTAKE_MAX_ROWS' };
+  OPEN: 'INTAKE_OPEN', VERSION: 'CONSENT_VERSION', SS: 'SS_ID', DIRTY: 'INTAKE_DIRTY', MAX_ROWS: 'INTAKE_MAX_ROWS',
+  RESEARCHERS: 'RESEARCHERS', RECIPIENTS: 'RECIPIENTS', RLOG: 'RESEARCHER_LOG', RATE: 'AUTH_RATE', MAIL_DAY: 'MAIL_DAY', OTP_DAY: 'OTP_DAY', DOMAINS: 'RECIPIENT_DOMAINS' };
 var SHEET = { check: '접수 점검', link: '가명표(운영자만)', memo: '메모(운영자만)', resp: '응답' };
 // 앱 접수가 적는 ‘응답’ 시트의 머리글. 점검 코드가 열 제목의 글자(‘연구 이용’+‘동의’, ‘면허’)로 열을 찾으므로 1단계 동의 열 제목에는 ‘연구 이용’을, 다른 열에는 ‘면허’를 넣지 않는다.
 var RESP_HEADER = ['타임스탬프', '확인서(JSON)', '개인정보 수집·이용 동의(1단계·필수)', '연구 이용 동의(2단계·선택)', '면허확인(운영자 기입)', '접수 경로', '동의서 버전', '앱 버전'];
+// 연구자가 등록한 주소로 가는 요약 메일 끝에만 붙는 안내(운영자 주소로 가는 메일에는 없음)
+var FOOT_TEXT = '\n— 이 메일은 연구자 페이지에서 등록된 주소로 보냈습니다. 그만 받으려면 연구자 페이지에서 이 주소를 지우거나 운영자에게 알려 주세요.\n';
+var FOOT_HTML = '<p style="margin:8px 0 0;font-size:12.5px;color:#52514e">이 메일은 연구자 페이지에서 등록된 주소로 보냈습니다. 그만 받으려면 연구자 페이지에서 이 주소를 지우거나 운영자에게 알려 주세요.</p>';
 var GATE_NOTE = {
   research_consent: '연구 이용 동의 없음 — 분석에서 제외', license: '면허 확인 전 — 면허확인 열에 Y 를 적으면 다음 점검부터 반영',
   gate_unknown: '연구 이용 동의·면허확인 열을 찾지 못함 — 열 이름을 확인하세요'
 };
 
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('MedTerm-KR')
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('MedTerm-KR')
     .addItem('처음 설정(받을 주소·자동 실행)', 'setup')
     .addItem('앱 접수 열기(동의서 버전 맞추기)', 'openIntake')
     .addItem('앱 접수 닫기', 'closeIntake')
     .addItem('앱 접수 상태 보기', 'intakeStatus')
     .addItem('지금 점검·분석 새로 만들기', 'refreshNow')
     .addItem('요약 메일 지금 보내기', 'sendSummaryNow')
+    .addSubMenu(ui.createMenu('연구자 페이지')
+      .addItem('연구자 지정(메일 인증 허용)', 'addResearcher')
+      .addItem('연구자 지정 취소', 'removeResearcher')
+      .addItem('받는 주소 지우기(운영자)', 'removeRecipient')
+      .addItem('연구자 페이지 현황·주소', 'researcherStatus'))
     .addToUi();
 }
 
@@ -632,10 +645,21 @@ function setup() {
     (appRoute ? '\n앱으로 받으려면: ① 오른쪽 위 ‘배포’ → 새 배포 → 웹 앱(실행: 나, 액세스: 모든 사용자)으로 배포해 주소를 앱에 넣고 ② 메뉴 ‘앱 접수 열기’에서 동의서 버전을 적어 주세요.' : '') +
     (hasForm ? '\n※ 구글 폼이 연결된 시트입니다. 앱 접수와 한 시트 파일에서 섞어 쓰지 마세요.' : ''));
 }
-function onFormSubmitCheck() { refresh_(false); }
-function weeklySummary() { refresh_(true); }
+/** 구글이 그 함수의 자동 실행을 돌릴 때만 true. 자동 실행은 이벤트에 자기 번호(triggerUid)를 담아 보내고, 그 번호가 이 프로젝트에 설치된 자동 실행 중 “이 함수(fn)를 돌리는 것”의 번호와 같아야 한다(다른 함수의 자동 실행 번호로는 통하지 않는다).
+ *  이름 끝에 밑줄이 없는 함수는 웹 앱 화면의 google.script.run 으로 아무나 부를 수 있으므로, 메일을 보내거나 시트를 다시 쓰는 자동 실행 함수는 이 확인을 거친다. */
+function fromTrigger_(e, fn) {
+  var uid = e && typeof e === 'object' ? e.triggerUid : null;
+  if (uid === null || uid === undefined || uid === '') return false;
+  var ts = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < ts.length; i++) if (String(ts[i].getUniqueId()) === String(uid) && ts[i].getHandlerFunction() === fn) return true;
+  return false;
+}
+function notTrigger_(name) { Logger.log(name + ': 자동 실행이 아닌 곳에서 불려 아무것도 하지 않았습니다 — 메뉴 MedTerm-KR 를 쓰세요'); }
+function onFormSubmitCheck(e) { if (!fromTrigger_(e, 'onFormSubmitCheck')) return notTrigger_('onFormSubmitCheck'); refresh_(false); }
+function weeklySummary(e) { if (!fromTrigger_(e, 'weeklySummary')) return notTrigger_('weeklySummary'); refresh_(true); }
 /** 앱 접수로 새 응답이 들어왔을 때만(표시가 있을 때) 점검·분석을 새로 만든다. 한 시간마다 도는 자동 실행이며, 메일은 보내지 않는다. */
-function hourlyCheck() {
+function hourlyCheck(e) {
+  if (!fromTrigger_(e, 'hourlyCheck')) return notTrigger_('hourlyCheck');
   var p = PropertiesService.getScriptProperties();
   if (p.getProperty(PROP.DIRTY) !== '1') return;
   p.deleteProperty(PROP.DIRTY);
@@ -710,8 +734,12 @@ function intakeStatus() {
 }
 
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
-/** 웹 앱 확인용(주소를 브라우저로 열면 접수가 열렸는지만 알려 줌). 시트 내용은 돌려주지 않는다. */
-function doGet() { return json_({ ok: true, kind: 'medterm-kr-intake/1', open: isOpen_(PropertiesService.getScriptProperties()) }); }
+/** 웹 앱 주소를 브라우저로 열면: 그대로면 접수가 열렸는지만 알려 주고(시트 내용은 돌려주지 않음), 주소 끝에 ?page=researcher 가 있으면 연구자 페이지를 보여 준다. */
+function doGet(e) {
+  var page = e && e.parameter && typeof e.parameter.page === 'string' ? e.parameter.page : '';
+  if (page === 'researcher') return HtmlService.createHtmlOutput(RESEARCHER_HTML).setTitle('MedTerm-KR 연구자 페이지').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  return json_({ ok: true, kind: 'medterm-kr-intake/1', open: isOpen_(PropertiesService.getScriptProperties()) });
+}
 /** 앱의 ‘보내기’가 부르는 곳. 검사에 통과한 확인서만 ‘응답’ 시트에 한 줄 적고, 어긋나면 이유 코드만 돌려준다(시트 내용은 돌려주지 않음). */
 function doPost(e) { return json_(intakeRun_(e && e.postData && typeof e.postData.contents === 'string' ? e.postData.contents : '')); }
 function intakeRun_(body) {
@@ -739,6 +767,300 @@ function intakeRun_(body) {
   } finally { lock.releaseLock(); }
 }
 
+// ═════════════ 연구자 페이지 — 연구자가 메일 인증을 거쳐 요약 메일 받을 주소를 직접 등록·삭제 ═════════════
+// 흐름: ① 운영자가 메뉴로 ‘연구자’ 메일 주소를 지정(RESEARCHERS) → ② 연구자가 웹 앱 주소 끝에 ?page=researcher 를 붙여 열고 자기 주소로 인증 번호(6자리)를 받아 입력(로그인) →
+//       ③ 받을 주소를 추가(자기 주소는 바로, 다른 주소는 그 주소로 간 인증 번호까지 받아 입력해야)·삭제(RECIPIENTS, 최대 5개). 매주 요약 메일은 운영자 주소(SUMMARY_TO)와 이 주소들에 한 통씩 따로 간다.
+// 이 페이지는 확인서·분석 내용을 보여 주지 않는다. 인증 번호·로그인 표는 캐시에 해시로만 두고, 지정·등록·기록은 스크립트 속성에 둔다. 인증 메일은 하루 20통, 같은 주소에는 한 시간 3번까지.
+// 주의: 이름 끝에 밑줄이 없는 함수는 웹 앱 화면의 google.script.run 으로 누구나 부를 수 있다 →
+//       (1) 메뉴 함수는 맨 앞에서 getUi() 를 불러 시트 화면 밖에서는 아무것도 바꾸기 전에 오류가 나게 하고 (2) 자동 실행 함수는 구글이 넘긴 자동 실행 번호를 확인하며 (3) researcherApi 는 로그인한 연구자만 바꾸게 한다.
+var RLIM = { codeTtl: 600, tries: 5, perHour: 3, otpPerDay: 20, mailPerDay: 60, sessIdle: 1800, sessMax: 7200, maxRecipients: 5, maxResearchers: 3, logKeep: 40, bodyMax: 2000 };
+
+function jget_(props, key, dflt) {
+  var s = props.getProperty(key);
+  if (!s) return dflt;
+  try { var v = JSON.parse(s); return v === null || v === undefined ? dflt : v; } catch (e) { return dflt; }
+}
+function jset_(props, key, v) { props.setProperty(key, JSON.stringify(v)); }
+function today_() { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'); }
+function trim_(x) { return String(x).trim(); }
+/** 메일 주소를 소문자로 바꿔 검사한다(모양이 아니면 ''). 쉼표·공백·꺾쇠·여러 개·너무 긴 글은 모두 거른다 — 이 글이 그대로 메일 보내기에 쓰이기 때문. */
+function normEmail_(s) {
+  if (typeof s !== 'string') return '';   // 글자가 아닌 값(숫자·배열·객체)은 주소로 보지 않는다
+  s = s.trim().toLowerCase();
+  if (s.length < 6 || s.length > 100) return '';
+  if (!/^[a-z0-9][a-z0-9._+-]*@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/.test(s)) return '';
+  if (s.indexOf('..') >= 0 || !RI.validEmail(s)) return '';
+  return s;
+}
+function maskEmail_(a) {
+  var p = String(a).split('@'), l = p[0] || '';
+  return (l.length <= 2 ? l.charAt(0) : l.slice(0, 2)) + '***@' + (p[1] || '');
+}
+function sha_(s) {   // 구글의 digest 는 부호 있는 바이트(-128~127)를 돌려주므로 0~255 로 바꿔 16진수로
+  var b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8), o = '';
+  for (var i = 0; i < b.length; i++) o += ('0' + ((b[i] + 256) % 256).toString(16)).slice(-2);
+  return o;
+}
+function rnd_(n) { var s = ''; while (s.length < n) s += Utilities.getUuid().replace(/-/g, ''); return s.slice(0, n); }
+function code6_() { return ('00000' + (parseInt(rnd_(12), 16) % 1000000)).slice(-6); }
+
+function researchers_(props) {
+  var out = [], raw = jget_(props, PROP.RESEARCHERS, []);
+  if (!Array.isArray(raw)) raw = [];
+  raw.forEach(function (a) { var n = typeof a === 'string' ? normEmail_(a) : ''; if (n && out.indexOf(n) < 0) out.push(n); });
+  return out.slice(0, RLIM.maxResearchers);
+}
+function recipients_(props) {
+  var out = [], seen = {}, raw = jget_(props, PROP.RECIPIENTS, []);
+  if (!Array.isArray(raw)) raw = [];
+  raw.forEach(function (r) {
+    var n = r && typeof r.a === 'string' ? normEmail_(r.a) : '';
+    if (n && !seen[n]) { seen[n] = 1; out.push({ a: n, by: typeof r.by === 'string' ? normEmail_(r.by) : '', at: typeof r.at === 'string' && /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$/.test(r.at) ? r.at : '' }); }   // 손으로 고친 값이 화면·삭제 기준에 섞이지 않도록 모양을 맞춘다
+  });
+  return out.slice(0, RLIM.maxRecipients);
+}
+function domainsOf_(props) { return String(props.getProperty(PROP.DOMAINS) || '').toLowerCase().split(',').map(trim_).filter(function (x) { return x; }); }
+function domainOk_(props, a) { var d = domainsOf_(props); return !d.length || d.indexOf(a.split('@')[1]) >= 0; }
+function rlog_(props, text) {
+  var L = jget_(props, PROP.RLOG, []);
+  if (!Array.isArray(L)) L = [];
+  L.push(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') + ' ' + text);
+  jset_(props, PROP.RLOG, L.slice(-RLIM.logKeep));
+}
+/** 같은 열쇠가 한 시간에 limit 번을 넘으면 false(넘지 않으면 이번 시각을 적고 true). 지정된 연구자 주소 때만 부르므로 아무 주소나 넣어 속성이 불어나지 않는다. */
+function rateOk_(props, key, now, limit) {
+  var st = jget_(props, PROP.RATE, {}), cut = now - 3600000, out = {}, k;
+  if (!st || typeof st !== 'object' || Array.isArray(st)) st = {};
+  for (k in st) {
+    if (Object.prototype.hasOwnProperty.call(st, k) && Array.isArray(st[k])) {
+      var keep = st[k].filter(function (t) { return typeof t === 'number' && t > cut; });
+      if (keep.length) out[k] = keep;
+    }
+  }
+  var a = out[key] || [];
+  if (a.length >= limit) { jset_(props, PROP.RATE, out); return false; }
+  a.push(now); out[key] = a; jset_(props, PROP.RATE, out);
+  return true;
+}
+/** 하루 상한: 오늘 쓴 횟수가 cap 이상이면 false, 아니면 1 올리고 true */
+function dayCap_(props, key, day, cap) {
+  var p = String(props.getProperty(key) || '').split(':'), n = p[0] === day ? (+p[1] || 0) : 0;
+  if (n >= cap) return false;
+  props.setProperty(key, day + ':' + (n + 1));
+  return true;
+}
+function withLock_(ms, fn, onBusy) {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(ms); } catch (e) { return onBusy(); }
+  try { return fn(); } finally { lock.releaseLock(); }
+}
+
+/** 모든 메일은 여기로만 나간다(받는 주소는 한 개 · 하루 60통 상한 · 첨부·참조 없음). kind: 'summary'(주간 요약) | 'otp'(인증 번호) */
+function sendMail_(kind, to, subject, body, html, name) {
+  var props = PropertiesService.getScriptProperties();
+  if (!RI.validEmail(to)) throw new Error('받는 주소 모양이 이상합니다');
+  if (!dayCap_(props, PROP.MAIL_DAY, today_(), RLIM.mailPerDay)) throw new Error('하루 메일 한도(' + RLIM.mailPerDay + '통)에 도달했습니다');
+  var msg = { to: to, subject: subject, body: body, name: name };
+  if (html) msg.htmlBody = html;
+  MailApp.sendEmail(msg);
+}
+function loginMail_(code) {
+  return { subject: '[MedTerm-KR] 연구자 페이지 인증 번호',
+    body: 'MedTerm-KR 연구자 페이지 인증 번호: ' + code + '\n\n연구자 페이지에 ' + Math.round(RLIM.codeTtl / 60) + '분 안에 입력하세요(틀려도 ' + RLIM.tries + '번까지 다시 해 볼 수 있습니다).\n' +
+      '본인이 요청하지 않았다면 이 메일을 무시하세요. 인증 번호는 다른 사람에게 알려 주지 마세요.\n' };
+}
+function addMail_(code, by) {
+  return { subject: '[MedTerm-KR] 요약 메일 받을 주소 등록 인증 번호',
+    body: 'MedTerm-KR 약사 확인서 주간 요약 메일을 이 주소로 받겠다는 등록 요청이 있었습니다.\n요청한 연구자: ' + maskEmail_(by) + '\n\n인증 번호: ' + code + '\n\n' +
+      '이 주소로 받기를 원하면 요청한 연구자에게 위 번호를 알려 주세요(' + Math.round(RLIM.codeTtl / 60) + '분 안). 번호를 알려 주지 않으면 등록되지 않습니다. 모르는 요청이면 무시하세요.\n' +
+      '받게 될 메일: 매주 월요일 아침의 약사 확인서 접수 현황·판정 분포·일치도 집계. 이름·소속·메모·원본 글은 들어 있지 않습니다. 언제든 연구자 페이지에서 지울 수 있습니다.\n' };
+}
+
+// 인증 번호: 캐시에는 번호 자체가 아니라 (임의 소금 + 번호)의 해시만 둔다. 5번 틀리면 지우고, 10분이 지나면 캐시가 알아서 지운다. 캐시가 일찍 비워져도 ‘번호가 맞지 않음’으로 닫힐 뿐 열리지 않는다.
+function codeKey_(kind, who, target) { return 'otp:' + kind + ':' + sha_(who + '|' + target).slice(0, 40); }
+function issueCode_(cache, kind, who, target, now) {
+  var code = code6_(), salt = rnd_(16);
+  cache.put(codeKey_(kind, who, target), JSON.stringify({ s: salt, h: sha_(salt + ':' + code), n: 0, t: now }), RLIM.codeTtl);
+  return code;
+}
+function checkCode_(cache, kind, who, target, code, now) {
+  var key = codeKey_(kind, who, target), raw = cache.get(key), st, left;
+  if (!raw) return 'bad';
+  try { st = JSON.parse(raw); } catch (e) { cache.remove(key); return 'bad'; }
+  code = String(code === null || code === undefined ? '' : code).replace(/\s+/g, '');
+  if (!st || typeof st.s !== 'string' || typeof st.h !== 'string' || !(st.n < RLIM.tries)) { cache.remove(key); return 'bad'; }
+  if (/^[0-9]{6}$/.test(code) && sha_(st.s + ':' + code) === st.h) { cache.remove(key); return 'ok'; }
+  st.n += 1;
+  left = RLIM.codeTtl - Math.floor((now - st.t) / 1000);
+  if (st.n >= RLIM.tries || left < 1) cache.remove(key); else cache.put(key, JSON.stringify(st), left);
+  return 'bad';
+}
+// 로그인 표(세션): 임의의 긴 글(토큰)을 화면에 주고, 캐시에는 그 해시를 열쇠로 두는 연구자 주소·시작 시각만 둔다. 쓰지 않고 30분이면 끝나고, 처음부터 2시간이면 끝난다. 지정이 취소된 연구자의 표는 바로 쓸 수 없게 된다.
+function newSession_(cache, addr, now) {
+  var tok = rnd_(48);
+  cache.put('sess:' + sha_(tok), JSON.stringify({ a: addr, t: now }), RLIM.sessIdle);
+  return tok;
+}
+function readSession_(cache, tok, props, now) {
+  if (typeof tok !== 'string' || !/^[0-9a-f]{48}$/.test(tok)) return '';
+  var key = 'sess:' + sha_(tok), raw = cache.get(key), st;
+  if (!raw) return '';
+  try { st = JSON.parse(raw); } catch (e) { cache.remove(key); return ''; }
+  if (!st || typeof st.a !== 'string' || typeof st.t !== 'number' || now - st.t > RLIM.sessMax * 1000 || researchers_(props).indexOf(st.a) < 0) { cache.remove(key); return ''; }
+  cache.put(key, raw, RLIM.sessIdle);
+  return st.a;
+}
+
+function stateOf_(props, me) {
+  var to = normEmail_(props.getProperty(PROP.TO) || '');
+  return { ok: true, me: me, operator: to ? maskEmail_(to) : '', recipients: recipients_(props).map(function (r) { return { a: r.a, at: r.at }; }),
+    max: RLIM.maxRecipients, domains: domainsOf_(props), idleMin: Math.round(RLIM.sessIdle / 60) };
+}
+function addRecipient_(props, a, by, now) {
+  var list = recipients_(props);
+  list.push({ a: a, by: by, at: Utilities.formatDate(new Date(now), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') });
+  jset_(props, PROP.RECIPIENTS, list);
+  rlog_(props, '받는 주소 추가 ' + a + ' (등록 ' + by + ')');
+  var s = stateOf_(props, by);
+  s.step = 'done'; s.msg = '받는 주소에 추가했습니다. 다음 주 월요일 아침부터 이 주소로도 요약 메일이 갑니다.';
+  return s;
+}
+
+/** 연구자 페이지가 부르는 단 하나의 입구. 글(JSON) 하나를 받아 글(JSON) 하나를 돌려준다. 오류 내용은 화면에 내지 않고 기록에만 남긴다. */
+function researcherApi(text) {
+  var out;
+  try { out = researcherRun_(text); }
+  catch (err) { Logger.log('연구자 페이지 오류: ' + err); out = { ok: false, code: 'server', msg: '처리 중 오류가 났습니다. 잠시 뒤 다시 해 보세요.' }; }
+  return JSON.stringify(out);
+}
+function researcherRun_(text) {
+  var props = PropertiesService.getScriptProperties(), q = null;
+  var badReq = { ok: false, code: 'bad_request', msg: '요청 모양이 맞지 않습니다. 페이지를 새로 고쳐 주세요.' };
+  if (typeof text !== 'string' || !text.length || text.length > RLIM.bodyMax) return badReq;
+  try { q = JSON.parse(text); } catch (e) { q = null; }
+  if (!q || typeof q !== 'object' || Array.isArray(q) || typeof q.op !== 'string') return badReq;
+  if (q.op === 'ping') return { ok: true, kind: 'medterm-kr-researcher/1', ver: SCRIPT_VERSION, enabled: researchers_(props).length > 0 };
+  return withLock_(10000, function () { return researcherOp_(q, props); }, function () { return { ok: false, code: 'busy', msg: '지금 다른 작업이 돌고 있습니다. 잠시 뒤 다시 해 주세요.' }; });
+}
+function researcherOp_(q, props) {
+  var cache = CacheService.getScriptCache(), now = new Date().getTime(), day = today_(), op = q.op, me, a, m, list, keep, s;
+  var field = function (k) { return typeof q[k] === 'string' && q[k].length <= 200 ? q[k] : ''; };
+  var badMail = { ok: false, code: 'email', msg: '메일 주소 모양이 아닙니다.' };
+  var generic = { ok: true, msg: '등록된 연구자 주소라면 인증 번호를 보냈습니다. ' + Math.round(RLIM.codeTtl / 60) + '분 안에 입력하세요. 안 오면 스팸함을 보세요(한 시간에 ' + RLIM.perHour + '번까지 받을 수 있습니다).' };
+  var badCode = { ok: false, code: 'bad_code', msg: '번호가 맞지 않거나 시간이 지났습니다. 새 번호를 받아 다시 해 주세요.' };
+  var needAuth = { ok: false, code: 'auth', msg: '인증이 끝났습니다(' + Math.round(RLIM.sessIdle / 60) + '분 동안 쓰지 않았거나 지정이 바뀌었습니다). 다시 인증해 주세요.' };
+
+  if (op === 'code') {   // 로그인용 인증 번호. 지정된 주소인지는 답으로 알려 주지 않는다(누구나 똑같은 답)
+    a = normEmail_(field('email'));
+    if (!a) return badMail;
+    if (researchers_(props).indexOf(a) < 0) return generic;
+    if (!rateOk_(props, 'c:' + sha_(a).slice(0, 12), now, RLIM.perHour)) return generic;
+    if (!dayCap_(props, PROP.OTP_DAY, day, RLIM.otpPerDay)) return generic;
+    try { m = loginMail_(issueCode_(cache, 'login', a, '', now)); sendMail_('otp', a, m.subject, m.body, '', 'MedTerm-KR 연구자 인증'); } catch (e) { Logger.log('인증 메일을 보내지 못했습니다: ' + e); }
+    return generic;
+  }
+  if (op === 'login') {
+    a = normEmail_(field('email'));
+    if (!a || researchers_(props).indexOf(a) < 0) return badCode;
+    if (checkCode_(cache, 'login', a, '', field('code'), now) !== 'ok') return badCode;
+    rlog_(props, '로그인 ' + a);
+    return { ok: true, token: newSession_(cache, a, now), me: a, idleMin: Math.round(RLIM.sessIdle / 60) };
+  }
+  // 여기부터는 로그인한 연구자만
+  me = readSession_(cache, field('token'), props, now);
+  if (!me) return needAuth;
+  if (op === 'state') return stateOf_(props, me);
+  if (op === 'logout') { cache.remove('sess:' + sha_(field('token'))); return { ok: true }; }
+  if (op === 'add' || op === 'verify') {
+    a = normEmail_(field('email'));
+    if (!a) return badMail;
+    if (!domainOk_(props, a)) return { ok: false, code: 'domain', msg: '운영자가 허용한 도메인(' + domainsOf_(props).join(', ') + ')의 주소만 등록할 수 있습니다.' };
+    list = recipients_(props);
+    if (a === normEmail_(props.getProperty(PROP.TO) || '') || list.some(function (r) { return r.a === a; })) return { ok: false, code: 'dup', msg: '이미 요약 메일을 받는 주소입니다.' };
+    if (list.length >= RLIM.maxRecipients) return { ok: false, code: 'full', msg: '연구자가 등록할 수 있는 주소는 최대 ' + RLIM.maxRecipients + '개입니다. 하나를 지운 뒤 추가해 주세요.' };
+    if (op === 'verify') {
+      if (checkCode_(cache, 'add', me, a, field('code'), now) !== 'ok') return badCode;
+      return addRecipient_(props, a, me, now);
+    }
+    if (a === me) return addRecipient_(props, a, me, now);   // 방금 메일 인증을 마친 본인 주소
+    if (!rateOk_(props, 'v:' + sha_(me).slice(0, 12), now, RLIM.perHour)) return { ok: false, code: 'wait', msg: '인증 번호를 너무 자주 요청했습니다. 한 시간 뒤에 다시 해 주세요(한 시간에 ' + RLIM.perHour + '번).' };
+    if (!dayCap_(props, PROP.OTP_DAY, day, RLIM.otpPerDay)) return { ok: false, code: 'wait', msg: '오늘은 인증 메일을 더 보낼 수 없습니다. 내일 다시 해 주세요.' };
+    m = addMail_(issueCode_(cache, 'add', me, a, now), me);
+    try { sendMail_('otp', a, m.subject, m.body, '', 'MedTerm-KR 연구자 인증'); }
+    catch (e) { Logger.log('인증 메일을 보내지 못했습니다: ' + e); return { ok: false, code: 'mail', msg: '그 주소로 메일을 보내지 못했습니다. 주소를 확인하거나 잠시 뒤 다시 해 주세요.' }; }
+    rlog_(props, '주소 인증 번호 보냄 ' + a + ' (요청 ' + me + ')');
+    return { ok: true, step: 'verify', msg: '그 주소로 인증 번호를 보냈습니다. 그 주소를 쓰는 분에게 번호를 받아 아래에 입력하세요(' + Math.round(RLIM.codeTtl / 60) + '분 안).' };
+  }
+  if (op === 'remove') {
+    a = normEmail_(field('email'));
+    list = recipients_(props);
+    keep = list.filter(function (r) { return r.a !== a; });
+    if (!a || keep.length === list.length) return { ok: false, code: 'none', msg: '그 주소는 등록돼 있지 않습니다.' };
+    jset_(props, PROP.RECIPIENTS, keep);
+    rlog_(props, '받는 주소 삭제 ' + a + ' (삭제 ' + me + ')');
+    s = stateOf_(props, me);
+    s.step = 'removed'; s.msg = '지웠습니다. 다음 요약 메일부터 이 주소로는 가지 않습니다.';
+    return s;
+  }
+  return { ok: false, code: 'bad_request', msg: '모르는 요청입니다. 페이지를 새로 고쳐 주세요.' };
+}
+
+// ── 운영자 메뉴(시트 화면에서만 돈다: 맨 앞의 getUi() 가 시트 화면 밖에서는 오류를 내므로, 웹 앱 화면의 google.script.run 으로는 아무것도 바뀌지 않는다) ──
+function addResearcher() {
+  var ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties(), list = researchers_(props);
+  var r = ui.prompt('연구자 지정 — 인증을 허용할 메일 주소(한 개)', '연구자 페이지에서 인증 번호를 받을 수 있는 주소입니다(예: 연구 책임자의 학교 메일).\n지금 지정: ' + (list.length ? list.join(', ') : '없음') + ' (최대 ' + RLIM.maxResearchers + '명)', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var a = normEmail_(r.getResponseText());
+  if (!a) { ui.alert('메일 주소 모양이 아닙니다. 다시 실행해 주세요.'); return; }
+  if (list.indexOf(a) >= 0) { ui.alert('이미 지정된 주소입니다.'); return; }
+  if (list.length >= RLIM.maxResearchers) { ui.alert('연구자는 최대 ' + RLIM.maxResearchers + '명까지 지정할 수 있습니다. 먼저 한 명의 지정을 취소해 주세요.'); return; }
+  var done = withLock_(15000, function () { var cur = researchers_(props); if (cur.indexOf(a) < 0) cur.push(a); jset_(props, PROP.RESEARCHERS, cur); rlog_(props, '연구자 지정 ' + a); return true; }, function () { return false; });
+  ui.alert(done ? '연구자로 지정했습니다: ' + a + '\n연구자 페이지 주소는 웹 앱 주소 끝에 ?page=researcher 를 붙인 것입니다(메뉴 “연구자 페이지 현황·주소”에서 확인).\n그 주소를 연구자에게 알려 주세요. 연구자는 이 주소로 인증 번호를 받아, 요약 메일 받을 주소를 직접 넣고 뺄 수 있습니다.'
+    : '지금 다른 작업이 돌고 있습니다. 잠시 뒤 다시 실행해 주세요.');
+}
+function removeResearcher() {
+  var ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties(), list = researchers_(props);
+  if (!list.length) { ui.alert('지정된 연구자가 없습니다.'); return; }
+  var r = ui.prompt('연구자 지정 취소', '지정을 취소할 주소를 적어 주세요.\n지금 지정: ' + list.join(', ') + '\n그 연구자가 등록한 받는 주소도 함께 지워집니다. 이미 로그인한 화면도 바로 쓸 수 없게 됩니다.', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var a = normEmail_(r.getResponseText());
+  if (!a || list.indexOf(a) < 0) { ui.alert('지정된 연구자 주소가 아닙니다. 다시 실행해 주세요.'); return; }
+  var removed = withLock_(15000, function () {
+    var cur = researchers_(props).filter(function (x) { return x !== a; }), all = recipients_(props), keep = all.filter(function (x) { return x.by !== a; });
+    jset_(props, PROP.RESEARCHERS, cur); jset_(props, PROP.RECIPIENTS, keep);
+    rlog_(props, '연구자 지정 취소 ' + a + (all.length - keep.length ? ' (그가 등록한 받는 주소 ' + (all.length - keep.length) + '개 함께 삭제)' : ''));
+    return all.length - keep.length;
+  }, function () { return -1; });
+  ui.alert(removed < 0 ? '지금 다른 작업이 돌고 있습니다. 잠시 뒤 다시 실행해 주세요.' : '지정을 취소했습니다: ' + a + (removed ? '\n그가 등록한 받는 주소 ' + removed + '개도 지웠습니다.' : ''));
+}
+function removeRecipient() {
+  var ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties(), list = recipients_(props);
+  if (!list.length) { ui.alert('연구자가 등록한 받는 주소가 없습니다.'); return; }
+  var r = ui.prompt('받는 주소 지우기(운영자)', '지울 주소를 적어 주세요.\n지금: ' + list.map(function (x) { return x.a; }).join(', ') + '\n(운영자 주소 SUMMARY_TO 는 “처음 설정”에서 바꿉니다.)', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var a = normEmail_(r.getResponseText());
+  var res = withLock_(15000, function () {
+    var all = recipients_(props), keep = all.filter(function (x) { return x.a !== a; });
+    if (!a || keep.length === all.length) return 0;
+    jset_(props, PROP.RECIPIENTS, keep); rlog_(props, '받는 주소 삭제(운영자) ' + a); return 1;
+  }, function () { return -1; });
+  ui.alert(res < 0 ? '지금 다른 작업이 돌고 있습니다. 잠시 뒤 다시 실행해 주세요.' : (res ? '지웠습니다: ' + a : '그 주소는 연구자가 등록한 받는 주소가 아닙니다.'));
+}
+function researcherStatus() {
+  var ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties(), rs = researchers_(props), rc = recipients_(props), log = jget_(props, PROP.RLOG, []), url = '', L = [];
+  if (!Array.isArray(log)) log = [];
+  try { url = String(ScriptApp.getService().getUrl() || ''); } catch (e) { url = ''; }
+  var base = url.replace(/[?#].*$/, '');
+  L.push('연구자 페이지 주소: ' + (base ? base + '?page=researcher' : '(웹 앱으로 배포한 뒤, 배포 관리의 웹 앱 주소 끝에 ?page=researcher 를 붙이세요)'));
+  if (/\/dev$/.test(base)) L.push('※ /dev 로 끝나는 주소는 시험용이라 연구자가 열 수 없습니다. 배포 관리에서 새 배포를 만들고 /exec 로 끝나는 주소를 쓰세요.');
+  L.push('지정된 연구자 ' + rs.length + '/' + RLIM.maxResearchers + ': ' + (rs.length ? rs.join(', ') : '없음 — 메뉴 “연구자 지정”으로 지정'));
+  L.push('운영자 주소(SUMMARY_TO): ' + (props.getProperty(PROP.TO) || '없음'));
+  L.push('연구자가 등록한 받는 주소 ' + rc.length + '/' + RLIM.maxRecipients + ': ' + (rc.length ? rc.map(function (x) { return x.a + ' ← ' + x.by + ' ' + x.at; }).join(' · ') : '없음'));
+  if (domainsOf_(props).length) L.push('허용 도메인(RECIPIENT_DOMAINS): ' + domainsOf_(props).join(', '));
+  L.push('최근 기록: ' + (log.length ? '\n  ' + log.slice(-8).join('\n  ') : '없음'));
+  ui.alert(L.join('\n'));
+}
+
 function refresh_(send) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -758,7 +1080,17 @@ function refresh_(send) {
         var text = RI.emailText(res.summary), html = RI.emailHtml(res.summary), subj = RI.emailSubject(res.summary);
         var leak = RI.leakCount([subj, text, html], res.ops.secrets, MANIFEST);
         if (leak) { res.mailNote = '이름·소속·메모로 보이는 글 ' + leak + '건이 메일에 섞여 있어 보내지 않았습니다'; }
-        else { MailApp.sendEmail({ to: to, subject: subj, body: text, htmlBody: html, name: 'MedTerm-KR 접수 점검' }); res.mailSent = true; props.setProperty(PROP.LAST_MAIL, today + ' ' + subj); }
+        else {
+          sendMail_('summary', to, subj, text, html, 'MedTerm-KR 접수 점검');   // 운영자 주소로 먼저(실패하면 오류가 그대로 올라옴)
+          res.mailSent = true; res.mailCount = 1; props.setProperty(PROP.LAST_MAIL, today + ' ' + subj);
+          var failed = 0, mine = normEmail_(to);
+          recipients_(props).forEach(function (r) {   // 연구자가 연구자 페이지에서 등록한 주소: 한 통씩 따로(서로 주소가 안 보임). 한 곳이 실패해도 나머지는 보낸다.
+            if (r.a === mine) return;
+            try { sendMail_('summary', r.a, subj, text + FOOT_TEXT, html.replace(/<\/div>\s*$/, FOOT_HTML + '</div>'), 'MedTerm-KR 접수 점검'); res.mailCount++; }
+            catch (e) { failed++; Logger.log('연구자 등록 주소로 보내지 못했습니다: ' + e); }
+          });
+          if (failed) res.mailNote = '연구자가 등록한 주소 ' + failed + '곳에는 보내지 못했습니다(메일 한도 등) — 메뉴 “연구자 페이지 현황·주소”에서 확인하세요';
+        }
       }
     }
     return res;
@@ -898,3 +1230,218 @@ function writeAnalysis_(props, res) {
   writeTable_(ensureSheet_(ss2, '주별 접수'), ['범위', '주(월요일)', '새 약사', '누적 약사'], rowsW);
 }
 function sumVals_(o) { var s = 0; Object.keys(o).forEach(function (k) { s += o[k]; }); return s; }
+
+// ═════════════ 연구자 페이지 화면(웹 앱 주소 끝에 ?page=researcher) — 바깥 자료 없이 이 글 하나로 그려진다 ═════════════
+// 화면 글은 모두 textContent 로만 넣는다(innerHTML 안 씀). 로그인 토큰은 화면의 변수에만 두고 저장하지 않는다(새로 고치면 다시 인증).
+var RESEARCHER_HTML = `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MedTerm-KR 연구자 페이지</title>
+<style>
+:root{--bg:#f4f3ef;--card:#ffffff;--ink:#17191e;--sub:#4a505c;--line:#d6d3ca;--acc:#1c5db8;--on-acc:#ffffff;--bad:#a8231b;--ok:#14663a;--soft:#e9eff9;--focus:#1c5db8}
+@media (prefers-color-scheme:dark){:root{--bg:#13151a;--card:#1b1e25;--ink:#ecebe7;--sub:#b7bbc5;--line:#373c47;--acc:#8fb7f5;--on-acc:#0c1a33;--bad:#ff9a92;--ok:#86d9a6;--soft:#222b3b;--focus:#8fb7f5}}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"Segoe UI","Noto Sans KR","Malgun Gothic",sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.45rem;line-height:1.3;margin:4px 0 6px}
+h2{font-size:1.1rem;margin:0 0 8px}
+h2:focus{outline:none}
+.lead{margin:0 0 18px;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 14px}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-height:44px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+button{font:inherit;font-weight:600;min-height:44px;padding:9px 16px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:var(--on-acc);cursor:pointer}
+button.ghost{background:transparent;color:var(--acc)}
+button.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+button[disabled]{opacity:.55;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+ul.list{list-style:none;margin:8px 0;padding:0}
+ul.list li{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding:10px 0}
+ul.list li:first-child{border-top:0}
+.addr{word-break:break-all;min-width:0}
+.tag{display:inline-block;font-size:.8rem;color:var(--sub);background:var(--soft);border-radius:999px;padding:1px 9px;margin-left:6px}
+.small{font-size:.9rem;color:var(--sub);margin:4px 0}
+#live{min-height:1.6em;margin:0 0 12px;font-weight:600}
+#live.err{color:var(--bad)}
+#live.ok{color:var(--ok)}
+ul.plain{margin:6px 0;padding-left:20px}
+ul.plain li{margin:4px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>MedTerm-KR 연구자 페이지</h1>
+<p class="lead">약사 확인서 주간 요약 메일을 받을 주소를 연구자가 직접 등록·삭제합니다. 메일로 본인 확인을 마친 연구자만 바꿀 수 있습니다.</p>
+</header>
+<main>
+<noscript><p class="small">이 페이지는 자바스크립트가 켜져 있어야 동작합니다.</p></noscript>
+<p id="live" role="status" aria-live="polite"></p>
+
+<section class="card" id="s-login" aria-labelledby="h-login">
+<h2 id="h-login">1. 본인 확인</h2>
+<p class="small">운영자가 연구자로 지정한 메일 주소를 적으면, 그 주소로 인증 번호(6자리)가 갑니다.</p>
+<form id="f-code" novalidate>
+<label for="email">연구자 메일 주소</label>
+<input id="email" type="email" inputmode="email" autocomplete="email" maxlength="100" required>
+<div class="row"><button type="submit" id="b-code">인증 번호 받기</button></div>
+</form>
+<form id="f-login" novalidate hidden>
+<label for="code">인증 번호 (6자리)</label>
+<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" required>
+<div class="row"><button type="submit" id="b-login">확인</button><button type="button" class="ghost" id="b-again">번호 다시 받기</button></div>
+</form>
+</section>
+
+<section class="card" id="s-main" aria-labelledby="h-main" hidden>
+<h2 id="h-main" tabindex="-1">2. 요약 메일 받는 주소</h2>
+<p class="small" id="me"></p>
+<ul class="list" id="list"></ul>
+<p class="small" id="count"></p>
+<form id="f-add" novalidate>
+<label for="new">추가할 메일 주소</label>
+<input id="new" type="email" inputmode="email" autocomplete="off" maxlength="100" required>
+<p class="small" id="dom" hidden></p>
+<div class="row"><button type="submit" id="b-add">추가</button></div>
+</form>
+<form id="f-verify" novalidate hidden>
+<p class="small" id="v-note"></p>
+<label for="vcode">그 주소로 간 인증 번호 (6자리)</label>
+<input id="vcode" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]*" required>
+<div class="row"><button type="submit" id="b-verify">확인하고 추가</button><button type="button" class="ghost" id="b-vcancel">취소</button></div>
+</form>
+<div class="row"><button type="button" class="ghost" id="b-out">나가기</button></div>
+</section>
+
+<section class="card" aria-labelledby="h-info">
+<h2 id="h-info">받게 되는 메일</h2>
+<ul class="plain">
+<li>매주 월요일 아침(9시쯤), 등록된 주소마다 한 통씩 따로 갑니다. 받는 사람끼리 주소가 보이지 않습니다.</li>
+<li>내용: 접수 현황, 판정 분포(맞다·다르다·모르겠다), 항목별 일치도, ‘다르다’가 많은 항목.</li>
+<li>약사의 이름·소속·메모·원본 글은 들어 있지 않습니다(약사는 R01, R02… 번호로만 나옵니다).</li>
+<li>시험 단계에는 제목에 [시험용·가짜 데이터] 표시가 붙습니다.</li>
+</ul>
+<p class="small">이 페이지는 확인서나 분석 내용을 보여 주지 않습니다. 쓰지 않고 30분이 지나면 인증이 끝납니다. 문의는 이 주소를 알려 드린 MedIT 담당자에게 해 주세요.</p>
+</section>
+</main>
+</div>
+<script>
+(function () {
+  'use strict';
+  var token = '', pending = '';
+  function $(id) { return document.getElementById(id); }
+  function say(msg, kind) { var l = $('live'); l.textContent = msg || ''; l.className = kind || ''; }
+  function show(id, on) { $(id).hidden = !on; }
+  function setBusy(b) {
+    var bs = document.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) bs[i].disabled = b;
+    document.body.setAttribute('aria-busy', b ? 'true' : 'false');
+  }
+  function call(req, done) {
+    setBusy(true);
+    google.script.run
+      .withSuccessHandler(function (txt) {
+        setBusy(false);
+        var r = null;
+        try { r = JSON.parse(txt); } catch (e) { r = null; }
+        done(r || { ok: false, msg: '응답을 읽지 못했습니다. 페이지를 새로 고쳐 주세요.' });
+      })
+      .withFailureHandler(function () { setBusy(false); done({ ok: false, code: 'net', msg: '서버에 연결하지 못했습니다. 잠시 뒤 다시 해 보세요.' }); })
+      .researcherApi(JSON.stringify(req));
+  }
+  function toLogin(msg, kind) {
+    token = ''; pending = '';
+    show('s-main', false); show('s-login', true); show('f-code', true); show('f-login', false); show('f-verify', false); show('f-add', true);
+    $('code').value = ''; $('vcode').value = '';
+    say(msg, kind); $('email').focus();
+  }
+  function authLost(r) { if (r && r.code === 'auth') { toLogin(r.msg, 'err'); return true; } return false; }
+  function render(st) {
+    $('me').textContent = '접속한 연구자: ' + st.me;
+    var ul = $('list');
+    while (ul.firstChild) ul.removeChild(ul.firstChild);
+    var li = document.createElement('li'), sp = document.createElement('span'), tg = document.createElement('span');
+    sp.className = 'addr'; sp.textContent = st.operator || '(운영자 주소 없음)';
+    tg.className = 'tag'; tg.textContent = '운영자 · 지울 수 없음';
+    sp.appendChild(tg); li.appendChild(sp); ul.appendChild(li);
+    st.recipients.forEach(function (r) {
+      var item = document.createElement('li'), a = document.createElement('span'), b = document.createElement('button');
+      a.className = 'addr'; a.textContent = r.a;
+      if (r.at) { var t = document.createElement('span'); t.className = 'tag'; t.textContent = r.at + ' 등록'; a.appendChild(t); }
+      b.type = 'button'; b.className = 'danger'; b.textContent = '지우기'; b.setAttribute('aria-label', r.a + ' 지우기');
+      b.addEventListener('click', function () {
+        call({ op: 'remove', token: token, email: r.a }, function (res) {
+          if (authLost(res)) return;
+          if (res.ok) { render(res); say(res.msg, 'ok'); $('new').focus(); } else say(res.msg, 'err');
+        });
+      });
+      item.appendChild(a); item.appendChild(b); ul.appendChild(item);
+    });
+    $('count').textContent = '연구자가 등록한 주소 ' + st.recipients.length + ' / ' + st.max + '개';
+    var d = $('dom');
+    if (st.domains && st.domains.length) { d.textContent = '운영자가 허용한 도메인의 주소만 추가할 수 있습니다: ' + st.domains.join(', '); d.hidden = false; } else { d.textContent = ''; d.hidden = true; }
+    show('f-add', true); show('f-verify', false); pending = '';
+  }
+  function loadState(msg) {
+    call({ op: 'state', token: token }, function (st) {
+      if (authLost(st)) return;
+      if (!st.ok) { say(st.msg, 'err'); return; }
+      show('s-login', false); show('s-main', true); render(st); say(msg, 'ok'); $('h-main').focus();
+    });
+  }
+  function askCode() {
+    var em = $('email').value.trim();
+    if (!em) { say('메일 주소를 적어 주세요.', 'err'); $('email').focus(); return; }
+    call({ op: 'code', email: em }, function (r) {
+      if (!r.ok) { say(r.msg, 'err'); return; }
+      say(r.msg, 'ok'); show('f-login', true); $('code').focus();
+    });
+  }
+  $('f-code').addEventListener('submit', function (ev) { ev.preventDefault(); askCode(); });
+  $('b-again').addEventListener('click', askCode);
+  $('f-login').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var em = $('email').value.trim(), cd = $('code').value.trim();
+    if (!em || !cd) { say('메일 주소와 인증 번호를 모두 적어 주세요.', 'err'); return; }
+    call({ op: 'login', email: em, code: cd }, function (r) {
+      if (!r.ok) { say(r.msg, 'err'); $('code').select(); return; }
+      token = r.token; $('code').value = '';
+      loadState('인증했습니다. 이 화면은 쓰지 않고 ' + r.idleMin + '분이 지나면 닫힙니다.');
+    });
+  });
+  $('f-add').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var em = $('new').value.trim();
+    if (!em) { say('추가할 메일 주소를 적어 주세요.', 'err'); $('new').focus(); return; }
+    call({ op: 'add', token: token, email: em }, function (r) {
+      if (authLost(r)) return;
+      if (!r.ok) { say(r.msg, 'err'); return; }
+      if (r.step === 'verify') {
+        pending = em; $('v-note').textContent = r.msg; $('vcode').value = '';
+        show('f-add', false); show('f-verify', true); say('', ''); $('vcode').focus(); return;
+      }
+      render(r); $('new').value = ''; say(r.msg, 'ok');
+    });
+  });
+  $('f-verify').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var cd = $('vcode').value.trim();
+    if (!cd) { say('인증 번호를 적어 주세요.', 'err'); $('vcode').focus(); return; }
+    call({ op: 'verify', token: token, email: pending, code: cd }, function (r) {
+      if (authLost(r)) return;
+      if (!r.ok) { say(r.msg, 'err'); $('vcode').select(); return; }
+      render(r); $('new').value = ''; say(r.msg, 'ok'); $('new').focus();
+    });
+  });
+  $('b-vcancel').addEventListener('click', function () { pending = ''; show('f-verify', false); show('f-add', true); say('', ''); $('new').focus(); });
+  $('b-out').addEventListener('click', function () { call({ op: 'logout', token: token }, function () { toLogin('나갔습니다.', 'ok'); }); });
+  call({ op: 'ping' }, function (r) { if (r.ok && !r.enabled) say('아직 지정된 연구자가 없습니다. 운영자에게 연구자 지정을 요청해 주세요.', 'err'); });
+})();
+</script>
+</body>
+</html>`;

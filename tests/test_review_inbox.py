@@ -163,14 +163,14 @@ def cell_texts(ss, skip_response=True):
 src = rd(GS)
 code_only = re.sub(r'(?m)(^|\s)//\s.*$', '', re.sub(r'/\*.*?\*/', '', src, flags=re.S))
 services = set(re.findall(r'\b([A-Z][A-Za-z]*(?:App|Service))\b', code_only))
-ok('① 쓰는 구글 서비스는 시트·속성·잠금·메일·자동 실행·웹 앱 응답(ContentService)뿐(UrlFetchApp·DriveApp·GmailApp 등 없음)', services <= {'SpreadsheetApp', 'PropertiesService', 'LockService', 'MailApp', 'ScriptApp', 'ContentService'}, sorted(services))
-bad = [w for w in ('eval(', 'new Function', 'importScripts', 'XMLHttpRequest', 'fetch(', 'UserProperties', 'DocumentProperties', 'CacheService', 'HtmlService') if w in code_only] + [w for w in (r'\bDrive\.', r'\bSheets\.', r'\bGmail\.') if re.search(w, code_only)]
+ok('① 쓰는 구글 서비스는 시트·속성·잠금·메일·자동 실행·웹 앱 응답(ContentService)·연구자 페이지의 캐시(CacheService)와 화면(HtmlService)뿐(UrlFetchApp·DriveApp·GmailApp 등 없음)', services <= {'SpreadsheetApp', 'PropertiesService', 'LockService', 'MailApp', 'ScriptApp', 'ContentService', 'CacheService', 'HtmlService'}, sorted(services))
+bad = [w for w in ('eval(', 'new Function', 'importScripts', 'XMLHttpRequest', 'fetch(', 'UserProperties', 'DocumentProperties', 'innerHTML', 'document.write', 'google.script.host', 'window.open', 'ALLOWALL') if w in code_only] + [w for w in (r'\bDrive\.', r'\bSheets\.', r'\bGmail\.') if re.search(w, code_only)]
 ok('① 인터넷 접속·코드 실행·고급 서비스 호출이 없음', not bad, bad)
 inv = [hex(ord(c)) for f in (GS, HARNESS, os.path.join(root, 'tools', 'review_research_report.py'), os.path.join(root, 'tools', 'make_review_inbox_script.py')) for c in rd(f)
        if ord(c) in (0x2028, 0x2029, 0xfeff) or 0x200b <= ord(c) <= 0x200f or 0x202a <= ord(c) <= 0x202e or 0x2060 <= ord(c) <= 0x2069]
 ok('① 스크립트·도구 소스에 보이지 않는 글자(줄 구분자·제로폭·방향 제어)가 없음', not inv, inv[:5])
 ok('① 메일 받을 주소가 코드에 적혀 있지 않음(스크립트 속성에 둠)', not re.search(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}', code_only) and 'SUMMARY_TO' in code_only)
-ok('① 쓰는 API 범위가 작음: 시트 읽기·쓰기 + 메일 + 자동 실행 + 화면(메뉴)', 'MailApp.sendEmail' in code_only and 'GmailApp' not in code_only and code_only.count('MailApp.sendEmail') == 1)
+ok('① 쓰는 API 범위가 작음: 시트 읽기·쓰기 + 메일(보내는 곳은 sendMail_ 한 군데) + 자동 실행 + 화면(메뉴) + 연구자 페이지', 'MailApp.sendEmail' in code_only and 'GmailApp' not in code_only and code_only.count('MailApp.sendEmail') == 1 and code_only.count('sendMail_(') >= 4)
 ver = re.search(r"SCRIPT_VERSION = '([^']+)'", src).group(1)
 ok('① 스크립트 판 번호가 파이썬 도구와 같음', ver == RR.VERSION, (ver, RR.VERSION))
 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()): rc = MK.main(['--check'])
