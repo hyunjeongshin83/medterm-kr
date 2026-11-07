@@ -1,8 +1,11 @@
 // 약사 검수 참여(검수 2·3단계) — 화면 쪽 자료 읽기 · 이 기기에 판정 보관 · 확인서 내보내기·불러오기.
 // 검수 항목과 현황은 빌드가 담은 window.MEDTERM_REVIEW(build/review_lib.py 가 계산)에서 읽는다. 이 파일은 현황을 계산하지 않는다:
 // 약사가 이 화면에서 만든 확인서는 운영자가 약사 면허를 따로 확인해 병합 도구(tools/merge_pharmacist_reviews.py)로 합친 뒤 다음 빌드에서 현황에 나타난다.
-// 곧, 앱 안에서 스스로 ‘검수 완료’를 만들 길이 없다. 네트워크 요청도 없다(서버로 보내는 것이 없고, 약사가 파일을 직접 전달한다).
+// 곧, 앱 안에서 스스로 ‘검수 완료’를 만들 길이 없다.
+// 네트워크 요청: 기본은 없다(약사가 확인서 파일을 직접 전달한다). 동의서와 접수 주소가 담긴 독립 실행·설치형 웹앱 빌드에서만, 약사가 ‘MedIT로 보내기’를 누를 때 한 번 운영자의 구글 시트로 보낸다(sendToIntake).
+// 동의서 값·판·접수 주소는 빌드가 담는다(reviewIntake.js). 동의서가 준비되지 않은 판에서는 확인서를 내보내지도 보내지도 못한다(동의 없이 개인정보를 받지 않는다).
 import { layers } from './mt.js';
+import { getIntake } from './reviewIntake.js';
 import { APP_VERSION } from './version.js';
 
 export const SCHEMA = 'medterm-kr-review/1'; //                         내보내는 파일 형식(build/review_lib.py 의 SCHEMA 와 같아야 함 — tests/review_ui.cjs 가 확인)
@@ -49,7 +52,8 @@ export function availableScopes() {
 }
 
 /* ── 이 기기(브라우저)에 보관: 입력한 판정이 사라지지 않게 한다. 저장소를 못 쓰면(개인정보 보호 모드·WebView 설정) 열려 있는 동안만 쓰는 대체 보관으로 돌아선다. ── */
-const blank = () => ({ v: 1, rev: { name: '', org: '', pub: false, lic: false }, refs: [], other: '', att: false, scope: '', ans: {} });
+// att(확인서 동의) · c1(개인정보 수집·이용 동의) · c2(연구 이용 동의)는 보관하지 않는다: 내보내거나 보낼 때마다 새로 표시한다.
+const blank = () => ({ v: 1, rev: { name: '', org: '', pub: false, lic: false }, refs: [], other: '', att: false, c1: false, c2: false, scope: '', ans: {} });
 const noteKept = (v, m) => (v === 'ok' || !m ? {} : { m: cut(m, MAX.note) });
 
 function sane(o) {
@@ -70,7 +74,7 @@ function sane(o) {
       b.ans[sid] = out;
     }
   }
-  return b; // att(확인서 동의)는 보관하지 않는다: 내보낼 때마다 새로 표시한다.
+  return b; // att·c1·c2(동의 표시)는 보관하지 않는다: 내보낼 때마다 새로 표시한다.
 }
 let mem = null;
 export function loadStore() {
@@ -83,7 +87,7 @@ export function loadStore() {
 /** 저장했으면 true. 저장소를 못 쓰면 false(이 창이 열려 있는 동안만 남는다). */
 export function saveStore(s) {
   mem = s;
-  try { window.localStorage.setItem(STORE_KEY, JSON.stringify({ ...s, att: false })); return true; } catch (e) { return false; }
+  try { window.localStorage.setItem(STORE_KEY, JSON.stringify({ ...s, att: false, c1: false, c2: false })); return true; } catch (e) { return false; }
 }
 export function clearStore() {
   mem = null;
@@ -120,10 +124,13 @@ export const todayStr = () => { const d = new Date(); const p = (n) => String(n)
 /** 내보내기 전에 빠진 것(비어 있으면 내보낼 수 있다). */
 export function exportProblems(R, scope, st) {
   const p = [];
+  const I = getIntake();
+  if (!I.ready) p.push('이 앱 판은 동의서가 아직 준비되지 않아 확인서를 내보내거나 보낼 수 없습니다. 이 앱을 알려 드린 MedIT 담당자에게 문의해 주세요(판정은 이 기기에 저장되어 있습니다).');
   if (!clean(st.rev.name, MAX.name)) p.push('검수자 이름을 적어 주세요.');
   if (!st.rev.lic) p.push('‘약사 면허를 가지고 있습니다’에 표시해 주세요.');
   if (!Object.keys(liveAnswers(R, scope, st.ans[scope]).live).length) p.push('판정한 항목이 아직 없습니다.');
   if (st.refs.includes('other') && !clean(st.other, MAX.other)) p.push('‘기타’를 고르셨다면 참고한 자료의 이름을 적어 주세요.');
+  if (I.ready && !st.c1) p.push('‘개인정보 수집·이용 동의(필수)’에 동의해 주세요.');
   return p;
 }
 
@@ -140,6 +147,7 @@ export function buildExport(R, scope, st) {
     answers[it.id] = o;
   }
   const refs = REFS.map(([k]) => k).filter((k) => st.refs.includes(k));
+  const I = getIntake();
   return {
     schema: SCHEMA,
     scope,
@@ -150,6 +158,8 @@ export function buildExport(R, scope, st) {
     refs,
     refs_other: refs.includes('other') ? clean(st.other, MAX.other) : '',
     attested: !!st.att,
+    // 동의 기록: 동의서가 준비된 판에서만 담는다(준비 안 된 판은 내보내지 못한다). version = 약사가 읽은 동의서의 판, research = 연구 이용(선택) 동의 여부 — 연구 이용을 묻지 않는 판은 false.
+    ...(I.ready ? { consent: { version: I.version, collect: !!st.c1, research: !!(I.research && st.c2), date: todayStr() } } : {}),
     answers,
   };
 }
@@ -178,7 +188,61 @@ export async function copyText(text, getBox) {
   return false;
 }
 
-/* ── 불러오기: 이 앱이 내보낸 확인서(진행 상황) 글을 읽어 판정을 합친다. 확인서 동의(attested)는 가져오지 않는다(내보낼 때마다 다시 표시). ── */
+/* ── 보내기: 확인서를 운영자의 구글 시트(앱 스크립트 웹 앱)로 보낸다. 동의서와 접수 주소가 담긴 독립 실행·설치형 웹앱 빌드에서만 쓰며, 단추를 누를 때 한 번 요청이 나간다. ──
+   본문은 text/plain 으로 보낸다(브라우저가 사전 확인 요청을 먼저 보내지 않게 — 앱 스크립트 웹 앱은 그 요청을 받지 못한다). 쿠키·참조 주소는 보내지 않는다.
+   돌려주는 값: { kind, code, msg } — 예외를 던지지 않는다. kind: 'ok'(받았다는 답을 읽음) · 'rejected'(운영자 쪽이 받지 않음) · 'unknown'(받았는지 확인하지 못함: 답을 읽지 못함·시간 초과) · 'offline'(연결 없음 — 보내지 않음).
+   글은 운영자가 정한 문구만 쓴다(서버가 돌려준 글을 화면에 옮기지 않는다). */
+export const SEND_TIMEOUT_MS = 25000;
+const LATER = '다시 눌러 보내셔도 됩니다(같은 분의 같은 범위는 가장 나중 것만 반영됩니다). 계속 안 되면 ‘파일로 저장’으로 만들어 이 앱을 알려 드린 MedIT 담당자에게 전달해 주세요.';
+const FILE_ROUTE = '‘파일로 저장’으로 만들어 이 앱을 알려 드린 MedIT 담당자에게 전달해 주세요.';
+export const SEND_MSG = {
+  ok: '보냈습니다. 운영자(MedIT)가 약사 면허를 확인한 뒤 확인서를 합칩니다. 합친 다음 판의 ‘검수 상태’에 반영되며, 그 전에는 ‘검수 상태’가 바뀌지 않습니다.',
+  offline: '인터넷에 연결되어 있지 않아 보내지 못했습니다. 연결한 뒤 다시 눌러 주세요(입력한 내용은 이 기기에 남아 있습니다).',
+  unknown: `받았다는 답을 확인하지 못했습니다. 운영자가 받았을 수도, 못 받았을 수도 있습니다. ${LATER}`,
+  timeout: `시간이 오래 걸려 중단했습니다. 운영자가 받았을 수도, 못 받았을 수도 있습니다. ${LATER}`,
+  closed: `지금은 앱으로 확인서를 받지 않는 중입니다. ${FILE_ROUTE}`,
+  version: '이 앱의 동의서가 운영자가 받는 동의서와 달라 받지 못했습니다. 앱을 새로 고쳐 최신 판으로 열고, 동의서를 다시 읽고 동의한 뒤 보내 주세요.',
+  no_consent: '동의 표시가 확인되지 않아 받지 못했습니다. 동의서를 다시 읽고 동의 표시를 한 뒤 보내 주세요.',
+  draft: '동의서가 확정되기 전의 확인서라 받지 못했습니다. 앱을 새로 고쳐 최신 판으로 열어 주세요.',
+  invalid: `확인서가 운영자의 형식 검사를 통과하지 못했습니다. 앱을 새로 고친 뒤 다시 시도하고, 계속 안 되면 ${FILE_ROUTE}`,
+  too_large: `확인서가 너무 커서 받지 못했습니다. ${FILE_ROUTE}`,
+  full: '운영자의 접수 칸이 가득 차서 받지 못했습니다. 이 앱을 알려 드린 MedIT 담당자에게 알려 주세요.',
+  busy: '다른 확인서를 처리하는 중이라 받지 못했습니다. 잠시 뒤 다시 눌러 주세요.',
+  server: `운영자 쪽 오류로 받지 못했습니다. 잠시 뒤 다시 눌러 보고, 계속 안 되면 ${FILE_ROUTE}`,
+  other: `받지 못했습니다(알 수 없는 응답). ${FILE_ROUTE}`,
+  no_endpoint: `이 앱 판에는 보내기 주소가 없습니다. ${FILE_ROUTE}`,
+};
+SEND_MSG.bad_request = SEND_MSG.invalid;
+const SERVER_CODES = ['closed', 'bad_request', 'too_large', 'invalid', 'no_consent', 'draft', 'version', 'full', 'busy', 'server']; // 앱 스크립트(review_inbox.gs)가 돌려주는 거부 코드
+
+export async function sendToIntake(text) {
+  const I = getIntake();
+  if (!I.canSend) return { kind: 'rejected', code: 'no_endpoint', msg: SEND_MSG.no_endpoint };
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return { kind: 'offline', code: 'offline', msg: SEND_MSG.offline };
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = setTimeout(() => { try { if (ctl) ctl.abort(); } catch (e) { /* 무시 */ } }, SEND_TIMEOUT_MS);
+  let raw = '';
+  try {
+    const res = await fetch(I.endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ kind: 'medterm-kr-submit/1', text }),
+      redirect: 'follow', credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', ...(ctl ? { signal: ctl.signal } : {}),
+    });
+    raw = await res.text();
+  } catch (e) {
+    const to = !!(ctl && ctl.signal.aborted);
+    return { kind: 'unknown', code: to ? 'timeout' : 'network', msg: to ? SEND_MSG.timeout : SEND_MSG.unknown };
+  } finally { clearTimeout(timer); }
+  let j = null;
+  try { j = JSON.parse(raw); } catch (e) { j = null; }
+  if (j && typeof j === 'object' && j.ok === true) return { kind: 'ok', code: 'ok', msg: SEND_MSG.ok };
+  if (j && typeof j === 'object' && j.ok === false) {
+    const code = SERVER_CODES.includes(j.code) ? j.code : 'other';
+    return { kind: 'rejected', code, msg: SEND_MSG[code] };
+  }
+  return { kind: 'unknown', code: 'unreadable', msg: SEND_MSG.unknown };
+}
+
+/* ── 불러오기: 이 앱이 내보낸 확인서(진행 상황) 글을 읽어 판정을 합친다. 확인서 동의(attested)와 개인정보 수집·이용 동의(c1·c2)는 가져오지 않는다(내보낼 때마다 다시 표시). ── */
 export function parseImport(text, R, avail) {
   if (typeof text !== 'string' || !text.trim()) return { err: '붙여 넣은 글이 없습니다.' };
   if (text.length > MAX.file) return { err: '글이 너무 깁니다.' };

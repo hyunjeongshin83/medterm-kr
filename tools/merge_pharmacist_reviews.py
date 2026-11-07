@@ -47,6 +47,13 @@ def status_lines(items, store):
     return out
 
 
+def consent_text(c):
+    """동의 기록 한 줄(보고서·터미널 출력용)."""
+    if not c:
+        return '없음(경고 참고 — 동의를 받은 근거를 따로 확인하세요)'
+    return f"개인정보 수집·이용 동의 예(동의서 판 {c['version']}, {c['date']}) · 연구 이용 동의 {'예' if c['research'] else '아니오'}(연구 이용은 구글 시트의 연구 분석에서만 쓰며 사전 검수 반영과 상관없음)"
+
+
 def report_md(rep, warns, today):
     rr = rep['reviewer_raw']
     L = [f'# 약사 제출 파일 병합 보고 ({today})', '',
@@ -54,6 +61,7 @@ def report_md(rep, warns, today):
          f"- 범위: {RL.SCOPE_LABEL.get(rep['scope'], rep['scope'])} (`{rep['scope']}`)",
          f"- 검수자(제출 파일 기준): {rr['name']}" + (f" / {rr['affiliation']}" if rr['affiliation'] else '') + f" · 공개 동의: {'예' if rr['public'] else '아니오'} → 검수자 번호 {rep['pid']}",
          f"- 확인서 동의(attested): {'예' if rep['attested'] else '아니오(진행 상황 파일)'} · 작성일 {rep['created']}",
+         '- 동의 기록(consent): ' + consent_text(rep.get('consent')),
          f"- 반영한 판정 {rep['count']}개: " + ' · '.join(f"{VNAME[v]} {n}" for v, n in rep['verdicts'].items())]
     for w in warns:
         L.append(f'- 경고: {w}')
@@ -115,6 +123,7 @@ def main(argv=None):
     rr = rep['reviewer_raw']
     print(f"검수자 {rep['pid']} ({rr['name']}{' / ' + rr['affiliation'] if rr['affiliation'] else ''}, 공개 동의 {'예' if rr['public'] else '아니오'}) · 범위 {rep['scope']} · 판정 {rep['count']}개 "
           + '(' + ' · '.join(f'{VNAME[v]} {n}' for v, n in rep['verdicts'].items()) + f") · 확인서 {'동의' if rep['attested'] else '미동의(진행 상황)'}")
+    print('동의 기록:', consent_text(rep.get('consent')))
     for w in rep['warnings']:
         print('경고:', w)
     print(f"고칠 후보 {len(rep['flagged'])}개(다르다·모르겠다)" + (' — --report 로 보고서를 만들면 약사 메모와 함께 볼 수 있습니다' if rep['flagged'] and not a.report else ''))

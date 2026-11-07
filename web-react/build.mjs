@@ -5,12 +5,14 @@
 //   dist/MedTerm-KR_showcase.html  웹앱 + 모바일 앱 나란히 보기 한 페이지(메디노트 형식, 독립 실행) · dist/showcase_artifact.html 은 공유 페이지용 조각
 //   dist/pwa/                    설치형 웹앱(PWA) 폴더: index.html + manifest + sw.js + icons/ → HTTPS 정적 호스팅에 폴더째 올린다
 // 사용: node build.mjs            (MEDTERM_JS=<core.js·medterm-data.js·bench.js가 있는 폴더>, 기본은 ../web/js)
+//   MEDTERM_REVIEW_INTAKE=<파일>  약사 확인서 접수 설정(동의서 값·보내기 주소). 기본은 review_intake.json — 값이 비어 있으면 앱은 확인서 내보내기·보내기를 막는다.
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
+import { consentReady, normalizeIntake, versionBasis } from './src/lib/reviewConsent.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const JS_DIR = path.resolve(process.env.MEDTERM_JS || path.join(ROOT, '..', 'web', 'js'));
@@ -25,6 +27,25 @@ const read = (...p) => readFileSync(path.join(...p), 'utf8');
 // 화면에 보이는 버전(상단 제목 옆 v1.0.0)은 package.json 의 version 한 곳에서만 정한다.
 const VERSION = JSON.parse(read(ROOT, 'package.json')).version;
 if (!/^\d+\.\d+\.\d+$/.test(VERSION)) throw new Error(`package.json 의 version 이 x.y.z 형식이 아닙니다: ${VERSION}`);
+
+/* 약사 확인서 접수 설정(review_intake.json): 동의서에 들어가는 값과 ‘MedIT로 보내기’ 주소. 모르는 칸·글자 수 초과·잘못된 주소는 여기서 빌드를 멈춘다(법적 문구를 조용히 자르지 않는다).
+   값(보유·이용 기간 · 구글 국외 이전 안내)이 비어 있으면 동의서는 ‘준비 안 됨’이고 앱은 확인서 내보내기·보내기를 막는다. 준비되면 동의서 글 전체의 해시로 동의서 판(c-…)을 정한다 —
+   글이나 값이 한 글자라도 바뀌면 판이 바뀌고, 운영자의 시트(앱 스크립트)는 자기가 연 판과 다른 동의서로 만든 확인서를 받지 않는다.
+   보내기 주소는 독립 실행·설치형 웹앱(표면 'web')에만 넣는다: 안드로이드 앱(인터넷 권한 없음)·공유 페이지(바깥 연결이 막힘)·나란히 보기에는 넣지 않는다. */
+const INTAKE_FILE = path.resolve(process.env.MEDTERM_REVIEW_INTAKE || path.join(ROOT, 'review_intake.json'));
+let INTAKE_RAW = {};
+if (existsSync(INTAKE_FILE)) {
+  try { INTAKE_RAW = JSON.parse(readFileSync(INTAKE_FILE, 'utf8')); } catch (e) { throw new Error(`${INTAKE_FILE} 를 읽지 못했습니다(JSON 형식을 확인하세요): ${e.message}`); }
+} else if (process.env.MEDTERM_REVIEW_INTAKE) throw new Error(`MEDTERM_REVIEW_INTAKE 파일이 없습니다: ${INTAKE_FILE}`);
+const INTAKE = normalizeIntake(INTAKE_RAW, { strict: true });
+const CONSENT_READY = consentReady(INTAKE.cfg);
+const CONSENT_VERSION = CONSENT_READY ? 'c-' + createHash('sha256').update(versionBasis(INTAKE.cfg)).digest('hex').slice(0, 10) : '';
+const intakeFor = (surface) => (CONSENT_READY ? { ...INTAKE.cfg, version: CONSENT_VERSION, endpoint: surface === 'web' ? INTAKE.endpoint : '' } : {});
+const intakeNote = CONSENT_READY
+  ? `동의서 ${CONSENT_VERSION}(${INTAKE.cfg.research.irb ? '연구 이용 동의 포함' : '연구 이용 동의 없음'}) · 보내기 주소 ${INTAKE.endpoint ? '있음(독립 실행·설치형 웹앱에만)' : '없음(파일 전달만)'}`
+  : '동의서 준비 안 됨(review_intake.json 의 retention·overseas 를 채우면 열림 — 지금은 앱의 확인서 내보내기·보내기가 막힘)';
+if (INTAKE.endpoint && !CONSENT_READY) console.warn('review_intake.json: 보내기 주소는 있으나 동의서 값(retention·overseas)이 비어 있어 앱의 보내기는 막힙니다.');
+
 for (const f of ['medterm-data.js', 'bench.js', 'core.js']) {
   if (!existsSync(path.join(JS_DIR, f))) throw new Error(`${f}를 찾지 못했습니다: ${JS_DIR} (MEDTERM_JS 환경변수로 폴더를 지정하세요)`);
 }
@@ -77,7 +98,7 @@ async function bundle(enableProxy, surface) {
     entryPoints: [path.join(ROOT, 'src', 'main.jsx')],
     bundle: true, minify: true, format: 'iife', platform: 'browser', target: ['chrome100', 'safari15', 'firefox100'],
     jsx: 'automatic', write: false, legalComments: 'eof', logLevel: 'warning',
-    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface), __APP_VERSION__: JSON.stringify(VERSION), __EDITION__: JSON.stringify(EDITION) },
+    define: { 'process.env.NODE_ENV': '"production"', __ENABLE_PROXY__: String(enableProxy), __SURFACE__: JSON.stringify(surface), __APP_VERSION__: JSON.stringify(VERSION), __EDITION__: JSON.stringify(EDITION), __REVIEW_INTAKE__: JSON.stringify(intakeFor(surface)) },
   });
   return r.outputFiles[0].text;
 }
@@ -262,3 +283,4 @@ writeFileSync(path.join(PWA, '.nojekyll'), '');
 
 const kb = (f) => (readFileSync(path.join(DIST, f)).length / 1024).toFixed(0) + ' KB';
 console.log('MedTerm-KR_react.html', kb('MedTerm-KR_react.html'), '· artifact.html', kb('artifact.html'), '· MedTerm-KR_app.html', kb('MedTerm-KR_app.html'), '· pwa/index.html', kb('pwa/index.html'), '· showcase.html', kb('MedTerm-KR_showcase.html'), '· 서비스 워커 버전', swVersion, '· css', (css.length / 1024).toFixed(0) + ' KB');
+console.log('약사 확인서 접수:', intakeNote);

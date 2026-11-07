@@ -3,6 +3,7 @@
  임시 폴더의 가짜 제출 파일만 쓴다(가짜 판정은 도구 점검용이며 실제 약사의 판정이 아니다. 저장소의 data/review/pharmacist_reviews.json 은 건드리지 않는다).
  ① 검수 항목: 개수·id·번호(대조 시트와 같은 순서)·결정성·내용이 바뀌면 그 항목의 해시만 바뀜
  ② 제출 파일 검증: 정상·형식 위반 각각·사전 내용이 바뀐 판정·메모 정리·보이지 않는 글자
+    ②-2 동의 기록(consent): 병합 도구만 확인(없으면 경고 · 동의 표시가 true 가 아니거나 초안이면 거부 · 모양 점검) — 연구 분석 도구가 쓰는 validate_submission 은 그대로
  ③ 병합과 현황: 면허 확인 표시 필수·2단계·3단계 조건·‘다르다’ 우선·공개/비공개·같은 검수자·내용이 바뀐 뒤의 현황·메모 비저장
  ④ 저장 자료 점검(--check)과 명령줄 도구  ⑤ 도구 소스에 네트워크·실행 호출이 없음  ⑥ 저장소의 병합 자료·앱 덩어리가 지금 자료와 맞음"""
 import copy, io, json, os, re, shutil, sys, tempfile, contextlib
@@ -60,13 +61,17 @@ d3 = data_copy('no_law', None); os.remove(os.path.join(d3, 'medterm_law.json'))
 ok('항목: 약사법 자료가 없는 자료판에서는 성분·상품명 범위만 만듦(약사법 범위 없음)', list(RL.build_items(d3)['scopes']) == ['names'])
 
 # ── ② 제출 파일 검증 ──
-def sub(scope='names', ids=None, v='ok', attested=True, name='김약사', org='새봄약국', public=True, created='2026-11-08', refs=('health.kr',), items=IT, notes=None):
+CONS_OK = {'version': 'c-0123456789', 'collect': True, 'research': False, 'date': '2026-11-08'}
+def sub(scope='names', ids=None, v='ok', attested=True, name='김약사', org='새봄약국', public=True, created='2026-11-08', refs=('health.kr',), items=IT, notes=None, consent='ok'):
     lst = items['items'][scope]
     pick = lst if ids is None else [i for i in lst if i['id'] in ids]
     ans = {i['id']: {'v': (v(i) if callable(v) else v), 'h': i['h']} for i in pick}
     for k, m in (notes or {}).items(): ans[k]['m'] = m
-    return {'schema': RL.SCHEMA, 'app_version': '1.6.0', 'scope': scope, 'created': created, 'reviewer': {'name': name, 'affiliation': org, 'license_claimed': True, 'public': public},
-            'refs': list(refs), 'refs_other': '', 'attested': attested, 'answers': ans}
+    out = {'schema': RL.SCHEMA, 'app_version': '1.6.0', 'scope': scope, 'created': created, 'reviewer': {'name': name, 'affiliation': org, 'license_claimed': True, 'public': public},
+           'refs': list(refs), 'refs_other': '', 'attested': attested, 'answers': ans}
+    if consent == 'ok': out['consent'] = dict(CONS_OK)     # 기본: 동의서를 거친 확인서
+    elif consent is not None: out['consent'] = consent       # None 이면 칸 없음(동의서가 생기기 전 판의 파일)
+    return out
 good, warns = RL.validate_submission(sub(), IT, TODAY)
 ok('검증: 정상 제출 파일이 통과하고 항목 60개·확인서 표시(a)가 붙음', len(good['answers']) == 60 and all(a.get('a') == 1 for a in good['answers'].values()) and not warns and good['reviewer']['name'] == '김약사')
 g2, _ = RL.validate_submission(sub(attested=False), IT, TODAY)
@@ -117,12 +122,43 @@ ok('검증 거부: 모든 판정이 지난 판이면 병합하지 않음', '하�
 gn, _ = RL.validate_submission(sub(ids={NAMES[0]['id']}, notes={NAMES[0]['id']: '  줄바꿈\n  있는   메모 '}), IT, TODAY)
 ok('검증: 메모는 한 줄로 정리됨(줄바꿈·연속 공백 → 한 칸)', gn['notes'][NAMES[0]['id']] == '줄바꿈 있는 메모')
 
+# ── ②-2 동의 기록(consent): 병합 도구만 확인 ──
+ok('동의 기록: 검증(validate_submission)은 consent 칸을 읽지 않고 통과시킴(연구 분석 도구와 같은 검증 — 시트 서버가 받을 때 이미 검사)',
+   RL.validate_submission(sub(consent={'collect': False}), IT, TODAY)[0]['scope'] == 'names' and RL.validate_submission(sub(consent=None), IT, TODAY)[1] == [])
+cc, cw = RL.check_consent(sub(), TODAY)
+ok('동의 기록: 정상(필수 동의 true · 연구 이용 false · 판 · 날짜)은 그대로 정리되고 경고 없음', cc == {'version': 'c-0123456789', 'research': False, 'date': '2026-11-08'} and cw is None, (cc, cw))
+ok('동의 기록: 연구 이용 동의(research)가 true 여도 받고, 그 값만 기록함', RL.check_consent(sub(consent=dict(CONS_OK, research=True)), TODAY)[0]['research'] is True)
+cn, cwn = RL.check_consent(sub(consent=None), TODAY)
+ok('동의 기록: 칸이 없는 파일(동의서가 생기기 전 판)은 받되 “동의 기록이 없다 · 동의를 받은 근거를 따로 확인” 경고', cn is None and cwn and '동의 기록(consent)이 없는' in cwn and '근거를 따로 확인' in cwn, cwn)
+CBAD = [
+    ('객체가 아님', 'yes', 'consent(동의 기록)가 객체가 아닙니다'), ('객체가 아님(목록)', [CONS_OK], 'consent(동의 기록)가 객체가 아닙니다'),
+    ('필수 동의 false', dict(CONS_OK, collect=False), 'consent.collect'), ('필수 동의가 글자 “true”', dict(CONS_OK, collect='true'), 'consent.collect'),
+    ('필수 동의 칸 없음', {k: v for k, v in CONS_OK.items() if k != 'collect'}, 'consent.collect'), ('필수 동의가 숫자 1', dict(CONS_OK, collect=1), 'consent.collect'),
+    ('초안(draft)으로 만든 확인서', dict(CONS_OK, draft=True), 'consent.draft'),
+    ('연구 이용 동의가 true/false 아님', dict(CONS_OK, research='yes'), 'consent.research'), ('연구 이용 동의 칸 없음', {k: v for k, v in CONS_OK.items() if k != 'research'}, 'consent.research'),
+    ('동의서 판 칸 없음', {k: v for k, v in CONS_OK.items() if k != 'version'}, 'consent.version'), ('동의서 판 모양 이상(공백·느낌표)', dict(CONS_OK, version='bad version!'), 'consent.version'),
+    ('동의서 판이 숫자', dict(CONS_OK, version=123), 'consent.version'), ('동의서 판이 41자', dict(CONS_OK, version='c' * 41), 'consent.version'), ('동의서 판이 빈 글자', dict(CONS_OK, version=''), 'consent.version'),
+    ('동의한 날 칸 없음', {k: v for k, v in CONS_OK.items() if k != 'date'}, 'consent.date'), ('동의한 날 모양 이상', dict(CONS_OK, date='2026/11/08'), 'consent.date'),
+    ('동의한 날이 없는 날짜', dict(CONS_OK, date='2026-02-30'), '없는 날짜'), ('동의한 날이 너무 먼 미래', dict(CONS_OK, date='2026-12-30'), '범위를 벗어난 날짜'),
+]
+badc = [(t, e) for t, c, part in CBAD for e in [err_of(RL.check_consent, sub(consent=c), TODAY)] if e is None or part not in e]
+ok(f'동의 기록 거부: 잘못된 동의 기록 {len(CBAD)}가지(객체 아님 · 필수 동의 false/글자/없음 · 초안 · 연구 이용 값 · 판 · 날짜)는 이유와 함께 거부됨', not badc, badc[:3])
+ok('동의 기록 거부: 필수 동의가 true 여도 draft 가 true 면 거부(draft 가 먼저)', '동의서가 확정되기 전' in (err_of(RL.check_consent, sub(consent=dict(CONS_OK, draft=True)), TODAY) or ''))
+ok('동의 기록: 모르는 칸이 더 있어도 무시하고(정리 결과에 없음) 필요한 칸만 남김', RL.check_consent(sub(consent=dict(CONS_OK, extra='x', nested={'a': 1})), TODAY)[0] == {'version': 'c-0123456789', 'research': False, 'date': '2026-11-08'})
+
 # ── ③ 병합과 현황 ──
 def fresh(): return RL.empty_store()
 def merge(store, s, **kw):
     kw.setdefault('license_verified', True); kw.setdefault('verified_on', '2026-11-09'); kw.setdefault('today', TODAY)
     return RL.merge_submission(store, IT, s, **kw)
 ok('병합: 면허 확인 표시(license_verified)가 True 가 아니면 합치지 않음(저장 자료도 그대로)', all(err_of(RL.merge_submission, fresh(), IT, sub(), v, '2026-11-09', None, TODAY) for v in (False, None, 'yes', 1)))
+sc1 = fresh(); rc1 = merge(sc1, sub())
+ok('병합: 동의 기록이 있는 확인서는 경고 없이 합쳐지고 보고에 동의 기록(판 · 날짜 · 연구 이용 여부)이 실림', rc1['warnings'] == [] and rc1['consent'] == {'version': 'c-0123456789', 'research': False, 'date': '2026-11-08'}, (rc1['warnings'], rc1['consent']))
+sc2 = fresh(); rc2 = merge(sc2, sub(consent=None))
+ok('병합: 동의 기록이 없는 옛 파일은 합쳐지되 보고에 경고가 붙고 동의 기록은 None', len(rc2['warnings']) == 1 and '동의 기록(consent)이 없는' in rc2['warnings'][0] and rc2['consent'] is None and len(sc2['reviews']) == 1, rc2['warnings'])
+sc3 = fresh()
+ok('병합 거부: 개인정보 수집·이용 동의가 true 가 아니면(false · 초안) 합치지 않고 저장 자료도 그대로(비어 있음)', all('동의' in (err_of(RL.merge_submission, sc3, IT, sub(consent=c), True, '2026-11-09', None, TODAY) or '') for c in (dict(CONS_OK, collect=False), dict(CONS_OK, draft=True))) and sc3 == fresh())
+ok('저장 자료에는 동의 기록이 들어가지 않음(판정·날짜·참고 자료 종류만 — 동의 기록은 시트와 확인서 파일에 있음)', 'consent' not in RL.dump_store(sc1) and 'c-0123456789' not in RL.dump_store(sc1) and not RL.check_store(sc1, IT)[0])
 s0 = fresh(); merge(s0, sub(ids={i['id'] for i in NAMES[:30]}))
 c0 = RL.compute_status(IT, s0)
 ok('현황(부분): 판정 30/60 · 같다 30 · 2단계·3단계 아님 · 검수자 이름 공개 · 기준일은 면허 확인일', c0['scopes']['names']['answered'] == 30 and c0['scopes']['names']['confirmed'] == 30 and not c0['scopes']['names']['stage2'] and not c0['scopes']['names']['stage3']
@@ -202,9 +238,18 @@ rc, o = run([subf, '--store', store])
 ok('명령줄: --license-verified 없이는 합치지 않고(종료 코드 2) 저장 파일도 만들지 않음', rc == 2 and '면허' in o and not os.path.exists(store), o[:160])
 rc, o = run([subf, '--store', store, '--license-verified', '--dry-run'])
 ok('명령줄: --dry-run 은 결과만 보여 주고 저장하지 않음', rc == 0 and '저장하지 않았습니다' in o and not os.path.exists(store) and '고칠 후보 1개' in o, o[-200:])
+subc0 = os.path.join(td, 'sub_noconsent.json'); json.dump(sub(consent=None), open(subc0, 'w', encoding='utf-8'), ensure_ascii=False)
+rc, o = run([subc0, '--store', os.path.join(td, 'sc0.json'), '--license-verified', '--dry-run'])
+ok('명령줄: 동의 기록이 없는 파일은 합쳐 볼 수는 있으나 “동의 기록 없음”과 경고가 출력됨(종료 코드 0)', rc == 0 and '동의 기록: 없음' in o and '경고: 동의 기록(consent)이 없는' in o, o[:300])
+subc1 = os.path.join(td, 'sub_nocollect.json'); json.dump(sub(consent=dict(CONS_OK, collect=False)), open(subc1, 'w', encoding='utf-8'), ensure_ascii=False)
+rc, o = run([subc1, '--store', os.path.join(td, 'sc1.json'), '--license-verified'])
+ok('명령줄: 개인정보 수집·이용 동의가 false 인 파일은 합치지 않고(종료 코드 2) 저장 파일도 만들지 않음', rc == 2 and '동의' in o and not os.path.exists(os.path.join(td, 'sc1.json')), o[:200])
+rc, o = run([subf, '--store', os.path.join(td, 'sc2.json'), '--license-verified', '--dry-run'])
+ok('명령줄: 동의 기록이 있는 파일은 “동의 기록: 개인정보 수집·이용 동의 예(동의서 판 …) · 연구 이용 동의 아니오”가 출력되고 경고는 없음', rc == 0 and '동의 기록: 개인정보 수집·이용 동의 예(동의서 판 c-0123456789' in o and '연구 이용 동의 아니오' in o and '경고: 동의 기록' not in o, o[:300])
 rep = os.path.join(td, 'report.md')
 rc, o = run([subf, '--store', store, '--license-verified', '--verified-on', '2026-11-09', '--report', rep])
 ok('명령줄: 면허 확인 표시와 함께 합치면 저장되고(종료 코드 0) 보고서에 약사 메모가 들어감', rc == 0 and os.path.exists(store) and '표기가 다릅니다' in open(rep, encoding='utf-8').read() and '운영자용' in open(rep, encoding='utf-8').read() and '표기가 다릅니다' not in open(store, encoding='utf-8').read(), o[-200:])
+ok('명령줄: 보고서에 동의 기록 줄이 있음(판 · 날짜 · 연구 이용 여부)', '- 동의 기록(consent): 개인정보 수집·이용 동의 예(동의서 판 c-0123456789, 2026-11-08)' in open(rep, encoding='utf-8').read())
 rc, o = run(['--check', '--store', store])
 ok('명령줄: 병합 결과를 --check 가 통과시킴', rc == 0 and '통과' in o, o)
 open(store, 'a', encoding='utf-8').write(' ')

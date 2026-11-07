@@ -2,14 +2,16 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { layers } from '../lib/mt.js';
 import { scrollToCard } from '../lib/scroll.js';
 import {
-  MAX, REFS, VERDICTS, availableScopes, buildExport, clearStore, copyText, exportFileName, exportProblems, exportText, getReview, liveAnswers, loadStore, nextTodo, parseImport, saveAsFile, saveStore, tally,
+  MAX, REFS, VERDICTS, availableScopes, buildExport, clearStore, copyText, exportFileName, exportProblems, exportText, getReview, liveAnswers, loadStore, nextTodo, parseImport, saveAsFile, saveStore, sendToIntake, tally,
 } from '../lib/review.js';
+import { getIntake } from '../lib/reviewIntake.js';
 import { Badge, Btn, Card, INPUT_CLS, cx } from './ui.jsx';
 import { nf } from './ExtParts.jsx';
 
 /* 약사 검수 참여: 약사 면허가 있는 분이 성분 한글명·상품명(60)과 약사법 쉬운 풀이(53)를 항목마다 ‘맞다·다르다·모르겠다’로 표시하고,
-   ‘확인서’ 파일을 내보내 운영자에게 보낸다. 운영자가 약사 면허를 따로 확인해 합친 뒤 다음 판의 ‘검수 상태’에 반영된다.
-   이 화면은 서버로 아무것도 보내지 않으며(약사가 파일을 직접 전달), 스스로 ‘검수 완료’를 표시하지 않는다(현황 계산은 빌드가 한다 → build/review_lib.py). 입력은 이 기기의 브라우저에만 저장한다. */
+   동의서(개인정보 수집·이용 동의 필수 · 연구 이용 동의 선택)를 읽고 동의한 뒤 ‘확인서’를 운영자에게 전달한다. 운영자가 약사 면허를 따로 확인해 합친 뒤 다음 판의 ‘검수 상태’에 반영된다.
+   전달 길은 두 가지다: ① 파일로 저장·복사해 약사가 직접 전달(모든 판) ② ‘MedIT로 보내기’(동의서와 접수 주소가 담긴 독립 실행·설치형 웹앱 빌드만 — 단추를 누를 때 한 번 운영자의 구글 시트로 보낸다).
+   동의서가 준비되지 않은 판에서는 내보내지도 보내지도 못한다. 입력은 이 기기의 브라우저에만 저장하고, 누르기 전에는 서버로 아무것도 보내지 않는다. 스스로 ‘검수 완료’를 표시하지 않는다(현황 계산은 빌드가 한다 → build/review_lib.py). */
 
 function Pill({ on, children, ...rest }) {
   return (
@@ -37,6 +39,25 @@ function Check({ id, checked, onChange, children, hint }) {
 }
 
 const Step = ({ n, children }) => <h4 className="mb-1.5 mt-5 text-body-bold">{n}. {children}</h4>;
+
+/** 동의서 한 덩어리(필수 · 선택). 글은 reviewConsent.js 가 만들고(빌드가 그 글 전체의 해시로 ‘동의서 판’을 정한다), 여기서는 그대로 보여 준다. */
+function ConsentBlock({ b, checked, onChange }) {
+  return (
+    <section aria-labelledby={`rv-${b.id}-t`} data-review-consent={b.id} className="mt-2 rounded-xl border border-line bg-surface px-3 py-2.5">
+      <h5 id={`rv-${b.id}-t`} className="text-base font-bold text-ink">{b.title}</h5>
+      <p className="mt-0.5 text-small text-mut">{b.intro}</p>
+      <dl className="mt-1.5 grid gap-1.5 text-small">
+        {b.items.map(([k, v]) => (
+          <div key={k}>
+            <dt className="font-bold text-ink">{k}</dt>
+            <dd className="text-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <Check id={`rv-${b.id}`} checked={checked} onChange={onChange}>{b.check}</Check>
+    </section>
+  );
+}
 
 const NAME_Q = { ing: '이 한글 성분명이 맞습니까?', brand: '이 상품명이 이 성분의 국내 상품명으로 맞습니까?' };
 const QUESTION = (scope, it) => (scope === 'law' ? '원문과 비교해 이 쉬운 풀이가 맞습니까?' : NAME_Q[it.k]);
@@ -114,8 +135,12 @@ function Work({ R, scopes, onClose }) {
   const [askClear, setAskClear] = useState(false);
   const [paste, setPaste] = useState('');
   const [impMsg, setImpMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState({ kind: '', text: '' });
   const boxRef = useRef(null);
   const lastRef = useRef('');
+  const sendingRef = useRef(false);
+  const I = getIntake();
 
   const update = useCallback((fn) => { const next = fn(stRef.current); stRef.current = next; setSt(next); setSaved(saveStore(next)); }, []);
   const sc = scopes.includes(st.scope) ? st.scope : scopes[0];
@@ -156,7 +181,22 @@ function Work({ R, scopes, onClose }) {
     });
   };
 
+  /** ‘MedIT로 보내기’: 빠진 것이 없으면 확인서를 만들어 운영자의 구글 시트로 한 번 보낸다. 결과는 운영자가 정한 문구로만 알린다(받았다는 답을 못 읽었으면 ‘확인하지 못했다’고 그대로 말한다). */
+  const doSend = async () => {
+    if (sendingRef.current) return;
+    setMsg(''); setExp(null); setSendMsg({ kind: '', text: '' });
+    const p = exportProblems(R, sc, st);
+    setProbs(p);
+    if (p.length) return;
+    sendingRef.current = true; setSending(true);
+    try {
+      const r = await sendToIntake(exportText(buildExport(R, sc, st)));
+      setSendMsg({ kind: r.kind, text: r.msg });
+    } finally { sendingRef.current = false; setSending(false); }
+  };
+
   const doExport = (how) => {
+    setSendMsg({ kind: '', text: '' });
     const p = exportProblems(R, sc, st);
     setProbs(p);
     if (p.length) { setExp(null); setMsg(''); return; }
@@ -184,7 +224,7 @@ function Work({ R, scopes, onClose }) {
       ans: { ...s.ans, [r.scope]: { ...(s.ans[r.scope] || {}), ...r.answers } },
     }));
     setFilter('all'); setExp(null);
-    setImpMsg(`판정 ${nf(r.count)}개를 불러왔습니다(${R.scopes[r.scope].label})` + (r.stale ? ` · 사전 내용이 바뀌어 반영하지 않은 ${nf(r.stale)}개` : '') + (r.unknown ? ` · 알 수 없는 항목 ${nf(r.unknown)}개는 건너뜀` : '') + '. 면허 표시와 확인서 동의는 이 화면에서 직접 다시 표시해 주세요.');
+    setImpMsg(`판정 ${nf(r.count)}개를 불러왔습니다(${R.scopes[r.scope].label})` + (r.stale ? ` · 사전 내용이 바뀌어 반영하지 않은 ${nf(r.stale)}개` : '') + (r.unknown ? ` · 알 수 없는 항목 ${nf(r.unknown)}개는 건너뜀` : '') + '. 면허 표시와 동의 표시는 이 화면에서 직접 다시 표시해 주세요.');
     setPaste('');
   };
   const onFile = (e) => {
@@ -197,7 +237,7 @@ function Work({ R, scopes, onClose }) {
     rd.onerror = () => setImpMsg('파일을 읽지 못했습니다. 내용을 복사해 아래 칸에 붙여 넣어 주세요.');
     rd.readAsText(f);
   };
-  const doClear = () => { const b = clearStore(); stRef.current = b; setSt(b); setSaved(true); setExp(null); setProbs([]); setMsg(''); setImpMsg(''); setAskClear(false); setFilter('all'); };
+  const doClear = () => { const b = clearStore(); stRef.current = b; setSt(b); setSaved(true); setExp(null); setProbs([]); setMsg(''); setSendMsg({ kind: '', text: '' }); setImpMsg(''); setAskClear(false); setFilter('all'); };
 
   const hasAny = Object.values(st.ans).some((m) => Object.keys(m).length) || st.rev.name || st.rev.lic;
   const setRev = (k) => (v) => update((s) => ({ ...s, rev: { ...s.rev, [k]: v } }));
@@ -268,19 +308,35 @@ function Work({ R, scopes, onClose }) {
         ? <p className="mt-3 text-small text-mut">‘다르다’나 ‘모르겠다’로 표시한 항목이 아직 없습니다.</p>
         : <ol data-review-items="" className="mt-3 grid gap-2">{shown.map((it) => <ItemCard key={it.id} it={it} scope={sc} a={live[it.id] || null} onVerdict={onVerdict} onNote={onNote} />)}</ol>}
 
-      <Step n={4}>확인서 내보내기</Step>
+      <Step n={4}>동의서 (읽고 동의)</Step>
+      {I.ready ? (
+        <>
+          <p className="text-small text-mut">이름·소속·판정은 아래에 동의하신 뒤 확인서를 내보내거나 보낼 때에만 운영자(MedIT)에게 전달됩니다.</p>
+          {I.blocks.map((b) => <ConsentBlock key={b.id} b={b} checked={b.id === 'c1' ? st.c1 : st.c2} onChange={(on) => update((s) => ({ ...s, [b.id]: on }))} />)}
+          <p data-review-consent-version="" className="mt-1.5 text-caption text-mut">동의서 판 {I.version}{I.research ? '' : ' · 이 판은 연구 이용 동의를 묻지 않습니다(연구 이용은 ‘동의 안 함’으로 기록됩니다).'}</p>
+        </>
+      ) : (
+        <p role="note" data-review-consent-pending="" className="rounded-lg border border-notice-line bg-notice-bg px-3 py-2 text-small text-notice-ink">
+          이 앱 판은 동의서가 아직 준비되지 않아, 확인서를 내보내거나 보낼 수 없습니다(동의 없이 개인정보를 받지 않기 위해서입니다). 이 앱을 알려 드린 MedIT 담당자에게 문의해 주세요. 입력한 판정은 이 기기에 저장되어 있습니다.
+        </p>
+      )}
+
+      <Step n={5}>{I.canSend ? '확인서 보내기 · 내보내기' : '확인서 내보내기'}</Step>
       <Check id="rv-att" checked={st.att} onChange={(on) => update((s) => ({ ...s, att: on }))} hint="표시하지 않으면 ‘진행 상황 파일’이 됩니다. 진행 상황 파일은 2단계(약사 확인)에는 쓰이지만 3단계(약사 검수 완료)에는 쓰이지 않습니다.">
         저는 약사로서 위 판정을 확인했으며, 이 판정이 ‘약사 검수’ 기록(3단계)에 쓰이는 것에 동의합니다.
       </Check>
       <div className="mt-2 flex flex-wrap gap-2">
-        <Btn onClick={() => doExport('file')}>파일로 저장(.json)</Btn>
+        {I.canSend && <Btn onClick={doSend} disabled={sending} data-review-send="">{sending ? '보내는 중…' : 'MedIT로 보내기'}</Btn>}
+        <Btn variant={I.canSend ? 'secondary' : 'primary'} onClick={() => doExport('file')}>파일로 저장(.json)</Btn>
         <Btn variant="secondary" onClick={() => doExport('copy')}>복사하기</Btn>
       </div>
+      {I.canSend && <p className="mt-1.5 text-small text-mut">‘MedIT로 보내기’는 누르는 순간 확인서를 운영자의 구글 드라이브(구글 시트)로 한 번 보냅니다. 인터넷이 막혀 있거나 보내지 못하면 ‘파일로 저장’으로 전달해 주세요.</p>}
       {probs.length > 0 && (
         <ul role="alert" data-review-problems="" className="mt-2 list-disc rounded-lg border border-notice-line bg-notice-bg py-2 pl-7 pr-3 text-small text-notice-ink">
           {probs.map((t) => <li key={t}>{t}</li>)}
         </ul>
       )}
+      {I.canSend && <p data-review-send-msg="" data-kind={sendMsg.kind} role="status" aria-live="polite" className={cx('text-small', sendMsg.kind && sendMsg.kind !== 'ok' ? 'text-warn' : 'text-ink', sendMsg.text && 'mt-2')}>{sendMsg.text}</p>}
       <p data-review-msg="" role="status" aria-live="polite" className={cx('text-small text-ink', msg && 'mt-2')}>{msg}</p>
       {exp && (
         <div data-review-export="" className="mt-2">
@@ -293,9 +349,9 @@ function Work({ R, scopes, onClose }) {
         </div>
       )}
 
-      <Step n={5}>이어서 하기 · 불러오기 · 지우기</Step>
+      <Step n={6}>이어서 하기 · 불러오기 · 지우기</Step>
       <p className="text-small text-mut" data-review-saved="">
-        {saved ? '입력한 내용은 자동으로 이 기기의 브라우저에 저장되어, 다시 열면 이어서 할 수 있습니다. 서버로는 보내지 않습니다.' : '이 브라우저는 저장을 막고 있어 이 창을 닫으면 입력이 지워집니다. 중간에 ‘파일로 저장’이나 ‘복사하기’로 진행 상황 파일을 만들어 두세요.'}
+        {saved ? '입력한 내용은 자동으로 이 기기의 브라우저에만 저장되어, 다시 열면 이어서 할 수 있습니다(자동 저장은 서버로 보내지 않습니다). 동의 표시는 저장하지 않으니 내보내거나 보낼 때마다 다시 표시해 주세요.' : '이 브라우저는 저장을 막고 있어 이 창을 닫으면 입력이 지워집니다. 중간에 ‘파일로 저장’이나 ‘복사하기’로 진행 상황 파일을 만들어 두세요.'}
         {' '}공용 컴퓨터라면 끝낸 뒤 꼭 ‘이 기기에서 모두 지우기’를 눌러 주세요.
       </p>
       <details className="mt-1 rounded-xl border border-line bg-surface px-3" data-review-import="">
@@ -330,6 +386,7 @@ function Work({ R, scopes, onClose }) {
 export function PharmacistSection({ req = 0 }) {
   const R = getReview();
   const scopes = availableScopes();
+  const I = getIntake();
   const [open, setOpen] = useState(req > 0);
   useEffect(() => {
     if (!req) return undefined;
@@ -349,7 +406,16 @@ export function PharmacistSection({ req = 0 }) {
       </p>
       <ol className="mb-2 list-decimal pl-5 text-base">
         <li className="my-1">이 화면에서 항목마다 판정합니다. 약학정보원이나 약학정보 책은 약사님이 직접 열어 대조해 주세요.</li>
-        <li className="my-1">‘확인서’ 파일을 저장하거나 복사해 이 앱을 알려 드린 MedIT 담당자에게 보내 주세요. 이 화면은 서버로 아무것도 보내지 않습니다.</li>
+        <li className="my-1">
+          {I.ready
+            ? `확인서를 내보내거나 보내기 전에 동의서(개인정보 수집·이용 동의는 필수${I.research ? ', 연구 이용 동의는 선택' : ''})를 읽고 동의 표시를 합니다.`
+            : '이 앱 판은 동의서가 아직 준비되지 않아 확인서를 내보내거나 보낼 수 없습니다. 이 앱을 알려 드린 MedIT 담당자에게 문의해 주세요.'}
+        </li>
+        <li className="my-1">
+          {I.canSend
+            ? '‘확인서’는 ‘MedIT로 보내기’로 바로 보내거나, 파일로 저장·복사해 이 앱을 알려 드린 MedIT 담당자에게 전달해 주세요. 단추를 누르기 전에는 서버로 아무것도 보내지 않습니다.'
+            : '‘확인서’ 파일을 저장하거나 복사해 이 앱을 알려 드린 MedIT 담당자에게 보내 주세요. 이 화면은 서버로 아무것도 보내지 않습니다.'}
+        </li>
         <li className="my-1">MedIT가 약사 면허를 따로 확인한 뒤 확인서를 합칩니다. 합친 다음 판의 ‘검수 상태’에 반영되며, 그 전에는 ‘검수 상태’가 바뀌지 않습니다.</li>
       </ol>
       <p className="mb-2 text-small text-mut">이름·소속은 공개에 동의하신 경우에만 ‘검수 상태’에 나옵니다. 면허번호와 연락처는 받지 않고, ‘다르다’의 메모는 저장소에 보관하지 않고 MedIT 담당자만 읽습니다.</p>

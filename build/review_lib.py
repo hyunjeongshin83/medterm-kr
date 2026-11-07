@@ -185,6 +185,33 @@ def validate_submission(sub, items, today=None):
     return clean, warns
 
 
+_CONSENT_VERSION = re.compile(r'[A-Za-z0-9._-]{1,40}')
+
+
+def check_consent(sub, today=None):
+    """확인서의 동의 기록(consent: 약사가 앱의 동의서를 읽고 동의했다는 기록)을 확인한다 → (정리된 동의 기록 또는 None, 경고 문구 또는 None).
+    병합 도구(merge_submission)만 부른다. 연구 분석 도구가 쓰는 validate_submission 은 그대로다(구글 시트 서버가 받을 때 같은 칸을 이미 검사함).
+    · 칸이 없으면(앱에 동의서가 생기기 전 판에서 만든 파일) 합칠 수는 있으나 경고한다 — 운영자가 동의를 받은 근거를 따로 확인해야 한다.
+    · 칸이 있으면 개인정보 수집·이용 동의(collect)가 true 여야 하고 동의서 초안(draft)으로 만든 것이 아니어야 한다. 어기면 ReviewError.
+    · 연구 이용 동의(research)는 사전의 검수 반영과 상관없다(구글 시트의 연구 분석에서만 쓴다). 모양만 확인하고 기록해 둔다."""
+    today = today or datetime.date.today()
+    if 'consent' not in sub:
+        return None, '동의 기록(consent)이 없는 파일입니다 — 앱에 동의서가 생기기 전 판에서 만든 파일일 수 있습니다. 합치기 전에 약사에게 개인정보 수집·이용 동의를 받은 근거를 따로 확인하세요'
+    c = sub['consent']
+    if not isinstance(c, dict):
+        raise ReviewError('consent(동의 기록)가 객체가 아닙니다')
+    if c.get('draft') is True:
+        raise ReviewError('동의서가 확정되기 전에 만든 확인서입니다(consent.draft) — 합치지 않습니다')
+    if c.get('collect') is not True:
+        raise ReviewError('개인정보 수집·이용 동의(consent.collect)가 true 가 아닌 확인서입니다 — 동의 없이는 합치지 않습니다')
+    if not isinstance(c.get('research'), bool):
+        raise ReviewError('consent.research(연구 이용 동의)는 true/false 여야 합니다')
+    v = c.get('version')
+    if not isinstance(v, str) or not _CONSENT_VERSION.fullmatch(v):
+        raise ReviewError('consent.version(동의서 판)이 없거나 모양이 맞지 않습니다')
+    return {'version': v, 'research': c['research'], 'date': _date(c.get('date'), 'consent.date(동의한 날)', today)}, None
+
+
 # ── 저장 자료(병합 결과) ──
 def empty_store():
     return {'meta': {'schema': STORE_SCHEMA,
@@ -212,6 +239,9 @@ def merge_submission(store, items, sub, license_verified, verified_on, reviewer_
     today = today or datetime.date.today()
     _date(verified_on, '확인일(verified_on)', today)
     sub_clean, warns = validate_submission(sub, items, today)
+    consent, cwarn = check_consent(sub, today)
+    if cwarn:
+        warns = warns + [cwarn]
     sid, rv = sub_clean['scope'], sub_clean['reviewer']
     reviewers = store.setdefault('reviewers', {})
     pid = reviewer_id
@@ -246,7 +276,7 @@ def merge_submission(store, items, sub, license_verified, verified_on, reviewer_
     flagged = [{'id': i, 'verdict': sub_clean['answers'][i]['v'], 'note': sub_clean['notes'].get(i, ''), 'item': cur[i]} for i in sub_clean['answers'] if sub_clean['answers'][i]['v'] != 'ok']
     flagged.sort(key=lambda f: f['item']['no'])
     return {'pid': pid, 'scope': sid, 'reviewer_raw': {'name': rv['name'], 'affiliation': rv['affiliation'], 'public': rv['public']}, 'attested': sub_clean['attested'],
-            'count': len(sub_clean['answers']), 'verdicts': cnt, 'warnings': warns, 'flagged': flagged, 'created': sub_clean['created']}
+            'count': len(sub_clean['answers']), 'verdicts': cnt, 'warnings': warns, 'flagged': flagged, 'created': sub_clean['created'], 'consent': consent}
 
 
 # ── 현황 계산 ──
