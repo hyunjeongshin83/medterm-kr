@@ -4,10 +4,12 @@
 
 | 열기 | 주소 |
 |---|---|
-| 소개 페이지 (처음 화면) | https://hyunjeongshin83.github.io/medterm-kr/ |
-| 웹 화면과 휴대폰 앱 화면 나란히 보기 (휴대폰에서는 앱 화면만) | https://hyunjeongshin83.github.io/medterm-kr/showcase/ |
+| 웹 화면과 휴대폰 앱 화면 나란히 보기 (처음 화면, MedTerm-KR_showcase · 휴대폰에서는 앱 화면만) | https://hyunjeongshin83.github.io/medterm-kr/ |
+| 소개와 약사님께 드리는 안내 | https://hyunjeongshin83.github.io/medterm-kr/intro/ |
 | 설치형 웹앱 (휴대폰·PC 홈 화면에 추가) | https://hyunjeongshin83.github.io/medterm-kr/app/ |
 | 약사 검수 참여 (약사 면허가 있는 분) | https://hyunjeongshin83.github.io/medterm-kr/app/#review |
+
+이전 주소 `/showcase/` 는 처음 화면으로 이동합니다.
 
 ## 알아 둘 점
 - **약사 검수 참여(v1.6.0)**: 약사 면허가 있는 분이 「데이터·한계」 탭 「약사 검수 참여」에서 성분 한글명·국내 상품명 60개와 약사법 쉬운 풀이 53개를 항목마다 ‘맞다·다르다·모르겠다’로 판정하고 ‘확인서’ 파일을 저장하거나 복사해 MedIT 에 전달합니다. 이 화면은 서버로 아무것도 보내지 않고(입력은 이 기기의 브라우저에만 저장), 면허번호·연락처를 받지 않습니다. MedIT 가 면허를 따로 확인해 합친 뒤 새 판이 올라와야 「검수 상태」가 바뀌며, 지금은 아직 아무도 판정하지 않았습니다.
