@@ -43,7 +43,15 @@ def kappa(oo, ox, xo, xx):
     if k is not None:
         se = math.sqrt(po * (1 - po) / (n * (1 - pe) ** 2))
         ci = (max(-1.0, k - 1.96 * se), min(1.0, k + 1.96 * se))
-    return {'n': n, 'po': po, 'pe': pe, 'kappa': k, 'kappa_ci': ci, 'pabak': 2 * po - 1, 'agree_ci': wilson(oo + xx, n)}
+    # Gwet AC1(두 평가자·두 범주): 우연일치 = 2π(1-π), π = 두 사람이 O 로 본 비율의 평균. 한쪽 값에 쏠려도 κ 처럼 급히 낮아지지 않는다(근사 구간, 2026-11-09 주제 ③ 연구).
+    pi = (pa + pb) / 2; pe1 = 2 * pi * (1 - pi)
+    a1 = None if pe1 >= 1 else (po - pe1) / (1 - pe1)
+    a1ci = None
+    if a1 is not None:
+        se1 = math.sqrt(po * (1 - po) / (n * (1 - pe1) ** 2))
+        a1ci = (max(-1.0, a1 - 1.96 * se1), min(1.0, a1 + 1.96 * se1))
+    return {'n': n, 'po': po, 'pe': pe, 'kappa': k, 'kappa_ci': ci, 'pabak': 2 * po - 1, 'agree_ci': wilson(oo + xx, n),
+            'ac1': a1, 'ac1_ci': a1ci, 'oo': oo, 'xx': xx, 'disagree': ox + xo}
 
 
 # ── 읽기 ──
@@ -165,11 +173,13 @@ def md(res):
          f'- 진행: 판정A {n_ab}개 · 판정B {n_bb}개 · 둘 다 O/X 로 판정한 쌍 {(T["kappa"] or {}).get("n", 0)}개', '']
     if not (n_ab or n_bb):
         return '\n'.join(L + ['**아직 채워진 판정이 없습니다.** 판정A·판정B 칸에 O / X / ? 를 적은 시트를 넣어 주세요.', ''])
-    L += ['## 1. 두 약사의 일치도', '', '| 층 | 성분 | 쌍(O/X) | 일치율 | κ (근사 95% 구간) | PABAK |', '|---|---|---|---|---|---|']
+    L += ['## 1. 두 약사의 일치도', '', '| 층 | 성분 | 쌍(O/X) | 일치율 | 둘 다 O / 둘 다 X / 갈림 | κ (근사 95% 구간) | Gwet AC1 (근사 95% 구간) | PABAK |', '|---|---|---|---|---|---|---|---|']
     for s, v in [('전체', T)] + [(LABEL[k], v) for k, v in res['strata'].items()]:
         k = v['kappa']
         L.append(f'| {s} | {v["rows"]} | {k["n"] if k else 0} | {pc(k["po"]) if k else "—"}{rng(k["agree_ci"]) if k else ""} | '
+                 + (f'{k["oo"]} / {k["xx"]} / {k["disagree"]}' if k else '—') + ' | '
                  + (f'{fx(k["kappa"])}{rng(k["kappa_ci"], fx)}' if k and k['kappa'] is not None else '계산 불가(한쪽 값만 쓰임)' if k else '—')
+                 + ' | ' + (f'{fx(k["ac1"])}{rng(k["ac1_ci"], fx)}' if k and k['ac1'] is not None else '—')
                  + f' | {fx(k["pabak"]) if k else "—"} |')
     L += ['', '## 2. 자동 연결이 맞다고 본 비율', '',
           '| 층 | 약사A (O/(O+X)) | 약사B | 둘 다 O | 둘 다 X | 의견 갈림 | 판단 불가 포함 | 미완 | 합의 기준 범위(하한~상한) |', '|---|---|---|---|---|---|---|---|---|']
@@ -200,7 +210,7 @@ def md(res):
     L += ['', '## 5. 입력 점검', ''] + (['- ' + c for c in chk] if chk else ['- 문제 없음.'])
     L += ['', '## 읽는 법', '',
           '- 판단 기준: 등급 a·b 는 "이름과 다른 표기가 같은 성분인가", d 는 "미국 RxNorm 에 대응 성분이 없다는 판단이 맞는가". 시트 안내(docs/약사검수_판정시트_안내.md) 참고.',
-          '- κ 는 한쪽 값(대개 O)에 쏠리면 일치율이 높아도 낮게 나옵니다. 그래서 일치율·PABAK 을 같이 봅니다. 쌍이 20개 미만인 층은 참고용입니다. 구간은 근사입니다.',
+          '- κ 는 한쪽 값(대개 O)에 쏠리면 일치율이 높아도 낮게 나옵니다. 그래서 일치율·Gwet AC1·PABAK 과 범주별(둘 다 O / 둘 다 X) 건수를 같이 봅니다(상용 상위 시트는 등급 a 가 80% 라 쏠리기 쉽습니다). 쌍이 20개 미만인 층은 참고용입니다. 구간은 근사입니다.',
           '- "합의 기준 범위": 하한 = 둘 다 O 인 비율, 상한 = 둘 다 O + 의견 갈림. 갈린 행을 세 번째 약사나 협의로 정하면 이 범위가 한 점으로 좁혀집니다.',
           '- 이 보고서는 표본(시트에 든 성분)에 대한 것이며 전체 자료의 정확도가 아닙니다. 상용 상위 시트는 많이 쓰이는 성분에 쏠린 표본입니다.', '']
     return '\n'.join(L)

@@ -57,6 +57,9 @@ ok('안내 문서가 시트 3종·O/X/? 기준·실행 명령을 설명함', all
 k = RA.kappa(20, 5, 10, 15)
 ok('κ: 교과서 예(20·5·10·15) → 일치율 0.7 · 우연일치 0.5 · κ 0.4 · PABAK 0.4', close(k['po'], 0.7) and close(k['pe'], 0.5) and close(k['kappa'], 0.4) and close(k['pabak'], 0.4) and k['n'] == 50, k)
 ok('κ: 근사 95% 구간 = κ ± 1.96·√(po(1-po)/(n(1-pe)²)) ≈ 0.146 ~ 0.654', close(k['kappa_ci'][0], 0.4 - 1.96 * (0.21 / 12.5) ** 0.5, 1e-9) and close(k['kappa_ci'][1], 0.4 + 1.96 * (0.21 / 12.5) ** 0.5, 1e-9), k['kappa_ci'])
+k2 = RA.kappa(80, 5, 5, 10)  # O 쪽으로 쏠린 표본: 일치율 0.9 인데 κ 는 낮고 AC1 은 더 높다
+ok('AC1: 쏠린 표본(80·5·5·10) → 일치율 0.9 · AC1 > κ · 범주별 건수 · 구간 포함', close(k2['po'], 0.9) and k2['ac1'] > k2['kappa'] and k2['oo'] == 80 and k2['xx'] == 10 and k2['disagree'] == 10 and k2['ac1_ci'][0] < k2['ac1'] < k2['ac1_ci'][1], k2)
+ok('AC1: 완전 일치 → 1 · 쌍이 없으면 None(kappa 와 같음)', close(RA.kappa(5, 0, 0, 5)['ac1'], 1.0) and RA.kappa(0, 0, 0, 0) is None)
 ok('κ: 완전 일치 → 1 · 완전 반대 → -1 · 모두 O 로 같으면 정의 안 됨(None)이고 일치율 1 · 쌍이 없으면 None', close(RA.kappa(5, 0, 0, 5)['kappa'], 1.0) and close(RA.kappa(0, 5, 5, 0)['kappa'], -1.0)
    and RA.kappa(9, 0, 0, 0)['kappa'] is None and close(RA.kappa(9, 0, 0, 0)['po'], 1.0) and RA.kappa(0, 0, 0, 0) is None)
 w = RA.wilson(8, 10)
